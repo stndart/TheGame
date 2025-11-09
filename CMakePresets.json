@@ -22,8 +22,8 @@
         },
         {
             "inherits": "windows-only",
-            "name": "ninja-x64",
-            "displayName": "Windows MSVC x64 (Ninja)",
+            "name": "ninja",
+            "displayName": "Windows MSVC (Ninja)",
             "generator": "Ninja",
             "hidden": true,
             "toolset": {
@@ -37,9 +37,9 @@
             }
         },
         {
-            "inherits": "ninja-x64",
-            "name": "msvc-x64_x86-release",
-            "displayName": "Windows MSVC x64_x86 (Ninja) Release",
+            "inherits": "ninja",
+            "name": "msvc-x86-release",
+            "displayName": "Windows MSVC x86 (Ninja) Release",
             "architecture": {
                 "value": "x86",
                 "strategy": "external"
@@ -49,9 +49,9 @@
             }
         },
         {
-            "inherits": "ninja-x64",
-            "name": "msvc-x64_x86-debug",
-            "displayName": "Windows MSVC x64_x86 (Ninja) Debug",
+            "inherits": "ninja",
+            "name": "msvc-x86-debug",
+            "displayName": "Windows MSVC x86 (Ninja) Debug",
             "architecture": {
                 "value": "x86",
                 "strategy": "external"
@@ -64,12 +64,12 @@
     "buildPresets": [
         {
             "name": "release",
-            "configurePreset": "msvc-x64_x86-release",
+            "configurePreset": "msvc-x86-release",
             "configuration": "RelWithDebInfo"
         },
         {
             "name": "debug",
-            "configurePreset": "msvc-x64_x86-debug",
+            "configurePreset": "msvc-x86-debug",
             "configuration": "Debug"
         }
     ]

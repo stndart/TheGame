@@ -2,13 +2,13 @@
 #include <cstdint>
 #include <windows.h>
 
-
 struct HookStub {
   uint32_t rva;               // Relative Virtual Address in target EXE
   uint32_t hook_function;     // RVA to our hook function in this DLL
   const char *name;           // Human-readable name for debugging
   uint8_t original_bytes[12]; // Store original instructions
   bool is_hooked;             // Track hook status
+  uint32_t return_rva;        // RVA to return after hook
 };
 
 class HookManager {
