@@ -1,0 +1,76 @@
+{
+    "version": 3,
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 21,
+        "patch": 0
+    },
+    "configurePresets": [
+        {
+            "name": "windows-only",
+            "displayName": "Windows-only configuration",
+            "description": "This build is only available on Windows",
+            "cmakeExecutable": "C:/Program Files/CMake/bin/cmake.exe",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "installDir": "${sourceDir}/install/${presetName}",
+            "hidden": true,
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            }
+        },
+        {
+            "inherits": "windows-only",
+            "name": "ninja-x64",
+            "displayName": "Windows MSVC x64 (Ninja)",
+            "generator": "Ninja",
+            "hidden": true,
+            "toolset": {
+                "value": "v143,host=x64",
+                "strategy": "external"
+            },
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "cl.exe",
+                "CMAKE_CXX_COMPILER": "cl.exe",
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+            }
+        },
+        {
+            "inherits": "ninja-x64",
+            "name": "msvc-x64_x86-release",
+            "displayName": "Windows MSVC x64_x86 (Ninja) Release",
+            "architecture": {
+                "value": "x86",
+                "strategy": "external"
+            },
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+            }
+        },
+        {
+            "inherits": "ninja-x64",
+            "name": "msvc-x64_x86-debug",
+            "displayName": "Windows MSVC x64_x86 (Ninja) Debug",
+            "architecture": {
+                "value": "x86",
+                "strategy": "external"
+            },
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "release",
+            "configurePreset": "msvc-x64_x86-release",
+            "configuration": "RelWithDebInfo"
+        },
+        {
+            "name": "debug",
+            "configurePreset": "msvc-x64_x86-debug",
+            "configuration": "Debug"
+        }
+    ]
+}
