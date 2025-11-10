@@ -1,5 +1,7 @@
 #pragma once
+
 #include <cstdint>
+#include <vector>
 #include <windows.h>
 
 struct HookStub {
@@ -16,8 +18,11 @@ public:
   static bool initialize();
   static bool make_hook(HookStub &stub);
   static bool restore_hook(HookStub &stub);
+  static bool restore_all_hooks();
 
 private:
   static bool write_memory(void *address, const void *data, size_t size);
   static bool make_memory_writable(void *address, size_t size);
+
+  static std::vector<HookStub *> hooks;
 };

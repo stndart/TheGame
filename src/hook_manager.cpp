@@ -47,6 +47,7 @@ bool HookManager::make_hook(HookStub &stub) {
   }
 
   stub.is_hooked = true;
+  HookManager::hooks.push_back(&stub);
   return true;
 }
 
@@ -68,6 +69,16 @@ bool HookManager::restore_hook(HookStub &stub) {
 
   stub.is_hooked = false;
   return true;
+}
+
+bool HookManager::restore_all_hooks() {
+  bool status = true;
+  for (auto hook : HookManager::hooks) {
+    if (hook) {
+      status = status && HookManager::restore_hook(*hook);
+    }
+  }
+  return status;
 }
 
 bool HookManager::initialize() { return true; }
