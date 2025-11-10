@@ -4,10 +4,10 @@
 #include <basetsd.h>
 #include <debugapi.h>
 
-typedef UINT_PTR SOCKET;
+#include "WinSock2.h"
 
 void __cdecl handle_w_connect_2(SOCKET *sock, DWORD *a, int b, int c) {
-  logf("w_connect_1: sock=%p, *a='%s', b=%i, c=%i", sock, a, b, c);
+  logf("w_connect_2: sock=%p, *a='%s', b=%i, c=%i", sock, a, b, c);
 }
 
 extern "C" void __declspec(naked) hook_w_connect_2() {

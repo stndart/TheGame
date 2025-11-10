@@ -18,6 +18,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call,
     HookManager::initialize();
     HookManager::make_hook(g_target_w_connect_1);
     HookManager::make_hook(g_target_w_connect_2);
+    HookManager::make_hook(g_target_w_connect_3);
     break;
 
   case DLL_PROCESS_DETACH:
@@ -32,6 +33,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call,
     // Restore original code
     HookManager::restore_hook(g_target_w_connect_1);
     HookManager::restore_hook(g_target_w_connect_2);
+    HookManager::restore_hook(g_target_w_connect_3);
     break;
   }
   return TRUE;
