@@ -21,8 +21,7 @@ bool HookManager::make_hook(HookStub &stub) {
     return false;
 
   // Calculate target address in main EXE
-  BYTE *target_address = reinterpret_cast<BYTE *>(
-      reinterpret_cast<uintptr_t>(main_module) + stub.rva);
+  BYTE *target_address = reinterpret_cast<BYTE *>(stub.addr);
 
   // Save original bytes
   memcpy(stub.original_bytes, target_address, sizeof(stub.original_bytes));
@@ -56,8 +55,7 @@ bool HookManager::restore_hook(HookStub &stub) {
     return true;
 
   HMODULE main_module = GetModuleHandle(nullptr);
-  uint8_t *target_address = reinterpret_cast<uint8_t *>(
-      reinterpret_cast<uintptr_t>(main_module) + stub.rva);
+  BYTE *target_address = reinterpret_cast<BYTE *>(stub.addr);
 
   if (!make_memory_writable(target_address, sizeof(stub.original_bytes))) {
     return false;

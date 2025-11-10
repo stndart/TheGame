@@ -1,3 +1,4 @@
+#include "console.h"
 #include "hook_manager.h"
 #include "target_hooks.h"
 
@@ -10,15 +11,27 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call,
   case DLL_PROCESS_ATTACH:
     // Disable thread notifications for better performance
     DisableThreadLibraryCalls(hModule);
+    create_console();
+    log_message("DLL loaded - hooks installing");
 
     // Initialize and apply all hooks
     HookManager::initialize();
     HookManager::make_hook(g_target_w_connect_1);
+    HookManager::make_hook(g_target_w_connect_2);
     break;
 
   case DLL_PROCESS_DETACH:
+    log_message("DLL unloaded - hooks removed");
+    if (log_file.is_open()) {
+      log_file.close();
+    }
+    if (console_created) {
+      FreeConsole();
+    }
+
     // Restore original code
     HookManager::restore_hook(g_target_w_connect_1);
+    HookManager::restore_hook(g_target_w_connect_2);
     break;
   }
   return TRUE;
