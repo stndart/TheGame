@@ -6,7 +6,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # Set MSVC runtime library configuration
 if(MSVC)
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-    add_compile_options(/GS- /EHa)
+    add_compile_options(/GS- /EHs)
 endif()
 
 file(GLOB_RECURSE SOURCES src/*.cpp)
@@ -28,8 +28,6 @@ if(WIN32)
     )
 
     if (MSVC)
-        add_compile_options(/GS- /EHa)
-
         # Add ATL/MFC include path
         set(MSVC_ATL_INCLUDE_DIR "$ENV{VCToolsInstallDir}/atlmfc/include")
         target_include_directories(TheGame PRIVATE "${MSVC_ATL_INCLUDE_DIR}")
