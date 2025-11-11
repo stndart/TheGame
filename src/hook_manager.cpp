@@ -82,3 +82,5 @@ bool HookManager::restore_all_hooks() {
 }
 
 bool HookManager::initialize() { return true; }
+
+std::vector<HookStub *> HookManager::hooks;

@@ -26,6 +26,15 @@ if(WIN32)
         _CRT_SECURE_NO_WARNINGS
         WIN32_LEAN_AND_MEAN
     )
+
+    if (MSVC)
+        add_compile_options(/GS- /EHa)
+
+        # Add ATL/MFC include path
+        set(MSVC_ATL_INCLUDE_DIR "$ENV{VCToolsInstallDir}/atlmfc/include")
+        target_include_directories(TheGame PRIVATE "${MSVC_ATL_INCLUDE_DIR}")
+    endif()
+
     target_link_libraries(TheGame PRIVATE kernel32 user32)
 endif()
 

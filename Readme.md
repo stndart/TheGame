@@ -4,6 +4,8 @@ Everything is built into DLL that hooks the original methods on launch.
 
 ## Prerequisites
 - Visual Studio 2022 (Build tools)
+    - MSVC v143 - VS 2022 C++ x64/x86 Build tools
+    - ATL C++ for v143 (make sure it is the same version as MSVC v143)
 - CMake 3.15+
 - Your brain
 
