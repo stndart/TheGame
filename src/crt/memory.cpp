@@ -1,4 +1,3 @@
-#define _X86_
 #include <windows.h>
 
 #include "console.h"

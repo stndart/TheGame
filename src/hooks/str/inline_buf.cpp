@@ -10,28 +10,26 @@
 LPSTR __cdecl EnsureWStringBufferCapacity(LPSTR *str_p, int required_bytes,
                                           LPSTR inline_buf,
                                           int inline_buf_size_bytes) {
-  logf("EnsureWStringBufferCapacity: required_bytes='%i' with inline size='%i'",
-       required_bytes, inline_buf_size_bytes);
+  // logf("EnsureWStringBufferCapacity: required_bytes='%i' with inline
+  // size='%i'",
+  //      required_bytes, inline_buf_size_bytes);
 
   if (!str_p || (required_bytes < 0) || !inline_buf)
     throw ATL::CAtlException(E_INVALIDARG);
 
   if (*str_p != inline_buf) {                     // if using heap
     if (required_bytes > inline_buf_size_bytes) { // reallocate on heap
-      logf("recalloc at %p of %u", *str_p, required_bytes);
       *str_p = reinterpret_cast<LPSTR>(
           CRT::recalloc(reinterpret_cast<void *>(*str_p), required_bytes, 1));
       if (!*str_p)
         throw ATL::CAtlException(E_OUTOFMEMORY);
     } else { // use stack buf, since it's sufficient
-      logf("free at %p and go to heap %p", *str_p, inline_buf);
       CRT::free(*str_p);
       *str_p = inline_buf;
     }
   } else { // str_p is pointing at stack_buf
     if (required_bytes > inline_buf_size_bytes) { // use heap only if needed
       *str_p = reinterpret_cast<LPSTR>(CRT::calloc(required_bytes, 1));
-      logf("recalloc at %p of %u", *str_p, required_bytes);
       if (!*str_p)
         throw ATL::CAtlException(E_OUTOFMEMORY);
     }
@@ -48,10 +46,10 @@ extern "C" void __declspec(naked) hook_EnsureWStringBufferCapacity() {
         // push esi
         // push edi
 
-    mov eax, [esp + 0x24] ; // inline_buf_size_bytes
-    mov ebx, [esp + 0x28] ; // inline_buf 
-    mov ecx, [esp + 0x2C] ; // required_bytes
-    mov edx, [esp + 0x30] ; // str_p
+    mov eax, [esp + 0x24] ; // str_p 
+    mov ebx, [esp + 0x28] ; // required_bytes
+    mov ecx, [esp + 0x2C] ; // inline_buf 
+    mov edx, [esp + 0x30] ; // inline_buf_size_bytes
     push edx
     push ecx
     push ebx

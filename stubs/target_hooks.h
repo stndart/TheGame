@@ -8,9 +8,6 @@ extern HookStub g_target_ConvertWideToMultiByte;
 extern HookStub g_target_EnsureWStringBufferCapacity;
 
 // temp
-LPSTR __cdecl EnsureWStringBufferCapacity(LPSTR *str_p, int required_bytes,
-                                          LPSTR inline_buf,
-                                          int inline_buf_size_bytes);
 
 extern "C" {
 void hook_w_connect_1();

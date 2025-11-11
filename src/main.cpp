@@ -20,7 +20,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call,
     HookManager::make_hook(g_target_w_connect_1);
     HookManager::make_hook(g_target_w_connect_2);
     HookManager::make_hook(g_target_w_connect_3);
-    // HookManager::make_hook(g_target_ConvertWideToMultiByte);
+    HookManager::make_hook(g_target_ConvertWideToMultiByte);
     HookManager::make_hook(g_target_EnsureWStringBufferCapacity);
 
     log_message("DLL loaded - hooks installed");

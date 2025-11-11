@@ -1,11 +1,10 @@
+#include <atlexcept.h>
+
 #include "console.h"
 #include "helpers/strhelp.h"
-#include "target_hooks.h"
 
-// #include "atlexcept.h"
-#include "stringapiset.h"
-#include <errhandlingapi.h>
-#include <winsvc.h>
+#include "netstuff.h"
+#include "target_hooks.h"
 
 #define WSTRING_INLINE_BUF_SIZE 128
 
@@ -28,7 +27,6 @@ void __cdecl ConvertWideToMultiByte(LPSTR *str_p, LPCWSTR lpWideCharStr,
 
   int len = lstrlenW(lpWideCharStr) + 1;
 
-  // ensure wstring buffer
   str_p[0] = EnsureWStringBufferCapacity(&(str_p[0]), len * 4,
                                          reinterpret_cast<LPSTR>(str_p + 1),
                                          WSTRING_INLINE_BUF_SIZE);
@@ -39,15 +37,13 @@ void __cdecl ConvertWideToMultiByte(LPSTR *str_p, LPCWSTR lpWideCharStr,
   if (GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
     int required_bytes =
         WideCharToMultiByte(CodePage, 0, lpWideCharStr, len, 0, 0, 0, 0);
-    // ensure wstring buffer
     str_p[0] = EnsureWStringBufferCapacity(&(str_p[0]), required_bytes,
                                            reinterpret_cast<LPSTR>(str_p + 1),
                                            WSTRING_INLINE_BUF_SIZE);
     if (!WideCharToMultiByte(CodePage, 0, lpWideCharStr, len, str_p[0],
                              required_bytes, 0, 0)) {
       // throw string conversion error
-      // throw ATL::CAtlException(HRESULT_FROM_WIN32(GetLastError()));
-      throw HRESULT_FROM_WIN32(GetLastError());
+      throw ATL::CAtlException(HRESULT_FROM_WIN32(GetLastError()));
     }
   }
 }
@@ -55,13 +51,11 @@ void __cdecl ConvertWideToMultiByte(LPSTR *str_p, LPCWSTR lpWideCharStr,
 extern "C" void __declspec(naked) hook_ConvertWideToMultiByte() {
   __asm {
     pushad // esp += 0x20
-    pushfd // esp += 0x04
 
-            // Push arguments in reverse order (__cdecl convention)
-    mov eax, [esp + 0x2C] ; // CodePage
-    mov ebx, [esp + 0x28] ; // lpWideCharStr 
-    push eax
+    mov eax, [esp + 0x24] ; // lpWideCharStr
+    mov ebx, [esp + 0x28] ; // CodePage
     push ebx
+    push eax
     push ecx ; // 'this' pointer (in ECX for __thiscall)
     
     call ConvertWideToMultiByte
@@ -69,16 +63,20 @@ extern "C" void __declspec(naked) hook_ConvertWideToMultiByte() {
         // Clean up stack (3 args * 4 bytes = 12)
     add esp, 12
 
-    popfd
+    mov [esp + 0x1C], eax
+    mov [esp + 0x18], ecx
+    mov [esp + 0x14], edx
+
     popad
 
-    ret
+    ret 8
 
-    // Execute original instructions that were overwritten and jump back
-    // push ebx
-    // push ebp
-    // mov ebp, [esp + 0xC]
-    // jmp [g_target_ConvertWideToMultiByte.return_addr]
+    // Execute original instructions that were overwritten and jump
+    // back
+    push ebx
+    push ebp
+    mov ebp, [esp + 0xC]
+    jmp [g_target_ConvertWideToMultiByte.return_addr]
   }
 }
 
