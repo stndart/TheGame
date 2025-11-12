@@ -17,8 +17,8 @@ void __thiscall MultiByteHolder::ConvertWideToMultiByte(LPCWSTR lpWideCharStr,
 
   int len = lstrlenW(lpWideCharStr) + 1;
 
-  EnsureStringBufferCapacity(&current_ptr, len * 4, inline_buf,
-                             WSTRING_INLINE_BUF_SIZE);
+  EnsureMStringBufferCapacity(&current_ptr, len * 4, inline_buf,
+                              MSTRING_INLINE_BUF_SIZE);
   if (WideCharToMultiByte(CodePage, 0, lpWideCharStr, len, current_ptr, 4 * len,
                           0, 0))
     return;
@@ -26,8 +26,8 @@ void __thiscall MultiByteHolder::ConvertWideToMultiByte(LPCWSTR lpWideCharStr,
   if (GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
     int required_bytes =
         WideCharToMultiByte(CodePage, 0, lpWideCharStr, len, 0, 0, 0, 0);
-    EnsureStringBufferCapacity(&current_ptr, required_bytes, inline_buf,
-                               WSTRING_INLINE_BUF_SIZE);
+    EnsureMStringBufferCapacity(&current_ptr, required_bytes, inline_buf,
+                                MSTRING_INLINE_BUF_SIZE);
     if (!WideCharToMultiByte(CodePage, 0, lpWideCharStr, len, current_ptr,
                              required_bytes, 0, 0)) {
       ThrowStringConversionError(GetLastError());
