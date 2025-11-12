@@ -1,9 +1,6 @@
 #include "console.h"
 #include "target_hooks.h"
 
-#include <basetsd.h>
-#include <debugapi.h>
-
 #include "WinSock2.h"
 
 void __cdecl handle_w_connect_2(SOCKET *sock, DWORD *a, int b, int c) {

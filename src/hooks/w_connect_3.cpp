@@ -1,9 +1,6 @@
 #include "console.h"
 #include "target_hooks.h"
 
-#include <basetsd.h>
-#include <debugapi.h>
-
 #include "WinSock2.h"
 
 void __cdecl handle_w_connect_3(DWORD *this_p, int namelen) {
