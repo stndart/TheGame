@@ -13,7 +13,7 @@ inline int RefString::get_capacity() const {
   return thisbase->capacity;
 }
 
-void __thiscall RefString::truncate(int max_length) {
+void RefString::truncate(int max_length) {
   int old_size = get_capacity();
   int new_size = max_length <= 0 ? 0 : max_length;
   if (new_size >= old_size) {
@@ -27,6 +27,12 @@ void __thiscall RefString::truncate(int max_length) {
   }
 }
 
+void RefString::truncate_self() {
+  if (!str_p)
+    str_p = const_cast<LPSTR>(nullstr);
+  truncate(strlen(str_p));
+}
+
 /*
 struct RefString {
   LPSTR str_p;
@@ -38,7 +44,7 @@ struct RefString {
 
   LPSTR dec_ref(); // sub_9FCAF0, weird
   LPSTR inc_ref();
-  LPSTR truncate(int max_length);   // sub_CEFCC0
++  LPSTR truncate(int max_length);   // sub_CEFCC0
   void realloc(int new_size);       // sub_CEFEF0
   LPSTR reserve(int required_size); // sub_CF0020
 

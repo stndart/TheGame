@@ -15,6 +15,7 @@ struct RefString {
   LPSTR dec_ref(); // sub_9FCAF0, weird
   LPSTR inc_ref();
   void truncate(int max_length);    // sub_CEFCC0
+  void truncate_self();             // sub_D5A7E0
   void realloc(int new_size);       // sub_CEFEF0
   LPSTR reserve(int required_size); // sub_CF0020
 
