@@ -1,7 +1,8 @@
 #pragma once
 
 #include <windows.h>
-#include <winnt.h>
+
+extern LPCSTR nullstr;
 
 struct RefString {
   LPSTR str_p;
@@ -25,11 +26,18 @@ struct RefString {
 
 struct RefStringBase {
   int capacity;
-  size_t ref_cnt;
+  volatile size_t ref_cnt;
   RefString str;
 
   static inline RefStringBase *from_refstring(const RefString *rstr) {
-    return reinterpret_cast<RefStringBase *>(reinterpret_cast<int>(rstr) - 8);
+    if (!rstr)
+      return nullptr;
+    LPCSTR str_p = rstr->str_p;
+    if (!str_p || str_p == nullptr || str_p == nullstr)
+      return nullptr;
+
+    return reinterpret_cast<RefStringBase *>(
+        reinterpret_cast<uintptr_t>(str_p) - 8);
   }
 
   inline void dec_ref() { InterlockedDecrement(&ref_cnt); }

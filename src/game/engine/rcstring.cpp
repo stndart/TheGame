@@ -13,55 +13,17 @@ inline int RefString::get_capacity() const {
   return thisbase->capacity;
 }
 
-// void RefString::truncate(int max_length) {
-//   int old_size = get_capacity();
-//   int new_size = max_length <= 0 ? 0 : max_length;
-//   if (new_size >= old_size) {
-//     new_size = old_size;
-//   }
-//   if (str_p && str_p != nullstr) {
-//     if (thisbase) {
-//       thisbase->capacity = new_size;
-//       str_p[new_size] = 0;
-//     }
-//   }
-// }
-
 void __thiscall RefString::truncate(int max_length) {
-  logf("RefString::truncate at %p", this);
-
-  const CHAR *str_p; // eax
-  int old_size;      // ecx
-  int new_size;      // ecx
-  RefStringBase *v5; // eax
-
-  str_p = this->str_p;
-  if (this->str_p) {
-    if (str_p == nullstr)
-      old_size = 0;
-    else
-      old_size = *((DWORD *)str_p - 2);
-  } else {
-    old_size = 0;
+  int old_size = get_capacity();
+  int new_size = max_length <= 0 ? 0 : max_length;
+  if (new_size >= old_size) {
+    new_size = old_size;
   }
-  if ((max_length <= 0 ? 0 : max_length) >= old_size) {
-    if (str_p) {
-      if (str_p == nullstr)
-        new_size = 0;
-      else
-        new_size = *((DWORD *)str_p - 2);
-    } else {
-      new_size = 0;
-    }
-  } else {
-    new_size = max_length <= 0 ? 0 : max_length;
-  }
-  if (str_p != nullstr && str_p) {
-    v5 = (RefStringBase *)(str_p - 8);
-    if (v5) {
-      v5->capacity = new_size;
-      *((BYTE *)&v5->str.str_p + new_size) = 0;
-    }
+
+  RefStringBase *base = thisbase;
+  if (base) {
+    base->capacity = new_size;
+    str_p[new_size] = 0;
   }
 }
 
@@ -103,26 +65,26 @@ struct RefStringBase {
 
 void log_string_structure(const RefString *str, const char *label) {
   if (str == nullptr) {
-    logf("%s: null", label);
+    logf("%s: NULL", label);
     return;
   }
 
   if (str->str_p == nullstr) {
-    logf("%s: special empty string", label);
+    logf("%s: nullstr", label);
     return;
   }
 
   RefStringBase *header = RefStringBase::from_refstring(str);
 
-  // int tt = 0;
-  // if (header->capacity)
-  //   tt = *reinterpret_cast<int *>(header->capacity);
-  // int tt2 = 0;
-  // if (header->ref_cnt)
-  //   tt2 = *reinterpret_cast<int *>(header->ref_cnt);
+  int capacity = 0;
+  size_t ref_cnt = 0;
+  if (header) {
+    capacity = header->capacity;
+    ref_cnt = header->ref_cnt;
+  }
 
-  logf("%s: at %p, capacity=%d, refcount=%d, data='%s'", label, str,
-       header->capacity, header->ref_cnt, str->str_p);
+  logf("%s: at %p, capacity=%d, refcount=%d, data='%s'", label, str, capacity,
+       ref_cnt, str->str_p);
 }
 
 #undef thisbase
