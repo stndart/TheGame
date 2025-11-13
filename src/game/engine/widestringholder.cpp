@@ -7,12 +7,14 @@ void __thiscall WideStringHolder::ConvertMultiByteToWide(LPCSTR lpMultiByteStr,
                                                          UINT CodePage) {
   if (!lpMultiByteStr) {
     current_ptr = NULL;
-    logf("ConvertMultiByteToWide: null lpMultiByteStr");
+    if (LOG_WCONVERT)
+      logf("ConvertMultiByteToWide: null lpMultiByteStr");
     return;
   }
 
-  logf("ConvertMultiByteToWide: lpMultiByteStr='%s', CodePage='%u'",
-       lpMultiByteStr, CodePage);
+  if (LOG_WCONVERT)
+    logf("ConvertMultiByteToWide: lpMultiByteStr='%s', CodePage='%u'",
+         lpMultiByteStr, CodePage);
 
   int len = lstrlenA(lpMultiByteStr) + 1;
 

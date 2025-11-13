@@ -9,3 +9,5 @@ void create_console();
 void log_message(const char *message);
 
 void logf(const char *format, ...);
+
+void log_string_structure(char *str, const char *label);

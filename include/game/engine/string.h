@@ -2,6 +2,8 @@
 
 #include <windows.h>
 
+const bool LOG_WCONVERT = false;
+
 void ThrowStringConversionError(DWORD errcode);
 
 LPSTR __cdecl EnsureMStringBufferCapacity(LPSTR *str_p, int required_bytes,

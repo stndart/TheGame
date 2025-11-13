@@ -8,12 +8,14 @@ void __thiscall MultiByteHolder::ConvertWideToMultiByte(LPCWSTR lpWideCharStr,
                                                         UINT CodePage) {
   if (!lpWideCharStr) {
     current_ptr = NULL;
-    logf("ConvertWideToMultiByte: null lpWideCharStr");
+    if (LOG_WCONVERT)
+      logf("ConvertWideToMultiByte: null lpWideCharStr");
     return;
   }
 
-  logf("ConvertWideToMultiByte: lpWideCharStr='%s', CodePage='%u'",
-       wstring_to_string(lpWideCharStr).c_str(), CodePage);
+  if (LOG_WCONVERT)
+    logf("ConvertWideToMultiByte: lpWideCharStr='%s', CodePage='%u'",
+         wstring_to_string(lpWideCharStr).c_str(), CodePage);
 
   int len = lstrlenW(lpWideCharStr) + 1;
 
