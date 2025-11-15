@@ -1,8 +1,7 @@
 #include "console.h"
 #include "target_hooks.h"
 
-#include <game/engine/multibyteholder.h>
-#include <game/engine/widestringholder.h>
+#include <game/engine/StringConverters.h>
 
 extern "C" void __declspec(naked) hook_ConvertWideToMultiByte() {
   __asm {

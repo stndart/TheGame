@@ -3,11 +3,10 @@
 #include "console.h"
 #include "target_hooks.h"
 
-#include <game/engine/rcstring.h>
+#include <game/engine/String.h>
 
-void __cdecl handle_rstring_reserve(RefString *rstr, int required_size) {
-  // logf("hook_rstring_reserve, req_size='%i'", required_size);
-  log_string_structure(rstr, "hook_rstring_reserve");
+void __cdecl handle_rstring_reserve(String *rstr, int required_size) {
+  logf("hook_rstring_reserve, req_size='%i'", required_size);
 }
 
 extern "C" void __declspec(naked) hook_rstring_reserve() {
@@ -43,9 +42,8 @@ HookStub g_target_rstring_reserve = {
     0xCF0025,
 };
 
-void __cdecl handle_rstring_realloc(const RefString *rstr, int new_size) {
-  // logf("handle_rstring_realloc, new_size='%i'", new_size);
-  log_string_structure(rstr, "handle_rstring_realloc");
+void __cdecl handle_rstring_realloc(const String *rstr, int new_size) {
+  logf("handle_rstring_realloc, new_size='%i'", new_size);
 }
 
 extern "C" void __declspec(naked) hook_rstring_realloc() {

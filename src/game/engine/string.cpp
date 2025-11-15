@@ -1,62 +1,133 @@
-#include "crt/memory.h"
-#include <atlexcept.h>
+#include "console.h"
 
-#include "game/engine/string.h"
+#include <WinSock2.h>
+#include <cstdint>
+#include <minwindef.h>
+#include <windows.h>
 
-void ThrowStringConversionError(DWORD errcode) {
-  throw ATL::CAtlException(HRESULT_FROM_WIN32(errcode));
+#include "game/engine/AtomicOperations.h"
+#include "game/engine/MemoryDefines.h"
+#include "game/engine/String.h"
+
+String::StringBody *String::nullstr =
+    reinterpret_cast<StringBody *>(0x017B75E4);
+
+void String::Deallocate(StringBody *&io_pBody) {
+  if (io_pBody != nullptr && io_pBody != nullstr) {
+    StringHeader *pString = GetRealBufferStart(io_pBody);
+    EE_FREE(pString);
+    io_pBody = nullptr;
+  }
 }
 
-LPSTR __cdecl EnsureMStringBufferCapacity(LPSTR *str_p, int required_bytes,
-                                          LPSTR inline_buf,
-                                          int inline_buf_size_bytes) {
-  if (!str_p || (required_bytes < 0) || !inline_buf)
-    throw ATL::CAtlException(E_INVALIDARG);
+void String::IncRefCount(StringBody *pBody, bool bValidate) {
+  if (pBody == nullptr || pBody == nullstr)
+    return;
 
-  if (*str_p != inline_buf) {                     // if using heap
-    if (required_bytes > inline_buf_size_bytes) { // reallocate on heap
-      *str_p = reinterpret_cast<LPSTR>(
-          CRT::recalloc(reinterpret_cast<void *>(*str_p), required_bytes, 1));
-      if (!*str_p)
-        throw ATL::CAtlException(E_OUTOFMEMORY);
-    } else { // use stack buf, since it's sufficient
-      CRT::free(*str_p);
-      *str_p = inline_buf;
-    }
-  } else { // str_p is pointing at stack_buf
-    if (required_bytes > inline_buf_size_bytes) { // use heap only if needed
-      *str_p = reinterpret_cast<LPSTR>(CRT::calloc(required_bytes, 1));
-      if (!*str_p)
-        throw ATL::CAtlException(E_OUTOFMEMORY);
-    }
-  }
-
-  return *str_p;
+  StringHeader *pString = GetRealBufferStart(pBody);
+  AtomicIncrement(pString->m_RefCount);
 }
 
-LPWSTR __cdecl EnsureWStringBufferCapacity(LPWSTR *str_p, int required_bytes,
-                                           LPWSTR inline_buf,
-                                           int inline_buf_size_bytes) {
-  if (!str_p || (required_bytes < 0) || !inline_buf)
-    throw ATL::CAtlException(E_INVALIDARG);
+void String::DecRefCount(StringBody *&io_pBody, bool bValidate) {
+  if (io_pBody == nullptr || io_pBody == nullstr)
+    return;
 
-  if (*str_p != inline_buf) {                     // if using heap
-    if (required_bytes > inline_buf_size_bytes) { // reallocate on heap
-      *str_p = reinterpret_cast<LPWSTR>(
-          CRT::recalloc(reinterpret_cast<void *>(*str_p), required_bytes, 1));
-      if (!*str_p)
-        throw ATL::CAtlException(E_OUTOFMEMORY);
-    } else { // use stack buf, since it's sufficient
-      CRT::free(*str_p);
-      *str_p = inline_buf;
-    }
-  } else { // str_p is pointing at stack_buf
-    if (required_bytes > inline_buf_size_bytes) { // use heap only if needed
-      *str_p = reinterpret_cast<LPWSTR>(CRT::calloc(required_bytes, 1));
-      if (!*str_p)
-        throw ATL::CAtlException(E_OUTOFMEMORY);
-    }
+  StringHeader *pString = GetRealBufferStart(io_pBody);
+  AtomicDecrement(pString->m_RefCount);
+
+  if (pString->m_RefCount == 0) {
+    Deallocate(io_pBody);
   }
 
-  return *str_p;
+  io_pBody = nullptr;
+}
+
+size_t String::GetRefCount(StringBody *pBody, bool bValidate) {
+  if (pBody == nullptr || pBody == nullstr) {
+    return 0;
+  } else {
+    StringHeader *pString = GetRealBufferStart(pBody);
+    return pString->m_RefCount;
+  }
+}
+
+inline LPSTR String::GetString(StringBody *pBody, bool bValidate) {
+  // No need to perform an if NULL check, because
+  // it will correctly return NULL if pBody == NULL
+  return pBody->m_data;
+}
+
+// SURE? (m_cchStringLength in orig code)
+inline size_t String::GetLength(StringBody *pBody, bool bValidate) {
+  if (pBody == nullptr || pBody == nullstr) {
+    return 0;
+  } else {
+    StringHeader *pHeader = GetRealBufferStart(pBody);
+    return pHeader->m_cbBufferSize;
+  }
+}
+
+inline void String::SetLength(StringBody *pBody, size_t stLength) {
+  if (pBody == nullptr || pBody == nullstr)
+    return;
+
+  StringHeader *pHeader = GetRealBufferStart(pBody);
+  pHeader->m_cbBufferSize = stLength;
+}
+
+struct StringD {
+  int cap;
+  size_t rc;
+  char m_data[1];
+};
+
+void String::Truncate(int maxLength) {
+  if (!m_kHandle || m_kHandle == nullstr)
+    return;
+
+  StringHeader *header = GetRealBufferStart(m_kHandle);
+
+  int old_size = header->m_cbBufferSize;
+  int new_size = maxLength <= 0 ? 0 : maxLength;
+  if (new_size >= old_size)
+    new_size = old_size;
+
+  // logf("[x] Original size %i, new %i, maxlength %i, v2 %p, v5 %p", old_size,
+  //      new_size, maxLength, m_kHandle, header);
+
+  if (header) {
+    header->m_cbBufferSize = new_size;
+    m_kHandle->m_data[new_size] = '\0';
+  }
+}
+
+void __thiscall String::TruncateSelf(String **this_ptr) {
+  String *StringObj = *this_ptr;
+  StringBody *body = StringObj->m_kHandle;
+
+  // Calculate the current length of the string
+  size_t len = 0;
+  if (StringObj->m_kHandle && StringObj->m_kHandle != nullstr)
+    len = strlen(StringObj->m_kHandle->m_data);
+
+  // Truncate to the current length (effectively just ensures proper null
+  // termination)
+  StringObj->Truncate(len);
+}
+
+inline String::StringHeader *String::GetRealBufferStart(StringBody *pBody) {
+  return reinterpret_cast<StringHeader *>(reinterpret_cast<uintptr_t>(pBody) -
+                                          offsetof(StringData, m_data));
+}
+
+inline bool String::ValidateString(StringBody *pBody) {
+  if (pBody == nullptr || pBody == nullstr)
+    return true;
+
+  size_t length = GetRealBufferStart(pBody)->m_cbBufferSize;
+
+  if (length != strlen((const char *)pBody))
+    return false;
+
+  return true;
 }
