@@ -1,6 +1,8 @@
 #include "console.h"
 #include <windows.h>
 
+#include "game/engine/rcstring.h"
+
 void create_console() {
   if (console_created)
     return;
@@ -36,4 +38,29 @@ void logf(const char *format, ...) {
   va_end(args);
 
   log_message(buffer);
+}
+
+void log_string_structure(const RefString *str, const char *label) {
+  if (str == nullptr) {
+    logf("%s: NULL", label);
+    return;
+  }
+
+  if (str->m_kHandle->m_data == nullstr) {
+    logf("%s: nullstr", label);
+    return;
+  }
+
+  RefString::StringHeader *header =
+      RefString::GetRealBufferStart(str->m_kHandle);
+
+  int capacity = 0;
+  size_t ref_cnt = 0;
+  if (header) {
+    capacity = header->m_cbBufferSize;
+    ref_cnt = header->m_RefCount;
+  }
+
+  logf("%s: at %p, capacity=%d, refcount=%d, data='%s'", label, str, capacity,
+       ref_cnt, str->m_kHandle->m_data);
 }

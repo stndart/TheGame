@@ -4,47 +4,59 @@
 
 extern LPCSTR nullstr;
 
-struct RefString {
-  LPSTR str_p;
-
-  RefString();                            // sub_9FCB50
-  RefString(LPCSTR c_string);             // sub_CF0230
-  RefString(RefString &other);            // sub_9FC6B0
-  RefString &operator=(RefString &other); // sub_9FCAA0, weird
-
-  LPSTR dec_ref(); // sub_9FCAF0, weird
-  LPSTR inc_ref();
-  void truncate(int max_length);    // sub_CEFCC0
-  void truncate_self();             // sub_D5A7E0
-  void realloc(int new_size);       // sub_CEFEF0
-  LPSTR reserve(int required_size); // sub_CF0020
-
-  inline int get_capacity() const; // sub_CEFB80 and inline
-  inline size_t get_ref_cnt() const;
-  LPCSTR get_str();       // sub_9FCD20
-  LPCSTR get_str() const; // sub_CEFB70
-};
-
-struct RefStringBase {
-  int capacity;
-  volatile size_t ref_cnt;
-  RefString str;
-
-  static inline RefStringBase *from_refstring(const RefString *rstr) {
-    if (!rstr)
-      return nullptr;
-    LPCSTR str_p = rstr->str_p;
-    if (!str_p || str_p == nullptr || str_p == nullstr)
-      return nullptr;
-
-    return reinterpret_cast<RefStringBase *>(
-        reinterpret_cast<uintptr_t>(str_p) - 8);
+class RefString {
+public:
+  inline LPCSTR c_str() const {
+    if (!m_kHandle)
+      return "";
+    return GetString(m_kHandle);
   }
 
-  inline void dec_ref() { InterlockedDecrement(&ref_cnt); }
-  inline void inc_ref() { InterlockedIncrement(&ref_cnt); }
+  friend void log_string_structure(const RefString *str, const char *label);
 
-  RefStringBase(); // sub_CEFD20
+protected:
+  /// Internal structure defining the header data for a string
+  struct StringHeader {
+    size_t m_cbBufferSize;
+    size_t m_RefCount;
+    // size_t m_cchStringLength;
+  };
+  /// Internal structure defining the body, used for providing type information.
+  /// The actually buffer allocated is larger than StringBody making it safe to
+  /// read beyond the one character defined in this class.
+  struct StringBody {
+    CHAR m_data[1];
+  };
+  /// The internal storage for the string
+  struct StringData : public StringHeader, public StringBody {};
+
+  /// A string's only member variable is a pointer directly to the Body of a
+  /// StringData
+  StringBody *m_kHandle;
+
+  // static StringBody *Allocate(size_t stCount);
+  // static StringBody *AllocateAndCopy(LPCSTR pcStr, size_t stCount = 0);
+  // static StringBody *AllocateAndCopyHandle(StringBody *kHandle);
+  static void __thiscall Deallocate(StringBody *&io_pBody);
+
+  static void __thiscall IncRefCount(StringBody *pBody, bool bValidate = true);
+  static void __thiscall DecRefCount(StringBody *&io_pBody,
+                                     bool bValidate = true);
+  static size_t __thiscall GetRefCount(StringBody *pBody,
+                                       bool bValidate = true);
+
+  static char *__thiscall GetString(StringBody *pBody, bool bValidate = true);
+  static size_t __thiscall GetLength(StringBody *pBody, bool bValidate = true);
+  static size_t __thiscall GetAllocationSize(StringBody *pBody,
+                                             bool bValidate = true);
+  static size_t __thiscall GetBufferSize(StringBody *pBody,
+                                         bool bValidate = true);
+  static bool __thiscall ValidateString(StringBody *pBody);
+
+  static void __thiscall SetLength(StringBody *pBody, size_t stLength);
+  static StringHeader *__thiscall GetRealBufferStart(StringBody *pBody);
+
+public:
+  static void __thiscall Truncate(BYTE *pBody, int maxLength);
+  static void __thiscall TruncateSelf(BYTE **pBody);
 };
-
-void log_string_structure(const RefString *str, const char *label);

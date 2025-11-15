@@ -43,7 +43,7 @@ HookStub g_target_rstring_reserve = {
     0xCF0025,
 };
 
-void __cdecl handle_rstring_realloc(RefString *rstr, int new_size) {
+void __cdecl handle_rstring_realloc(const RefString *rstr, int new_size) {
   // logf("handle_rstring_realloc, new_size='%i'", new_size);
   log_string_structure(rstr, "handle_rstring_realloc");
 }

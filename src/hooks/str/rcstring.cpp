@@ -5,13 +5,13 @@
 
 extern "C" void __declspec(naked) hook_rstring_truncate() {
   __asm {
-      jmp RefString::truncate;
+      jmp RefString::Truncate;
   }
 }
 
 extern "C" void __declspec(naked) hook_rstring_truncate_self() {
   __asm {
-      jmp RefString::truncate_self;
+      jmp RefString::TruncateSelf;
   }
 }
 

@@ -1,4 +1,5 @@
 
+#include "game/engine/rcstring.h"
 #include <fstream>
 
 static std::ofstream log_file;
@@ -10,4 +11,4 @@ void log_message(const char *message);
 
 void logf(const char *format, ...);
 
-void log_string_structure(char *str, const char *label);
+void log_string_structure(const RefString *str, const char *label);

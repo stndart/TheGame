@@ -1,96 +1,145 @@
-// #include "crt/memory.h"
 #include "console.h"
 
-#include "game/engine/rcstring.h"
+#include <WinSock2.h>
+#include <cstdint>
+#include <windows.h>
 
-#define thisbase RefStringBase::from_refstring(this)
+#include "game/engine/AtomicOperations.h"
+#include "game/engine/MemoryDefines.h"
+#include "game/engine/rcstring.h"
 
 LPCSTR nullstr = *reinterpret_cast<const char **>(0x017B75E4);
 
-inline int RefString::get_capacity() const {
-  if (!str_p || str_p == nullstr)
+void RefString::Deallocate(StringBody *&io_pBody) {
+  if (io_pBody->m_data != nullptr && io_pBody->m_data != nullstr) {
+    StringHeader *pString = GetRealBufferStart(io_pBody);
+    EE_FREE(pString);
+    io_pBody = nullptr;
+  }
+}
+
+void RefString::IncRefCount(StringBody *pBody, bool bValidate) {
+  if (pBody->m_data == nullptr || pBody->m_data == nullstr)
+    return;
+
+  StringHeader *pString = GetRealBufferStart(pBody);
+  AtomicIncrement(pString->m_RefCount);
+}
+
+void RefString::DecRefCount(StringBody *&io_pBody, bool bValidate) {
+  if (io_pBody->m_data == nullptr || io_pBody->m_data == nullstr)
+    return;
+
+  StringHeader *pString = GetRealBufferStart(io_pBody);
+  AtomicDecrement(pString->m_RefCount);
+
+  if (pString->m_RefCount == 0) {
+    Deallocate(io_pBody);
+  }
+
+  io_pBody = nullptr;
+}
+
+size_t RefString::GetRefCount(StringBody *pBody, bool bValidate) {
+  if (pBody->m_data == nullptr || pBody->m_data == nullstr) {
     return 0;
-  return thisbase->capacity;
-}
-
-void RefString::truncate(int max_length) {
-  int old_size = get_capacity();
-  int new_size = max_length <= 0 ? 0 : max_length;
-  if (new_size >= old_size) {
-    new_size = old_size;
-  }
-
-  RefStringBase *base = thisbase;
-  if (base) {
-    base->capacity = new_size;
-    str_p[new_size] = 0;
+  } else {
+    StringHeader *pString = GetRealBufferStart(pBody);
+    return pString->m_RefCount;
   }
 }
 
-void RefString::truncate_self() {
-  if (!str_p)
-    str_p = const_cast<LPSTR>(nullstr);
-  truncate(strlen(str_p));
+inline LPSTR RefString::GetString(StringBody *pBody, bool bValidate) {
+  // No need to perform an if NULL check, because
+  // it will correctly return NULL if pBody == NULL
+  return pBody->m_data;
 }
 
-/*
-struct RefString {
-  LPSTR str_p;
+// SURE? (m_cchStringLength in orig code)
+inline size_t RefString::GetLength(StringBody *pBody, bool bValidate) {
+  if (pBody->m_data == nullptr || pBody->m_data == nullstr) {
+    return 0;
+  } else {
+    StringHeader *pHeader = GetRealBufferStart(pBody);
+    return pHeader->m_cbBufferSize;
+  }
+}
 
-  RefString();                            // sub_9FCB50
-  RefString(LPCSTR c_string);             // sub_CF0230
-  RefString(RefString &other);            // sub_9FC6B0
-  RefString &operator=(RefString &other); // sub_9FCAA0, weird
+inline void RefString::SetLength(StringBody *pBody, size_t stLength) {
+  if (pBody->m_data == nullptr || pBody->m_data == nullstr)
+    return;
 
-  LPSTR dec_ref(); // sub_9FCAF0, weird
-  LPSTR inc_ref();
-+  LPSTR truncate(int max_length);   // sub_CEFCC0
-  void realloc(int new_size);       // sub_CEFEF0
-  LPSTR reserve(int required_size); // sub_CF0020
+  StringHeader *pHeader = GetRealBufferStart(pBody);
+  pHeader->m_cbBufferSize = stLength;
+}
 
-  inline int get_capacity() const; // sub_CEFB80 and inline
-  inline size_t get_ref_cnt() const;
-  LPCSTR get_str();       // sub_9FCD20
-  LPCSTR get_str() const; // sub_CEFB70
+struct StringD {
+  int cap;
+  size_t rc;
+  char m_data[1];
 };
 
-struct RefStringBase {
-  int str_size;
-  size_t ref_cnt;
-  RefString str;
+void RefString::Truncate(BYTE *pBody, int maxLength) {
+  logf("Truncate %p", pBody);
 
-  static inline RefStringBase *from_refstring(const RefString *rstr);
-  inline const int get_capacity() const { return str_size; }
-  inline void dec_ref() { InterlockedDecrement(&ref_cnt); }
-  inline void inc_ref() { InterlockedIncrement(&ref_cnt); }
+  int old_size; // ecx
+  int new_size; // ecx
 
-  RefStringBase(); // sub_CEFD20
-};
-
-*/
-
-void log_string_structure(const RefString *str, const char *label) {
-  if (str == nullptr) {
-    logf("%s: NULL", label);
-    return;
+  LPCSTR v2 = *(const CHAR **)pBody;
+  if (*(DWORD *)pBody) {
+    if (v2 == nullstr)
+      old_size = 0;
+    else
+      old_size = *((DWORD *)v2 - 2);
+  } else {
+    old_size = 0;
   }
-
-  if (str->str_p == nullstr) {
-    logf("%s: nullstr", label);
-    return;
+  if ((maxLength <= 0 ? 0 : maxLength) >= old_size) {
+    if (v2) {
+      if (v2 == nullstr)
+        new_size = 0;
+      else
+        new_size = *((DWORD *)v2 - 2);
+    } else {
+      new_size = 0;
+    }
+  } else {
+    new_size = maxLength <= 0 ? 0 : maxLength;
   }
-
-  RefStringBase *header = RefStringBase::from_refstring(str);
-
-  int capacity = 0;
-  size_t ref_cnt = 0;
-  if (header) {
-    capacity = header->capacity;
-    ref_cnt = header->ref_cnt;
+  if (v2 != nullstr && v2) {
+    StringD *full = reinterpret_cast<StringD *>((int *)(v2 - 8));
+    if (full) {
+      full->cap = new_size;
+      // *((BYTE *)full + 8 + new_size) = 0
+      full->m_data[new_size] = 0;
+    }
   }
-
-  logf("%s: at %p, capacity=%d, refcount=%d, data='%s'", label, str, capacity,
-       ref_cnt, str->str_p);
 }
 
-#undef thisbase
+void RefString::TruncateSelf(BYTE **pBody) {
+  logf("TruncateSelf %p", pBody);
+
+  LPSTR m_data = reinterpret_cast<LPSTR>(*pBody);
+  if (m_data == nullptr)
+    m_data = const_cast<LPSTR>(nullstr);
+
+  int oldLength = strlen(m_data);
+  Truncate(*pBody, oldLength);
+}
+
+inline RefString::StringHeader *
+RefString::GetRealBufferStart(StringBody *pBody) {
+  return (StringHeader *)((StringData *)pBody->m_data);
+}
+
+inline bool RefString::ValidateString(StringBody *pBody) {
+  if (pBody->m_data == nullptr || pBody->m_data == nullstr)
+    return true;
+
+  size_t length = GetRealBufferStart(pBody)->m_cbBufferSize;
+
+  if (length != strlen((const char *)pBody))
+    return false;
+
+  return true;
+}
