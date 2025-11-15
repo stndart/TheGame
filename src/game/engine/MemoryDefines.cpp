@@ -53,3 +53,10 @@ bool _HeapFree(void *lpMem) {
   HANDLE ProcessHeap = CRT::get_proc_heap();
   return CRT::heap_free(ProcessHeap, 0, lpMem);
 }
+
+void *_HeapAlloc(size_t dwBytes) {
+  if (dwBytes == 0)
+    dwBytes = 1;
+  HANDLE ProcessHeap = CRT::get_proc_heap();
+  return CRT::heap_alloc(ProcessHeap, 0, dwBytes);
+}

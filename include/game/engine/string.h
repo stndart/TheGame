@@ -7,10 +7,11 @@ public:
   inline LPCSTR c_str() const {
     if (!m_kHandle)
       return "";
-    return GetString(m_kHandle);
+    return GetString();
   }
 
 protected:
+#pragma pack(push, 1) // Disable padding, use 1-byte alignment
   /// Internal structure defining the header data for a string
   struct StringHeader {
     size_t m_cbBufferSize;
@@ -25,35 +26,68 @@ protected:
   };
   /// The internal storage for the string
   struct StringData : public StringHeader, public StringBody {};
+#pragma pack(pop) // Restore default alignment
+
+  static_assert(sizeof(StringData) == 8 + 1,
+                "StringData should be 9 bytes with 1-byte alignment");
 
   /// A string's only member variable is a pointer directly to the Body of a
   /// StringData
   StringBody *m_kHandle;
 
 public:
-  // static StringBody *Allocate(size_t stCount);
-  // static StringBody *AllocateAndCopy(LPCSTR pcStr, size_t stCount = 0);
-  // static StringBody *AllocateAndCopyHandle(StringBody *kHandle);
-  static void __thiscall Deallocate(StringBody *&io_pBody);
+  /// Constructs an empty String.
+  String() : m_kHandle(nullstr) {};
+  /// Constructs String from another String. Increments RefCount only, no data
+  /// is copied.
+  String(const String &kStr);
+  /// Constructs String from an input string. String is copied into internal
+  /// buffer.
+  String(LPCSTR pcStr);
+  /// Constructs String from a part of input string. String is copied into
+  /// internal buffer.
+  String(LPCSTR pcStr, size_t stStrLength);
+  /// Constructs an empty String, allocating given buffer size.
+  // String(size_t stBuffLength); // disabled since our version does not
+  // separate allocated buffer and string length
+  /// Constructs String from a single char.
+  String(char ch);
+  /// Destroys String. Refcount is decremented and if it equals zero, the buffer
+  /// is deleted.
+  ~String() { DecRefCount(); };
 
-  static void __thiscall IncRefCount(StringBody *pBody, bool bValidate = true);
+  /// Ref-counted copy from another String
+  inline String &operator=(const String &kStr);
+  /// Copy string content from string
+  inline String &operator=(LPCSTR pcStr);
+  /// Set string content to single character
+  inline String &operator=(char ch);
+
+  static StringBody *Allocate(size_t stCount);
+  static StringBody *AllocateAndCopy(LPCSTR pcStr, size_t stCount = 0);
+  static void Deallocate(StringBody *&io_pBody);
+
+  void IncRefCount();
   void DecRefCount(); // sub_9FCAF0
-  static size_t __thiscall GetRefCount(StringBody *pBody,
-                                       bool bValidate = true);
+  size_t GetRefCount() const;
 
-  static char *__thiscall GetString(StringBody *pBody, bool bValidate = true);
-  static size_t __thiscall GetLength(StringBody *pBody, bool bValidate = true);
-  static size_t __thiscall GetAllocationSize(StringBody *pBody,
-                                             bool bValidate = true);
-  static size_t __thiscall GetBufferSize(StringBody *pBody,
-                                         bool bValidate = true);
-  static bool __thiscall ValidateString(StringBody *pBody);
+  void Swap(LPCSTR pcNewValue, size_t stLength = 0);
 
-  static void __thiscall SetLength(StringBody *pBody, size_t stLength);
-  static StringHeader *__thiscall GetRealBufferStart(StringBody *pBody);
+  LPSTR GetString() const;
+  size_t GetLength() const;
+  void SetLength(size_t stLength);
+
+  void SetBuffer(StringBody *pBody);
+  void CalcLength();
 
   void Truncate(int maxLength);                        // sub_CEFCC0
   static void __thiscall TruncateSelf(String **pBody); // sub_D5A7E0
+
+  static bool __thiscall ValidateString(StringBody *pBody);
+
+  static StringHeader *__thiscall GetRealBufferStart(StringBody *pBody);
+
+  void CopyOnWrite(); // sub_CEFDF0
 
   static StringBody *nullstr;
 };

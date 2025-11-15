@@ -12,8 +12,8 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call,
   case DLL_PROCESS_ATTACH:
     // Disable thread notifications for better performance
     DisableThreadLibraryCalls(hModule);
-    create_console();
     CRT::init_CRT();
+    create_console();
 
     // Initialize and apply all hooks
     HookManager::initialize();
