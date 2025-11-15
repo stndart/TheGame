@@ -1,7 +1,8 @@
 #include "console.h"
+#include "crt/memory.h"
 #include "helpers/strhelp.h"
 
-#include "game/engine/MemoryDefines.h"
+// #include "game/engine/MemoryDefines.h"
 #include <atlexcept.h>
 
 #include "game/engine/StringConverters.h"
@@ -19,16 +20,16 @@ LPSTR __cdecl EnsureMStringBufferCapacity(LPSTR *str_p, int required_bytes,
   if (*str_p != inline_buf) {                     // if using heap
     if (required_bytes > inline_buf_size_bytes) { // reallocate on heap
       *str_p = reinterpret_cast<LPSTR>(
-          EE_REALLOC(reinterpret_cast<void *>(*str_p), required_bytes));
+          CRT::recalloc(reinterpret_cast<void *>(*str_p), required_bytes, 1));
       if (!*str_p)
         throw ATL::CAtlException(E_OUTOFMEMORY);
     } else { // use stack buf, since it's sufficient
-      EE_FREE(*str_p);
+      CRT::free(*str_p);
       *str_p = inline_buf;
     }
   } else { // str_p is pointing at stack_buf
     if (required_bytes > inline_buf_size_bytes) { // use heap only if needed
-      *str_p = EE_ALLOC(CHAR, required_bytes);
+      *str_p = reinterpret_cast<LPSTR>(CRT::calloc(required_bytes, 1));
       if (!*str_p)
         throw ATL::CAtlException(E_OUTOFMEMORY);
     }
@@ -46,16 +47,16 @@ LPWSTR __cdecl EnsureWStringBufferCapacity(LPWSTR *str_p, int required_bytes,
   if (*str_p != inline_buf) {                     // if using heap
     if (required_bytes > inline_buf_size_bytes) { // reallocate on heap
       *str_p = reinterpret_cast<LPWSTR>(
-          EE_REALLOC(reinterpret_cast<void *>(*str_p), required_bytes));
+          CRT::recalloc(reinterpret_cast<void *>(*str_p), required_bytes, 1));
       if (!*str_p)
         throw ATL::CAtlException(E_OUTOFMEMORY);
     } else { // use stack buf, since it's sufficient
-      EE_FREE(*str_p);
+      CRT::free(*str_p);
       *str_p = inline_buf;
     }
   } else { // str_p is pointing at stack_buf
     if (required_bytes > inline_buf_size_bytes) { // use heap only if needed
-      *str_p = EE_ALLOC(WCHAR, required_bytes);
+      *str_p = reinterpret_cast<LPWSTR>(CRT::calloc(required_bytes, 1));
       if (!*str_p)
         throw ATL::CAtlException(E_OUTOFMEMORY);
     }

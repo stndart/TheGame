@@ -1,8 +1,6 @@
 #include "console.h"
 
 #include <WinSock2.h>
-#include <cstdint>
-#include <minwindef.h>
 #include <windows.h>
 
 #include "game/engine/AtomicOperations.h"
@@ -12,10 +10,10 @@
 String::StringBody *String::nullstr =
     reinterpret_cast<StringBody *>(0x017B75E4);
 
-void String::Deallocate(StringBody *&io_pBody) {
+inline void String::Deallocate(StringBody *&io_pBody) {
   if (io_pBody != nullptr && io_pBody != nullstr) {
     StringHeader *pString = GetRealBufferStart(io_pBody);
-    EE_FREE(pString);
+    EE_HEAPFREE(pString);
     io_pBody = nullptr;
   }
 }
@@ -28,18 +26,21 @@ void String::IncRefCount(StringBody *pBody, bool bValidate) {
   AtomicIncrement(pString->m_RefCount);
 }
 
-void String::DecRefCount(StringBody *&io_pBody, bool bValidate) {
-  if (io_pBody == nullptr || io_pBody == nullstr)
+void String::DecRefCount() {
+  if (m_kHandle == nullptr) {
+    m_kHandle = nullstr;
     return;
-
-  StringHeader *pString = GetRealBufferStart(io_pBody);
-  AtomicDecrement(pString->m_RefCount);
-
-  if (pString->m_RefCount == 0) {
-    Deallocate(io_pBody);
   }
 
-  io_pBody = nullptr;
+  StringHeader *header = GetRealBufferStart(m_kHandle);
+  if (header == nullptr) {
+    m_kHandle = nullstr;
+    return;
+  }
+  if (!AtomicDecrement(header->m_RefCount)) {
+    EE_HEAPFREE(header);
+  }
+  m_kHandle = nullstr;
 }
 
 size_t String::GetRefCount(StringBody *pBody, bool bValidate) {

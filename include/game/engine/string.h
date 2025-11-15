@@ -30,14 +30,14 @@ protected:
   /// StringData
   StringBody *m_kHandle;
 
+public:
   // static StringBody *Allocate(size_t stCount);
   // static StringBody *AllocateAndCopy(LPCSTR pcStr, size_t stCount = 0);
   // static StringBody *AllocateAndCopyHandle(StringBody *kHandle);
   static void __thiscall Deallocate(StringBody *&io_pBody);
 
   static void __thiscall IncRefCount(StringBody *pBody, bool bValidate = true);
-  static void __thiscall DecRefCount(StringBody *&io_pBody,
-                                     bool bValidate = true);
+  void DecRefCount(); // sub_9FCAF0
   static size_t __thiscall GetRefCount(StringBody *pBody,
                                        bool bValidate = true);
 
@@ -52,9 +52,8 @@ protected:
   static void __thiscall SetLength(StringBody *pBody, size_t stLength);
   static StringHeader *__thiscall GetRealBufferStart(StringBody *pBody);
 
-public:
-  void Truncate(int maxLength);
-  static void __thiscall TruncateSelf(String **pBody);
+  void Truncate(int maxLength);                        // sub_CEFCC0
+  static void __thiscall TruncateSelf(String **pBody); // sub_D5A7E0
 
   static StringBody *nullstr;
 };

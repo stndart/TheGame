@@ -8,8 +8,12 @@ void *_Malloc(size_t stSizeInBytes);
 
 void *_Realloc(void *memblock, size_t stSizeInBytes);
 
+bool _HeapFree(void *lpMem);
+
 #define EE_FREE(p) _Free(p)
 
 #define EE_ALLOC(T, count) ((T *)_Malloc(sizeof(T) * (count)))
 
 #define EE_REALLOC(memblock, size) (_Realloc(memblock, size))
+
+#define EE_HEAPFREE(lpMem) (_HeapFree(lpMem))

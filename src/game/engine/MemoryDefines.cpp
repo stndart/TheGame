@@ -48,3 +48,8 @@ void *_Realloc(void *pvMem, size_t stSizeInBytes) {
 
   return pvMem;
 }
+
+bool _HeapFree(void *lpMem) {
+  HANDLE ProcessHeap = CRT::get_proc_heap();
+  return CRT::heap_free(ProcessHeap, 0, lpMem);
+}
