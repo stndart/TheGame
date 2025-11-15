@@ -2,6 +2,7 @@
 
 #include <WinSock2.h>
 #include <cstdint>
+#include <minwindef.h>
 #include <windows.h>
 
 #include "game/engine/AtomicOperations.h"
@@ -9,6 +10,8 @@
 #include "game/engine/rcstring.h"
 
 LPCSTR nullstr = *reinterpret_cast<const char **>(0x017B75E4);
+RefString::StringBody *RefString::nullstr2 =
+    reinterpret_cast<StringBody *>(0x017B75E4);
 
 void RefString::Deallocate(StringBody *&io_pBody) {
   if (io_pBody->m_data != nullptr && io_pBody->m_data != nullstr) {
@@ -79,57 +82,44 @@ struct StringD {
   char m_data[1];
 };
 
-void RefString::Truncate(BYTE *pBody, int maxLength) {
-  logf("Truncate %p", pBody);
+void RefString::Truncate(int maxLength) {
+  if (!m_kHandle || m_kHandle == nullstr2)
+    return;
 
-  int old_size; // ecx
-  int new_size; // ecx
+  StringHeader *header = GetRealBufferStart(m_kHandle);
 
-  LPCSTR v2 = *(const CHAR **)pBody;
-  if (*(DWORD *)pBody) {
-    if (v2 == nullstr)
-      old_size = 0;
-    else
-      old_size = *((DWORD *)v2 - 2);
-  } else {
-    old_size = 0;
-  }
-  if ((maxLength <= 0 ? 0 : maxLength) >= old_size) {
-    if (v2) {
-      if (v2 == nullstr)
-        new_size = 0;
-      else
-        new_size = *((DWORD *)v2 - 2);
-    } else {
-      new_size = 0;
-    }
-  } else {
-    new_size = maxLength <= 0 ? 0 : maxLength;
-  }
-  if (v2 != nullstr && v2) {
-    StringD *full = reinterpret_cast<StringD *>((int *)(v2 - 8));
-    if (full) {
-      full->cap = new_size;
-      // *((BYTE *)full + 8 + new_size) = 0
-      full->m_data[new_size] = 0;
-    }
+  int old_size = header->m_cbBufferSize;
+  int new_size = maxLength <= 0 ? 0 : maxLength;
+  if (new_size >= old_size)
+    new_size = old_size;
+
+  // logf("[x] Original size %i, new %i, maxlength %i, v2 %p, v5 %p", old_size,
+  //      new_size, maxLength, m_kHandle, header);
+
+  if (header) {
+    header->m_cbBufferSize = new_size;
+    m_kHandle->m_data[new_size] = '\0';
   }
 }
 
-void RefString::TruncateSelf(BYTE **pBody) {
-  logf("TruncateSelf %p", pBody);
+void __thiscall RefString::TruncateSelf(RefString **this_ptr) {
+  RefString *refStringObj = *this_ptr;
+  StringBody *body = refStringObj->m_kHandle;
 
-  LPSTR m_data = reinterpret_cast<LPSTR>(*pBody);
-  if (m_data == nullptr)
-    m_data = const_cast<LPSTR>(nullstr);
+  // Calculate the current length of the string
+  size_t len = 0;
+  if (refStringObj->m_kHandle && refStringObj->m_kHandle != nullstr2)
+    len = strlen(refStringObj->m_kHandle->m_data);
 
-  int oldLength = strlen(m_data);
-  Truncate(*pBody, oldLength);
+  // Truncate to the current length (effectively just ensures proper null
+  // termination)
+  refStringObj->Truncate(len);
 }
 
 inline RefString::StringHeader *
 RefString::GetRealBufferStart(StringBody *pBody) {
-  return (StringHeader *)((StringData *)pBody->m_data);
+  return reinterpret_cast<StringHeader *>(reinterpret_cast<uintptr_t>(pBody) -
+                                          offsetof(StringData, m_data));
 }
 
 inline bool RefString::ValidateString(StringBody *pBody) {

@@ -57,6 +57,8 @@ protected:
   static StringHeader *__thiscall GetRealBufferStart(StringBody *pBody);
 
 public:
-  static void __thiscall Truncate(BYTE *pBody, int maxLength);
-  static void __thiscall TruncateSelf(BYTE **pBody);
+  void Truncate(int maxLength);
+  static void __thiscall TruncateSelf(RefString **pBody);
+
+  static StringBody *nullstr2;
 };

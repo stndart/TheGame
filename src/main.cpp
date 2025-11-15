@@ -27,7 +27,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call,
     HookManager::make_hook(g_target_ConvertMultiByteToWide);
 
     HookManager::make_hook(g_target_rstring_truncate);
-    // HookManager::make_hook(g_target_rstring_truncate_self);
+    HookManager::make_hook(g_target_rstring_truncate_self);
     // HookManager::make_hook(g_target_rstring_realloc);
     // HookManager::make_hook(g_target_rstring_reserve);
 
