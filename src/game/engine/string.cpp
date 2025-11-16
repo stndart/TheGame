@@ -3,8 +3,6 @@
 #include <atlexcept.h>
 #include <windows.h>
 
-#include "target_hooks.h"
-
 #include "game/engine/AtomicOperations.h"
 #include "game/engine/MemoryDefines.h"
 #include "game/engine/String.h"
@@ -173,8 +171,7 @@ void String::Swap(LPCSTR pcNewValue, size_t stLength) {
 }
 
 LPCSTR String::Reserve(int stLength) {
-  // logf("String::Reserve %i", stLength);
-  log_str(reinterpret_cast<void **>(this));
+  logf("String::Reserve %i", stLength);
 
   size_t old_size = 0;
   if (m_kHandle != nullptr && m_kHandle != nullstr) {
@@ -185,43 +182,17 @@ LPCSTR String::Reserve(int stLength) {
     stLength = 1;
   }
 
-  logf("Found old size %i and rq %i at %p of handle %p", old_size, stLength,
-       this, m_kHandle);
   if (old_size < stLength) { // not enough allocated memory
     Realloc(stLength);
   }
   CopyOnWrite();
-
-  log_str(reinterpret_cast<void **>(this));
 
   if (!m_kHandle)
     return nullstr->m_data;
   return m_kHandle->m_data;
 }
 
-void String::w_old_reallok(int stLength) {
-  __asm { push ecx }
-  logf("old String::Realloc %i", stLength);
-  __asm {
-    pop ecx
-    pop ebx
-    mov esp, ebp
-    pop ebp
-
-        // Execute original instructions that were overwritten
-    sub esp, 0x30
-    push ebx
-    mov ebx, ecx ;
-
-    // Jump back to original code after our patch
-    jmp [g_target_rstring_realloc.return_addr]
-  }
-}
-
 void String::Realloc(int stLength) {
-  // temp
-  // return w_old_reallok(stLength);
-
   logf("String::Realloc %i", stLength);
 
   if (!m_kHandle)
@@ -331,7 +302,8 @@ inline bool String::ValidateString(StringBody *pBody) {
 }
 
 void String::CopyOnWrite() {
-  logf("String::CopyOnWrite");
+  if (ALLOC_LOG)
+    logf("String::CopyOnWrite");
 
   if (m_kHandle == nullptr || m_kHandle == nullstr) {
     m_kHandle = Allocate(0);

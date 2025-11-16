@@ -20,6 +20,3 @@ extern HookStub g_target_rstring_realloc;
 extern HookStub g_target_rstring_reserve;
 
 extern HookStub g_target_w_strlen;
-
-extern HookStub g_target_logstr_start;
-extern HookStub g_target_logstr_end;
