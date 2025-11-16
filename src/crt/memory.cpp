@@ -114,35 +114,35 @@ void *__stdcall CRT::heap_alloc(HANDLE hHeap, DWORD dwFlags, SIZE_T dwBytes) {
 }
 
 // Override global new/delete operators to use your custom allocators
-void *operator new(size_t size) {
-  if (!CRT::stub.initialized)
-    CRT::init_CRT();
-  return CRT::stub.recalloc(nullptr, size, 1);
-}
+// void *operator new(size_t size) {
+//   if (!CRT::stub.initialized)
+//     CRT::init_CRT();
+//   return CRT::stub.recalloc(nullptr, size, 1);
+// }
 
-void *operator new[](size_t size) {
-  if (!CRT::stub.initialized)
-    CRT::init_CRT();
-  return CRT::stub.recalloc(nullptr, size, 1);
-}
+// void *operator new[](size_t size) {
+//   if (!CRT::stub.initialized)
+//     CRT::init_CRT();
+//   return CRT::stub.recalloc(nullptr, size, 1);
+// }
 
-void operator delete(void *ptr) noexcept {
-  if (!CRT::stub.initialized)
-    CRT::init_CRT();
-  if (ptr)
-    CRT::stub.recalloc(ptr, 0, 0); // Using recalloc with 0 size as free
-}
+// void operator delete(void *ptr) noexcept {
+//   if (!CRT::stub.initialized)
+//     CRT::init_CRT();
+//   if (ptr)
+//     CRT::stub.recalloc(ptr, 0, 0); // Using recalloc with 0 size as free
+// }
 
-void operator delete[](void *ptr) noexcept {
-  if (!CRT::stub.initialized)
-    CRT::init_CRT();
-  if (ptr)
-    CRT::stub.recalloc(ptr, 0, 0);
-}
+// void operator delete[](void *ptr) noexcept {
+//   if (!CRT::stub.initialized)
+//     CRT::init_CRT();
+//   if (ptr)
+//     CRT::stub.recalloc(ptr, 0, 0);
+// }
 
-void operator delete(void *ptr, size_t) noexcept {
-  if (!CRT::stub.initialized)
-    CRT::init_CRT();
-  if (ptr)
-    CRT::stub.recalloc(ptr, 0, 0);
-}
+// void operator delete(void *ptr, size_t) noexcept {
+//   if (!CRT::stub.initialized)
+//     CRT::init_CRT();
+//   if (ptr)
+//     CRT::stub.recalloc(ptr, 0, 0);
+// }

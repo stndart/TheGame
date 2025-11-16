@@ -37,8 +37,8 @@ void *__stdcall heap_alloc(HANDLE hHeap, DWORD dwFlags, SIZE_T dwBytes);
 } // namespace CRT
 
 // Override global new/delete operators to use your custom allocators
-void *operator new(size_t size);
-void *operator new[](size_t size);
-void operator delete(void *ptr) noexcept;
-void operator delete[](void *ptr) noexcept;
-void operator delete(void *ptr, size_t) noexcept;
+// void *operator new(size_t size);
+// void *operator new[](size_t size);
+// void operator delete(void *ptr) noexcept;
+// void operator delete[](void *ptr) noexcept;
+// void operator delete(void *ptr, size_t) noexcept;

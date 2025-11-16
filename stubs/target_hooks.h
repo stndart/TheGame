@@ -13,6 +13,7 @@ extern HookStub g_target_ConvertMultiByteToWide;
 extern HookStub g_target_rstring_truncate;
 extern HookStub g_target_rstring_truncate_self;
 extern HookStub g_target_rstring_decrefcnt;
+extern HookStub g_target_rstring_copyonwrite;
 
 extern HookStub g_target_rstring_realloc;
 extern HookStub g_target_rstring_reserve;

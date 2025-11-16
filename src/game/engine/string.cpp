@@ -1,10 +1,7 @@
 #include "console.h"
 
-#include <WinSock2.h>
-#include <basetsd.h>
-#include <cstring>
+#include <atlexcept.h>
 #include <windows.h>
-#include <winnt.h>
 
 #include "game/engine/AtomicOperations.h"
 #include "game/engine/MemoryDefines.h"
@@ -19,12 +16,15 @@ inline String::StringHeader *String::GetRealBufferStart(StringBody *pBody) {
 }
 
 String::StringBody *String::Allocate(size_t stCount) {
+  logf("String::Allocate %i", stCount);
+
   if (stCount == 0)
     stCount = 1;
 
   size_t stBufferSize = stCount + sizeof(StringData);
+
   StringData *pString =
-      reinterpret_cast<StringData *>(EE_ALLOC(char, stBufferSize));
+      reinterpret_cast<StringData *> EE_HEAPALLOC(stBufferSize);
   if (!pString) {
     return nullptr;
   }
@@ -35,6 +35,8 @@ String::StringBody *String::Allocate(size_t stCount) {
 }
 
 String::StringBody *String::AllocateAndCopy(LPCSTR pcStr, size_t stCount) {
+  logf("String::AllocateAndCopy %i", stCount);
+
   if (pcStr == nullptr)
     return nullptr;
 
@@ -52,6 +54,8 @@ String::StringBody *String::AllocateAndCopy(LPCSTR pcStr, size_t stCount) {
 }
 
 inline void String::Deallocate(StringBody *&io_pBody) {
+  logf("String::Deallocate %p", io_pBody);
+
   if (io_pBody != nullptr && io_pBody != nullstr) {
     StringHeader *pString = GetRealBufferStart(io_pBody);
     EE_HEAPFREE(pString);
@@ -96,7 +100,6 @@ inline String &String::operator=(const String &kStr) {
   return *this;
 }
 
-//--------------------------------------------------------------------------------------------------
 inline String &String::operator=(LPCSTR pcStr) {
   if (pcStr == GetString())
     return *this;
@@ -105,7 +108,6 @@ inline String &String::operator=(LPCSTR pcStr) {
   return *this;
 }
 
-//--------------------------------------------------------------------------------------------------
 inline String &String::operator=(char ch) {
   char acString[2];
   acString[0] = ch;
@@ -147,6 +149,8 @@ size_t String::GetRefCount() const {
 }
 
 void String::Swap(LPCSTR pcNewValue, size_t stLength) {
+  logf("String::Swap %i", stLength);
+
   if (pcNewValue == nullptr) {
     DecRefCount();
     return;
@@ -156,29 +160,60 @@ void String::Swap(LPCSTR pcNewValue, size_t stLength) {
     stLength = strlen(pcNewValue);
   }
 
+  Reserve(stLength);
+  memcpy(m_kHandle->m_data, pcNewValue, stLength);
+  m_kHandle->m_data[stLength] = '\0';
+}
+
+void String::Reserve(size_t stLength) {
+  logf("String::Reserve %i", stLength);
+
   if (m_kHandle == nullptr || m_kHandle == nullstr) {
-    m_kHandle = AllocateAndCopy(pcNewValue, stLength);
+    m_kHandle = Allocate(stLength);
     return;
   }
 
   StringHeader *header = GetRealBufferStart(m_kHandle);
   if (header->m_cbBufferSize < stLength) { // deallocation is inevitable
     DecRefCount();
-    m_kHandle = AllocateAndCopy(pcNewValue, stLength);
+    m_kHandle = Allocate(stLength);
     return;
   }
 
   size_t nRefCount = AtomicDecrement(header->m_RefCount);
   if (nRefCount == 0) { // means the only reference
     header->m_RefCount = 1;
-    memcpy(m_kHandle->m_data, pcNewValue, stLength);
     m_kHandle->m_data[stLength] = '\0';
     return;
   }
 
   StringBody *body = (StringBody *)m_kHandle;
   Deallocate(body);
-  m_kHandle = AllocateAndCopy(pcNewValue, stLength);
+  m_kHandle = Allocate(stLength);
+}
+
+void String::Realloc(int stLength) {
+  logf("String::Realloc %i", stLength);
+
+  if (!m_kHandle)
+    m_kHandle = nullstr;
+
+  if (stLength < 0) {
+    throw ATL::CAtlException(E_INVALIDARG);
+  }
+
+  if (stLength == 0) {
+    DecRefCount();
+    return;
+  }
+
+  StringHeader *header = GetRealBufferStart(m_kHandle);
+  if (stLength == header->m_cbBufferSize) {
+    return;
+  }
+
+  m_kHandle = AllocateAndCopy(m_kHandle->m_data, stLength);
+  m_kHandle->m_data[strlen(m_kHandle->m_data)] = '\0';
 }
 
 inline LPSTR String::GetString() const {
@@ -220,6 +255,8 @@ inline void String::CalcLength() {
 }
 
 void String::Truncate(int maxLength) {
+  logf("String::Truncate %i", maxLength);
+
   if (!m_kHandle || m_kHandle == nullstr)
     return;
 
@@ -264,4 +301,17 @@ inline bool String::ValidateString(StringBody *pBody) {
   return true;
 }
 
-void String::CopyOnWrite() {}
+void String::CopyOnWrite() {
+  logf("String::CopyOnWrite");
+
+  if (m_kHandle == nullptr || m_kHandle == nullstr) {
+    m_kHandle = Allocate(0);
+    return;
+  }
+
+  if (GetRefCount() > 1) {
+    LPCSTR old_str = m_kHandle->m_data;
+    DecRefCount();
+    m_kHandle = AllocateAndCopy(old_str);
+  }
+}

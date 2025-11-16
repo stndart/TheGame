@@ -72,6 +72,8 @@ public:
   size_t GetRefCount() const;
 
   void Swap(LPCSTR pcNewValue, size_t stLength = 0);
+  void Reserve(size_t stLength); // sub_CF0020 // in progress
+  void Realloc(int stLength);    // sub_CEFEF0 // in progress
 
   LPSTR GetString() const;
   size_t GetLength() const;

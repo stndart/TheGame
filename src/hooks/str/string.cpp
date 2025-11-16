@@ -6,19 +6,36 @@
 
 extern "C" void __declspec(naked) hook_rstring_truncate() {
   __asm {
-      jmp String::Truncate;
+    jmp String::Truncate;
   }
 }
 
 extern "C" void __declspec(naked) hook_rstring_truncate_self() {
   __asm {
-      jmp String::TruncateSelf;
+    jmp String::TruncateSelf;
   }
 }
 
 extern "C" void __declspec(naked) hook_rstring_decrefcnt() {
   __asm {
     jmp String::DecRefCount;
+  }
+}
+
+extern "C" void __declspec(naked) hook_rstring_copyonwrite() {
+  __asm {
+    jmp String::CopyOnWrite;
+  }
+}
+
+extern "C" void __declspec(naked) hook_rstring_reserve() {
+  __asm {
+    jmp String::Reserve;
+  }
+}
+extern "C" void __declspec(naked) hook_rstring_realloc() {
+  __asm {
+    jmp String::Realloc;
   }
 }
 
@@ -47,4 +64,31 @@ HookStub g_target_rstring_decrefcnt = {
     {0},
     false,
     0x9FCAF5,
+};
+
+HookStub g_target_rstring_copyonwrite = {
+    0xCEFDF0,
+    (uint32_t)(uintptr_t)hook_rstring_copyonwrite,
+    "hook_rstring_copyonwrite",
+    {0},
+    false,
+    0xCEFDF5,
+};
+
+HookStub g_target_rstring_reserve = {
+    0xCF0020,
+    (uint32_t)(uintptr_t)hook_rstring_reserve,
+    "hook_rstring_reserve",
+    {0},
+    false,
+    0xCF0025,
+};
+
+HookStub g_target_rstring_realloc = {
+    0xCEFEF0,
+    (uint32_t)(uintptr_t)hook_rstring_realloc,
+    "hook_rstring_realloc",
+    {0},
+    false,
+    0xCEFEF6,
 };
