@@ -1,4 +1,4 @@
-#include "console.h"
+// #include "console.h"
 #include "hook_manager.h"
 #include "target_hooks.h"
 
@@ -33,6 +33,7 @@ extern "C" void __declspec(naked) hook_rstring_reserve() {
     jmp String::Reserve;
   }
 }
+
 extern "C" void __declspec(naked) hook_rstring_realloc() {
   __asm {
     jmp String::Realloc;
@@ -43,6 +44,17 @@ extern "C" void __declspec(naked) hook_rstring_realloc() {
 
     // Jump back to original code after our patch
     jmp [g_target_rstring_realloc.return_addr]
+  }
+}
+
+extern "C" void __declspec(naked) hook_rstring_truncateatfirst() {
+  __asm {
+    jmp String::TruncateAtFirstOccurrence;
+  }
+}
+extern "C" void __declspec(naked) hook_rstring_trimleft() {
+  __asm {
+    jmp String::TrimLeft;
   }
 }
 
@@ -98,4 +110,22 @@ HookStub g_target_rstring_realloc = {
     {0},
     false,
     0xCEFEF6,
+};
+
+HookStub g_target_rstring_truncateatfirst = {
+    0xCF2D90,
+    (uint32_t)(uintptr_t)hook_rstring_truncateatfirst,
+    "hook_rstring_truncateatfirst",
+    {0},
+    false,
+    0xCF2D96,
+};
+
+HookStub g_target_rstring_trimleft = {
+    0xCF2CD0,
+    (uint32_t)(uintptr_t)hook_rstring_trimleft,
+    "hook_rstring_trimleft",
+    {0},
+    false,
+    0xCF2CD8,
 };

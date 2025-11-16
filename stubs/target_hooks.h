@@ -19,4 +19,7 @@ extern HookStub g_target_rstring_copyonwrite;
 extern HookStub g_target_rstring_realloc;
 extern HookStub g_target_rstring_reserve;
 
+extern HookStub g_target_rstring_truncateatfirst;
+extern HookStub g_target_rstring_trimleft;
+
 extern HookStub g_target_w_strlen;

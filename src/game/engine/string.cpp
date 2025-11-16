@@ -1,11 +1,18 @@
-#include "console.h"
+// #include "console.h"
 
 #include <atlexcept.h>
+#include <cstdint>
+#include <mbstring.h>
 #include <windows.h>
+#include <wingdi.h>
+#include <winnt.h>
 
 #include "game/engine/AtomicOperations.h"
 #include "game/engine/MemoryDefines.h"
 #include "game/engine/String.h"
+
+#define ALLOC_LOG 0
+#define RESERVE_LOG 0
 
 String::StringBody *String::nullstr =
     *reinterpret_cast<StringBody **>(0x017B75E4);
@@ -14,8 +21,6 @@ inline String::StringHeader *String::GetRealBufferStart(StringBody *pBody) {
   return reinterpret_cast<StringHeader *>(reinterpret_cast<uintptr_t>(pBody) -
                                           offsetof(StringData, m_data));
 }
-
-#define ALLOC_LOG 0
 
 String::StringBody *String::Allocate(size_t stCount) {
   if (ALLOC_LOG)
@@ -120,6 +125,83 @@ inline String &String::operator=(char ch) {
   return String::operator=((LPCSTR)&acString[0]);
 }
 
+void String::TruncateAtFirstOccurrence(char ch) {
+  logf("String::TruncateAtFirstOccurrence");
+  log_str(this, "TruncateAtFirstOccurrence");
+
+  if (m_kHandle == nullptr)
+    m_kHandle = nullstr;
+
+  if (m_kHandle == nullstr || ch == '\0')
+    return;
+
+  StringBody *found_sym = 0;
+  StringBody *handle = m_kHandle;
+  char first_sym = handle->m_data[0];
+  while (handle->m_data[0]) {
+    if (first_sym == ch) {
+      found_sym = handle;
+      break;
+    }
+    handle = reinterpret_cast<StringBody *>(
+        _mbsinc(reinterpret_cast<const unsigned char *>(handle)));
+    first_sym = handle->m_data[0];
+  }
+  if (found_sym) {
+    handle = m_kHandle;
+    int len = reinterpret_cast<uintptr_t>(found_sym) -
+              reinterpret_cast<uintptr_t>(handle);
+    Reserve(len); // does CopyOnWrite inside
+    Truncate(len);
+  }
+
+  // more efficient implementation
+  // bool found = false;
+  // size_t i = 0;
+  // const unsigned char *pcStr =
+  //     reinterpret_cast<const unsigned char *>(GetString());
+  // while (pcStr[0]) {
+  //   if (pcStr[0] == ch) {
+  //     found = true;
+  //     break;
+  //   }
+  //   i++;
+  //   pcStr = _mbsinc(pcStr);
+  // }
+  // if (found) {
+  //   Reserve(i); // does CopyOnWrite inside
+  //   Truncate(i);
+  // }
+}
+
+void String::TrimLeft(char ch) {
+  logf("String::TrimLeft");
+  log_str(this, "TrimLeft");
+
+  if (m_kHandle == nullptr)
+    m_kHandle = nullstr;
+
+  if (ch == '\0' || m_kHandle == NULL)
+    return;
+
+  size_t stTrimCount = 0;
+  size_t stLength = GetLength();
+  unsigned char *pcStr = reinterpret_cast<unsigned char *>(GetString());
+
+  while (stTrimCount < stLength && pcStr[0] == ch) {
+    stTrimCount++;
+    pcStr = _mbsinc(pcStr);
+  }
+
+  if (stTrimCount > 0) {
+    CopyOnWrite();
+    // Update string pointer
+    pcStr = reinterpret_cast<unsigned char *>(GetString());
+    memmove(pcStr, pcStr + stTrimCount, stLength - stTrimCount + 1);
+    Truncate(stLength - stTrimCount);
+  }
+}
+
 void String::IncRefCount() {
   if (m_kHandle == nullptr || m_kHandle == nullstr)
     return;
@@ -171,7 +253,8 @@ void String::Swap(LPCSTR pcNewValue, size_t stLength) {
 }
 
 LPCSTR String::Reserve(int stLength) {
-  logf("String::Reserve %i", stLength);
+  if (RESERVE_LOG)
+    logf("String::Reserve %i", stLength);
 
   size_t old_size = 0;
   if (m_kHandle != nullptr && m_kHandle != nullstr) {
@@ -193,7 +276,8 @@ LPCSTR String::Reserve(int stLength) {
 }
 
 void String::Realloc(int stLength) {
-  logf("String::Realloc %i", stLength);
+  if (RESERVE_LOG)
+    logf("String::Realloc %i", stLength);
 
   if (!m_kHandle)
     m_kHandle = nullstr;
@@ -255,7 +339,8 @@ inline void String::CalcLength() {
 }
 
 void String::Truncate(int maxLength) {
-  logf("String::Truncate %i", maxLength);
+  if (RESERVE_LOG)
+    logf("String::Truncate %i", maxLength);
 
   if (!m_kHandle || m_kHandle == nullstr)
     return;
