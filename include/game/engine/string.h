@@ -72,8 +72,8 @@ public:
   size_t GetRefCount() const;
 
   void Swap(LPCSTR pcNewValue, size_t stLength = 0);
-  void Reserve(size_t stLength); // sub_CF0020 // in progress
-  void Realloc(int stLength);    // sub_CEFEF0 // in progress
+  LPCSTR Reserve(int stLength); // sub_CF0020 // in progress
+  void Realloc(int stLength);   // sub_CEFEF0 // in progress
 
   LPSTR GetString() const;
   size_t GetLength() const;
@@ -92,4 +92,6 @@ public:
   void CopyOnWrite(); // sub_CEFDF0
 
   static StringBody *nullstr;
+
+  void __thiscall w_old_reallok(int stLength);
 };

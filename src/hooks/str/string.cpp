@@ -36,6 +36,13 @@ extern "C" void __declspec(naked) hook_rstring_reserve() {
 extern "C" void __declspec(naked) hook_rstring_realloc() {
   __asm {
     jmp String::Realloc;
+    
+    sub esp, 0x30
+    push ebx
+    mov ebx, ecx ;
+
+    // Jump back to original code after our patch
+    jmp [g_target_rstring_realloc.return_addr]
   }
 }
 

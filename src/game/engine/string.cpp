@@ -3,20 +3,25 @@
 #include <atlexcept.h>
 #include <windows.h>
 
+#include "target_hooks.h"
+
 #include "game/engine/AtomicOperations.h"
 #include "game/engine/MemoryDefines.h"
 #include "game/engine/String.h"
 
 String::StringBody *String::nullstr =
-    reinterpret_cast<StringBody *>(0x017B75E4);
+    *reinterpret_cast<StringBody **>(0x017B75E4);
 
 inline String::StringHeader *String::GetRealBufferStart(StringBody *pBody) {
   return reinterpret_cast<StringHeader *>(reinterpret_cast<uintptr_t>(pBody) -
                                           offsetof(StringData, m_data));
 }
 
+#define ALLOC_LOG 0
+
 String::StringBody *String::Allocate(size_t stCount) {
-  logf("String::Allocate %i", stCount);
+  if (ALLOC_LOG)
+    logf("String::Allocate %i", stCount);
 
   if (stCount == 0)
     stCount = 1;
@@ -29,13 +34,14 @@ String::StringBody *String::Allocate(size_t stCount) {
     return nullptr;
   }
 
-  pString->m_cbBufferSize = stBufferSize;
+  pString->m_cbBufferSize = stCount;
   pString->m_RefCount = 1;
   return (StringBody *)(pString->m_data);
 }
 
 String::StringBody *String::AllocateAndCopy(LPCSTR pcStr, size_t stCount) {
-  logf("String::AllocateAndCopy %i", stCount);
+  if (ALLOC_LOG)
+    logf("String::AllocateAndCopy %i", stCount);
 
   if (pcStr == nullptr)
     return nullptr;
@@ -54,7 +60,8 @@ String::StringBody *String::AllocateAndCopy(LPCSTR pcStr, size_t stCount) {
 }
 
 inline void String::Deallocate(StringBody *&io_pBody) {
-  logf("String::Deallocate %p", io_pBody);
+  if (ALLOC_LOG)
+    logf("String::Deallocate %p", io_pBody);
 
   if (io_pBody != nullptr && io_pBody != nullstr) {
     StringHeader *pString = GetRealBufferStart(io_pBody);
@@ -165,34 +172,56 @@ void String::Swap(LPCSTR pcNewValue, size_t stLength) {
   m_kHandle->m_data[stLength] = '\0';
 }
 
-void String::Reserve(size_t stLength) {
-  logf("String::Reserve %i", stLength);
+LPCSTR String::Reserve(int stLength) {
+  // logf("String::Reserve %i", stLength);
+  log_str(reinterpret_cast<void **>(this));
 
-  if (m_kHandle == nullptr || m_kHandle == nullstr) {
-    m_kHandle = Allocate(stLength);
-    return;
+  size_t old_size = 0;
+  if (m_kHandle != nullptr && m_kHandle != nullstr) {
+    old_size = GetRealBufferStart(m_kHandle)->m_cbBufferSize;
   }
 
-  StringHeader *header = GetRealBufferStart(m_kHandle);
-  if (header->m_cbBufferSize < stLength) { // deallocation is inevitable
-    DecRefCount();
-    m_kHandle = Allocate(stLength);
-    return;
+  if (stLength <= 1) {
+    stLength = 1;
   }
 
-  size_t nRefCount = AtomicDecrement(header->m_RefCount);
-  if (nRefCount == 0) { // means the only reference
-    header->m_RefCount = 1;
-    m_kHandle->m_data[stLength] = '\0';
-    return;
+  logf("Found old size %i and rq %i at %p of handle %p", old_size, stLength,
+       this, m_kHandle);
+  if (old_size < stLength) { // not enough allocated memory
+    Realloc(stLength);
   }
+  CopyOnWrite();
 
-  StringBody *body = (StringBody *)m_kHandle;
-  Deallocate(body);
-  m_kHandle = Allocate(stLength);
+  log_str(reinterpret_cast<void **>(this));
+
+  if (!m_kHandle)
+    return nullstr->m_data;
+  return m_kHandle->m_data;
+}
+
+void String::w_old_reallok(int stLength) {
+  __asm { push ecx }
+  logf("old String::Realloc %i", stLength);
+  __asm {
+    pop ecx
+    pop ebx
+    mov esp, ebp
+    pop ebp
+
+        // Execute original instructions that were overwritten
+    sub esp, 0x30
+    push ebx
+    mov ebx, ecx ;
+
+    // Jump back to original code after our patch
+    jmp [g_target_rstring_realloc.return_addr]
+  }
 }
 
 void String::Realloc(int stLength) {
+  // temp
+  // return w_old_reallok(stLength);
+
   logf("String::Realloc %i", stLength);
 
   if (!m_kHandle)
