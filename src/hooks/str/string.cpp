@@ -80,6 +80,12 @@ extern "C" void __declspec(naked) hook_rstring_concatenate() {
   }
 }
 
+extern "C" void __declspec(naked) hook_rstring_concatenate_cstr() {
+  __asm {
+    jmp String::Concatenate_cstr;
+  }
+}
+
 HookStub g_target_rstring_truncate = {
     0xCEFCC0,
     (uint32_t)(uintptr_t)hook_rstring_truncate,
@@ -156,6 +162,15 @@ HookStub g_target_rstring_concatenate = {
     0xCF1A90,
     (uint32_t)(uintptr_t)hook_rstring_concatenate,
     "hook_rstring_concatenate",
+    {0},
+    false,
+    0xCF1A96,
+};
+
+HookStub g_target_rstring_concatenate_cstr = {
+    0xCF1A90,
+    (uint32_t)(uintptr_t)hook_rstring_concatenate_cstr,
+    "hook_rstring_concatenate_cstr",
     {0},
     false,
     0xCF1A96,

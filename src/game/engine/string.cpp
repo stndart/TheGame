@@ -1,4 +1,5 @@
 // #include "console.h"
+#include <cstring>
 #include <windows.h>
 
 #include <atlexcept.h>
@@ -231,6 +232,25 @@ void String::Concatenate(const String *pStr) {
   Reserve(newLength);
   memcpy(&(m_kHandle->m_data[currentLength]), pStr->m_kHandle->m_data,
          otherLength);
+  Truncate(newLength);
+}
+
+void String::Concatenate_cstr(LPCSTR pcStr) {
+  if (CONCAT_LOG) {
+    logf("String::Concatenate(LPCSTR)");
+    log_str(this, "Concatenate left");
+    logf("Concatenate right: %s", pcStr);
+  }
+
+  if (pcStr == nullptr)
+    return;
+
+  size_t otherLength = strlen(pcStr);
+  size_t currentLength = GetLength();
+  size_t newLength = currentLength + otherLength;
+
+  Reserve(newLength);
+  memcpy(&(m_kHandle->m_data[currentLength]), pcStr, otherLength);
   Truncate(newLength);
 }
 

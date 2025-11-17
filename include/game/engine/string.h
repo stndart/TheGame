@@ -11,7 +11,6 @@ sub_CF00F0
 sub_CF0230 // String(LPCSTR pcStr) ?
 sub_D59E20
 sub_D5A900
-sub_CF1B50 // Concatenate(LPCSTR other) ?
 sub_9FC6B0 // String(LPCSTR pcStr) ?
 sub_9FCAA0 // String(const String &kStr) ?
 
@@ -121,6 +120,7 @@ public:
   /// Add the String* to the end of this string, growing the buffer as
   /// necessary.
   void Concatenate(const String *pStr); // sub_CF1A90
+  void Concatenate_cstr(LPCSTR pcStr);  // sub_CF1B50
 
 public:
   static StringBody *Allocate(size_t stCount);
