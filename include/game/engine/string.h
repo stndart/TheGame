@@ -9,10 +9,9 @@ TODO:
 sub_CF1DD0
 sub_CF00F0
 sub_CF0230 // String(LPCSTR pcStr) ?
-sub_CF2CD0 // TrimLeft?
 sub_D59E20
 sub_D5A900
-sub_CF1A90
+sub_CF1B50 // Concatenate(LPCSTR other) ?
 sub_9FC6B0 // String(LPCSTR pcStr) ?
 sub_9FCAA0 // String(const String &kStr) ?
 
@@ -27,7 +26,7 @@ sub_156FE40
 */
 
 class String {
-  static void __cdecl log_str(String *handle, LPCSTR hint = "") {
+  static void __cdecl log_str(const String *handle, LPCSTR hint = "") {
     void *nullstr_hardcoded = *reinterpret_cast<void **>(0x017B75E4);
     if (handle == nullptr) {
       logf("log %s: null at %p", hint, handle);
@@ -41,10 +40,10 @@ class String {
         if (header) {
           int len = header[0];
           size_t cnt = header[1];
-          size_t cnt2 = cnt > 15 ? 15 : cnt;
+          int display_len = len > 15 ? 15 : len;
           char str[16];
-          str[15] = 0;
-          memcpy(str, ptr, cnt2);
+          str[display_len] = 0;
+          memcpy(str, ptr, display_len);
           logf("log %s: str at %p with len %i and refcnt %i starts as %s at %p",
                hint, ptr, len, cnt, str, handle);
         } else {
@@ -118,6 +117,10 @@ public:
   void TruncateAtFirstOccurrence(char ch); // sub_CF2D90
   /// Trim this character from the beginning of the string
   void TrimLeft(char ch); // sub_CF2CD0
+
+  /// Add the String* to the end of this string, growing the buffer as
+  /// necessary.
+  void Concatenate(const String *pStr); // sub_CF1A90
 
 public:
   static StringBody *Allocate(size_t stCount);

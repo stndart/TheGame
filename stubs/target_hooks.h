@@ -21,5 +21,6 @@ extern HookStub g_target_rstring_reserve;
 
 extern HookStub g_target_rstring_truncateatfirst;
 extern HookStub g_target_rstring_trimleft;
+extern HookStub g_target_rstring_concatenate;
 
 extern HookStub g_target_w_strlen;

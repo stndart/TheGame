@@ -1,9 +1,9 @@
 // #include "console.h"
+#include <windows.h>
 
 #include <atlexcept.h>
 #include <cstdint>
 #include <mbstring.h>
-#include <windows.h>
 #include <wingdi.h>
 #include <winnt.h>
 
@@ -13,6 +13,7 @@
 
 #define ALLOC_LOG 0
 #define RESERVE_LOG 0
+#define CONCAT_LOG 1
 
 String::StringBody *String::nullstr =
     *reinterpret_cast<StringBody **>(0x017B75E4);
@@ -58,6 +59,9 @@ String::StringBody *String::AllocateAndCopy(LPCSTR pcStr, size_t stCount) {
 
   memcpy(pBody->m_data, pcStr, stCount);
   pBody->m_data[stCount] = '\0';
+
+  if (ALLOC_LOG)
+    logf("String::AllocateAndCopy: allocated at %p", pBody);
 
   return pBody;
 }
@@ -126,8 +130,10 @@ inline String &String::operator=(char ch) {
 }
 
 void String::TruncateAtFirstOccurrence(char ch) {
-  logf("String::TruncateAtFirstOccurrence");
-  log_str(this, "TruncateAtFirstOccurrence");
+  if (CONCAT_LOG) {
+    logf("String::TruncateAtFirstOccurrence");
+    log_str(this, "TruncateAtFirstOccurrence");
+  }
 
   if (m_kHandle == nullptr)
     m_kHandle = nullstr;
@@ -175,8 +181,10 @@ void String::TruncateAtFirstOccurrence(char ch) {
 }
 
 void String::TrimLeft(char ch) {
-  logf("String::TrimLeft");
-  log_str(this, "TrimLeft");
+  if (CONCAT_LOG) {
+    logf("String::TrimLeft");
+    log_str(this, "TrimLeft");
+  }
 
   if (m_kHandle == nullptr)
     m_kHandle = nullstr;
@@ -200,6 +208,30 @@ void String::TrimLeft(char ch) {
     memmove(pcStr, pcStr + stTrimCount, stLength - stTrimCount + 1);
     Truncate(stLength - stTrimCount);
   }
+}
+
+void String::Concatenate(const String *pStr) {
+  if (CONCAT_LOG) {
+    logf("String::Concatenate(String*)");
+    log_str(this, "Concatenate left");
+    log_str(pStr, "Concatenate right");
+  }
+
+  if (pStr == nullptr)
+    return;
+
+  if (pStr->m_kHandle == nullptr || pStr->m_kHandle == nullstr)
+    return;
+  size_t otherLength = pStr->GetLength();
+  if (otherLength == 0)
+    return;
+
+  size_t currentLength = GetLength();
+  size_t newLength = currentLength + otherLength;
+  Reserve(newLength);
+  memcpy(&(m_kHandle->m_data[currentLength]), pStr->m_kHandle->m_data,
+         otherLength);
+  Truncate(newLength);
 }
 
 void String::IncRefCount() {
@@ -254,7 +286,7 @@ void String::Swap(LPCSTR pcNewValue, size_t stLength) {
 
 LPCSTR String::Reserve(int stLength) {
   if (RESERVE_LOG)
-    logf("String::Reserve %i", stLength);
+    logf("String::Reserve %i for %p", stLength, this);
 
   size_t old_size = 0;
   if (m_kHandle != nullptr && m_kHandle != nullstr) {
@@ -270,6 +302,11 @@ LPCSTR String::Reserve(int stLength) {
   }
   CopyOnWrite();
 
+  if (RESERVE_LOG) {
+    if (m_kHandle)
+      logf("String::Reserve - reserved at %p", &m_kHandle->m_data);
+  }
+
   if (!m_kHandle)
     return nullstr->m_data;
   return m_kHandle->m_data;
@@ -277,7 +314,7 @@ LPCSTR String::Reserve(int stLength) {
 
 void String::Realloc(int stLength) {
   if (RESERVE_LOG)
-    logf("String::Realloc %i", stLength);
+    logf("String::Realloc %i for %p", stLength, this);
 
   if (!m_kHandle)
     m_kHandle = nullstr;
@@ -297,7 +334,11 @@ void String::Realloc(int stLength) {
   }
 
   m_kHandle = AllocateAndCopy(m_kHandle->m_data, stLength);
-  m_kHandle->m_data[strlen(m_kHandle->m_data)] = '\0';
+  m_kHandle->m_data[stLength] = '\0';
+
+  if (RESERVE_LOG) {
+    logf("String::Realloc - reserved at %p", &m_kHandle->m_data);
+  }
 }
 
 inline LPSTR String::GetString() const {

@@ -38,6 +38,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call,
 
     HookManager::make_hook(g_target_rstring_truncateatfirst);
     HookManager::make_hook(g_target_rstring_trimleft);
+    HookManager::make_hook(g_target_rstring_concatenate);
 
     log_message("DLL loaded - hooks installed");
     break;

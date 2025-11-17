@@ -52,9 +52,31 @@ extern "C" void __declspec(naked) hook_rstring_truncateatfirst() {
     jmp String::TruncateAtFirstOccurrence;
   }
 }
+
 extern "C" void __declspec(naked) hook_rstring_trimleft() {
   __asm {
     jmp String::TrimLeft;
+  }
+}
+
+extern "C" void __declspec(naked) hook_rstring_concatenate() {
+  __asm {
+    jmp String::Concatenate;
+
+    pushad;
+    mov eax, [esp + 0x24]; // String* other
+    push eax
+    call String::Concatenate;
+    add esp, 4 // CAREFUL (maybe bug)
+    popad;
+    ret;
+    
+    push ebp
+    push edi
+    mov edi, [esp+12]
+
+    // Jump back to original code after our patch
+    jmp [g_target_rstring_concatenate.return_addr]
   }
 }
 
@@ -128,4 +150,13 @@ HookStub g_target_rstring_trimleft = {
     {0},
     false,
     0xCF2CD8,
+};
+
+HookStub g_target_rstring_concatenate = {
+    0xCF1A90,
+    (uint32_t)(uintptr_t)hook_rstring_concatenate,
+    "hook_rstring_concatenate",
+    {0},
+    false,
+    0xCF1A96,
 };
