@@ -14,7 +14,8 @@
 
 #define ALLOC_LOG 0
 #define RESERVE_LOG 0
-#define CONCAT_LOG 1
+#define CONCAT_LOG 0
+#define FORMAT_LOG 1
 
 String::StringBody *String::nullstr =
     *reinterpret_cast<StringBody **>(0x017B75E4);
@@ -461,4 +462,28 @@ void String::CopyOnWrite() {
     DecRefCount();
     m_kHandle = AllocateAndCopy(old_str);
   }
+}
+
+void String::vformat(String *pStr, LPCSTR pcFormat, va_list *argPtr) {
+  if (FORMAT_LOG)
+    logf("vformat of format %s", pcFormat);
+
+  pStr->Vformat(pcFormat, *argPtr); // TODO: check argPtr typing
+}
+
+void String::Vformat(LPCSTR pcFormat, va_list argPtr) {
+  if (FORMAT_LOG)
+    logf("String::Vformat of format %s to %p", pcFormat, this);
+
+  if (!pcFormat) {
+    throw ATL::CAtlException(E_INVALIDARG);
+  }
+
+  char buffer[1024];
+  int written = vsprintf_s(buffer, 1024, pcFormat, argPtr);
+
+  LPCSTR new_buf = Reserve(written);
+  strcpy(const_cast<LPSTR>(new_buf), buffer);
+  int new_len = strlen(m_kHandle->m_data);
+  Truncate(new_len);
 }

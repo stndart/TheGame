@@ -86,6 +86,18 @@ extern "C" void __declspec(naked) hook_rstring_concatenate_cstr() {
   }
 }
 
+extern "C" void __declspec(naked) hook_rstring_vformat() {
+  __asm {
+    jmp String::vformat;
+  }
+}
+
+extern "C" void __declspec(naked) hook_rstring_vformat_this() {
+  __asm {
+    jmp String::Vformat;
+  }
+}
+
 HookStub g_target_rstring_truncate = {
     0xCEFCC0,
     (uint32_t)(uintptr_t)hook_rstring_truncate,
@@ -174,4 +186,22 @@ HookStub g_target_rstring_concatenate_cstr = {
     {0},
     false,
     0xCF1A96,
+};
+
+HookStub g_target_rstring_vformat = {
+    0xCF1DD0,
+    (uint32_t)(uintptr_t)hook_rstring_vformat,
+    "hook_rstring_vformat",
+    {0},
+    false,
+    0xCF1DD8,
+};
+
+HookStub g_target_rstring_vformat_this = {
+    0xCF1BB0,
+    (uint32_t)(uintptr_t)hook_rstring_vformat_this,
+    "hook_rstring_vformat_this",
+    {0},
+    false,
+    0xCF1BB6,
 };
