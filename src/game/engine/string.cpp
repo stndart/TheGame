@@ -5,8 +5,6 @@
 #include <atlexcept.h>
 #include <cstdint>
 #include <mbstring.h>
-#include <wingdi.h>
-#include <winnt.h>
 
 #include "game/engine/AtomicOperations.h"
 #include "game/engine/MemoryDefines.h"
@@ -29,10 +27,7 @@ String::StringBody *String::Allocate(size_t stCount) {
   if (ALLOC_LOG)
     logf("String::Allocate %i", stCount);
 
-  if (stCount == 0)
-    stCount = 1;
-
-  size_t stBufferSize = stCount + sizeof(StringData);
+  size_t stBufferSize = (stCount + 1) * sizeof(char) + sizeof(StringHeader);
 
   StringData *pString =
       reinterpret_cast<StringData *> EE_HEAPALLOC(stBufferSize);
@@ -59,8 +54,9 @@ String::StringBody *String::AllocateAndCopy(LPCSTR pcStr, size_t stCount) {
   if (pBody == nullptr)
     return nullptr;
 
-  memcpy(pBody->m_data, pcStr, stCount);
+  memcpy(pBody->m_data, pcStr, stCount * sizeof(char));
   pBody->m_data[stCount] = '\0';
+  GetRealBufferStart(pBody)->m_cbBufferSize = stCount;
 
   if (ALLOC_LOG)
     logf("String::AllocateAndCopy: allocated at %p", pBody);
@@ -102,9 +98,6 @@ String::String(char ch) {
 
   m_kHandle->m_data[0] = ch;
   m_kHandle->m_data[1] = '\0';
-  // char *pcString = (char *)m_kHandle;
-  // pcString[0] = ch;
-  // pcString[1] = '\0';
   SetLength(1);
 }
 
@@ -125,9 +118,7 @@ inline String &String::operator=(LPCSTR pcStr) {
 }
 
 inline String &String::operator=(char ch) {
-  char acString[2];
-  acString[0] = ch;
-  acString[1] = '\0';
+  char acString[2] = {ch, '\0'};
   return String::operator=((LPCSTR)&acString[0]);
 }
 
@@ -301,7 +292,7 @@ void String::Swap(LPCSTR pcNewValue, size_t stLength) {
   }
 
   Reserve(stLength);
-  memcpy(m_kHandle->m_data, pcNewValue, stLength);
+  memcpy(m_kHandle->m_data, pcNewValue, stLength * sizeof(char));
   m_kHandle->m_data[stLength] = '\0';
 }
 
