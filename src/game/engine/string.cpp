@@ -15,7 +15,7 @@
 #define ALLOC_LOG 0
 #define RESERVE_LOG 0
 #define CONCAT_LOG 0
-#define FORMAT_LOG 1
+#define FORMAT_LOG 0
 
 String::StringBody *String::nullstr =
     *reinterpret_cast<StringBody **>(0x017B75E4);
@@ -464,11 +464,14 @@ void String::CopyOnWrite() {
   }
 }
 
-void String::vformat(String *pStr, LPCSTR pcFormat, va_list *argPtr) {
+void String::vformat(String *pStr, LPCSTR pcFormat, ...) {
   if (FORMAT_LOG)
     logf("vformat of format %s", pcFormat);
 
-  pStr->Vformat(pcFormat, *argPtr); // TODO: check argPtr typing
+  va_list args;
+  va_start(args, pcFormat);
+  pStr->Vformat(pcFormat, args);
+  va_end(args);
 }
 
 void String::Vformat(LPCSTR pcFormat, va_list argPtr) {
@@ -480,7 +483,17 @@ void String::Vformat(LPCSTR pcFormat, va_list argPtr) {
   }
 
   char buffer[1024];
-  int written = vsprintf_s(buffer, 1024, pcFormat, argPtr);
+
+  // safe forwarding: copy the va_list because vsprintf_s consumes it
+  va_list args;
+  va_copy(args, argPtr);
+  int written = vsprintf_s(buffer, sizeof(buffer), pcFormat, args);
+  va_end(args);
+
+  if (written < 0) {
+    // handle formatting error
+    throw ATL::CAtlException(E_FAIL);
+  }
 
   LPCSTR new_buf = Reserve(written);
   strcpy(const_cast<LPSTR>(new_buf), buffer);

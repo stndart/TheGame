@@ -122,9 +122,8 @@ public:
   void Concatenate(const String *pStr); // sub_CF1A90
   void Concatenate_cstr(LPCSTR pcStr);  // sub_CF1B50
 
-  static void vformat(String *pStr, LPCSTR pcFormat,
-                      va_list *argPtr);          // sub_CF1DD0
-  void Vformat(LPCSTR pcFormat, va_list argPtr); // sub_CF1BB0
+  static void vformat(String *pStr, LPCSTR pcFormat, ...); // sub_CF1DD0
+  void Vformat(LPCSTR pcFormat, va_list argPtr);           // sub_CF1BB0
 
 public:
   static StringBody *Allocate(size_t stCount);
