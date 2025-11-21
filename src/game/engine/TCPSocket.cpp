@@ -30,7 +30,8 @@ inline std::string to_ip_string(int addr) {
 
 int TCPSocket::Connect(WString wideHostname, int port) {
   if (LOG_CONNECT)
-    logf("TCPSocket::Connect to %ls:%u", wideHostname.c_str(), port);
+    logf("TCPSocket::Connect at %p to %ls:%u", this, wideHostname.c_str(),
+         port);
 
   // Convert wide char hostname to multibyte
   MultiByteHolder multibyteHolder;
@@ -64,18 +65,13 @@ int TCPSocket::Connect(WString wideHostname, int port) {
 
   // Set port and attempt connection
   serverAddr.sin_port = htons(port);
-  SOCKET socketHandle =
-      *(SOCKET *)((char *)this +
-                  0x12C); // Socket at offset 0x12C or 0x4B (DWORD*)
-
   std::string ipstr =
       to_ip_string(*reinterpret_cast<int *>(&serverAddr.sin_addr));
 
   if (LOG_CONNECT)
-    logf("Connecting socket %p to addr %s:%u", socketHandle, ipstr.c_str(),
-         port);
+    logf("Connecting socket %p to addr %s:%u", m_socketId, ipstr.c_str(), port);
 
-  if (connect(socketHandle, (sockaddr *)&serverAddr, sizeof(serverAddr)) ==
+  if (connect(m_socketId, (sockaddr *)&serverAddr, sizeof(serverAddr)) ==
       SOCKET_ERROR) {
     int error = WSAGetLastError();
     sub_D56170(this, error,

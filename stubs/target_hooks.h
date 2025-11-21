@@ -3,7 +3,6 @@
 
 void __cdecl log_str(void **handle);
 
-extern HookStub g_target_w_connect_1;
 extern HookStub g_target_w_connect_2;
 extern HookStub g_target_w_connect_3;
 
@@ -22,8 +21,19 @@ extern HookStub g_target_rstring_truncateatfirst;
 extern HookStub g_target_rstring_trimleft;
 extern HookStub g_target_rstring_concatenate;
 extern HookStub g_target_rstring_concatenate_cstr;
-
 extern HookStub g_target_rstring_vformat;
 extern HookStub g_target_rstring_vformat_this;
+
+extern HookStub g_target_TCPSocket_connect;
+
+extern HookStub g_target_send_1;
+extern HookStub g_target_send_2;
+extern HookStub g_target_send_3;
+// extern HookStub g_target_sendto_1;
+// extern HookStub g_target_sendto_2;
+// extern HookStub g_target_sendto_3;
+// extern HookStub g_target_recv_1;
+// extern HookStub g_target_recvfrom_1;
+// extern HookStub g_target_bind_1;
 
 extern HookStub g_target_w_strlen;

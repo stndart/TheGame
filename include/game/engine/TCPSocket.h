@@ -11,7 +11,9 @@ class TCPSocket {
 protected:
   TCPSocket();
 
-  SOCKET m_socketId;              // Socket file descriptor
+  char _padding[0x12C];
+  SOCKET m_socketId; // Socket file descriptor
+
   bool m_blocking;                // Blocking flag
   struct sockaddr_in m_localAddr; // local Address/port
   struct sockaddr_in
@@ -28,14 +30,15 @@ public:
   TCPSocket(uint16_t listenPort) {}; // TODO
   ~TCPSocket() {};                   // TODO
 
-  int Send();          // TODO
-  int Receive();       // TODO
-  int ReceiveFrom();   // TODO
-  bool Bind();         // TODO
-  TCPSocket *Accept(); // TODO
-  void Listen();       // TODO
-  int Connect_();      // TODO
-  void Shutdown();     // TODO
+  int _Send();          // TODO // sub_CF3290, sub_D567F0, sub_D569C0
+  int _SendTo();        // TODO // sub_D57590, sub_D577B0, sub_D57850
+  int _Recv();          // TODO // sub_D56470
+  int _RecvFrom();      // TODO // sub_D54BF0
+  bool _Bind();         // TODO // sub_D581C0
+  TCPSocket *_Accept(); // TODO
+  void _Listen();       // TODO
+  int _Connect();       // TODO
+  void _Shutdown();     // TODO
 
   int Connect(WString wideHostname, int port);
 

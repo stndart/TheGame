@@ -20,7 +20,6 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call,
 
     // HookManager::make_hook(g_target_w_strlen);
 
-    HookManager::make_hook(g_target_w_connect_1);
     HookManager::make_hook(g_target_w_connect_2);
     HookManager::make_hook(g_target_w_connect_3);
 
@@ -39,9 +38,22 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call,
     HookManager::make_hook(g_target_rstring_trimleft);
     HookManager::make_hook(g_target_rstring_concatenate);
     HookManager::make_hook(g_target_rstring_concatenate_cstr);
-
     HookManager::make_hook(g_target_rstring_vformat);
     HookManager::make_hook(g_target_rstring_vformat_this);
+
+    HookManager::make_hook(g_target_TCPSocket_connect);
+
+    HookManager::make_hook(g_target_send_1);
+    HookManager::make_hook(g_target_send_2);
+    HookManager::make_hook(g_target_send_3);
+
+    // HookManager::make_hook(g_target_sendto_1);
+    // HookManager::make_hook(g_target_sendto_2);
+    // HookManager::make_hook(g_target_sendto_3);
+
+    // HookManager::make_hook(g_target_recv_1);
+    // HookManager::make_hook(g_target_recvfrom_1);
+    // HookManager::make_hook(g_target_bind_1);
 
     log_message("DLL loaded - hooks installed");
     break;
