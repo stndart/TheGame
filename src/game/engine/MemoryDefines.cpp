@@ -2,6 +2,9 @@
 #include "crt/memory.h"
 
 void _Free(void *pvMem, size_t stSizeInBytes) {
+  if (SKIP_FREE)
+    return;
+
   // EE_ASSERT(MemManager::IsInitialized());
   if (pvMem == nullptr)
     return;

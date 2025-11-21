@@ -1,8 +1,6 @@
-#include "console.h"
 #include "crt/memory.h"
-#include "helpers/strhelp.h"
+#include <console.h>
 
-// #include "game/engine/MemoryDefines.h"
 #include <atlexcept.h>
 
 #include "game/engine/StringConverters.h"
@@ -75,8 +73,8 @@ void __thiscall MultiByteHolder::ConvertWideToMultiByte(LPCWSTR lpWideCharStr,
   }
 
   if (LOG_WCONVERT)
-    logf("ConvertWideToMultiByte: lpWideCharStr='%s', CodePage='%u'",
-         wstring_to_string(lpWideCharStr).c_str(), CodePage);
+    logf("ConvertWideToMultiByte: lpWideCharStr='%ls', CodePage='%u'",
+         lpWideCharStr, CodePage);
 
   int len = lstrlenW(lpWideCharStr) + 1;
 

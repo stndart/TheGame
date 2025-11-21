@@ -5,7 +5,7 @@
 #define WSTRING_INLINE_BUF_SIZE 128
 #define MSTRING_INLINE_BUF_SIZE 128
 
-const bool LOG_WCONVERT = false;
+#define LOG_WCONVERT 0
 
 void ThrowStringConversionError(DWORD errcode);
 
@@ -17,16 +17,24 @@ LPWSTR __cdecl EnsureWStringBufferCapacity(LPWSTR *str_p, int required_bytes,
                                            LPWSTR inline_buf,
                                            int inline_buf_size_bytes);
 
-struct WideStringHolder {
+class WideStringHolder {
+public:
   LPWSTR current_ptr; // points to heap buffer OR to the inline buffer
   WCHAR inline_buf[WSTRING_INLINE_BUF_SIZE]; // embedded inline buffer
+
+public:
+  WideStringHolder() : current_ptr(&inline_buf[0]) {};
 
   void __thiscall ConvertMultiByteToWide(LPCSTR lpCharStr, UINT CodePage);
 };
 
 struct MultiByteHolder {
+public:
   LPSTR current_ptr; // points to heap buffer OR to the inline buffer
   char inline_buf[MSTRING_INLINE_BUF_SIZE]; // embedded inline buffer
+
+public:
+  MultiByteHolder() : current_ptr(&inline_buf[0]) {};
 
   void __thiscall ConvertWideToMultiByte(LPCWSTR lpWideCharStr, UINT CodePage);
 };

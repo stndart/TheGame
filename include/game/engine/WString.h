@@ -120,3 +120,5 @@ public:
 
   static WStringBody *nullwstr;
 };
+
+#include "WString.inl"

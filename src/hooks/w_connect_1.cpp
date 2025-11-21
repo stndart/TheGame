@@ -1,16 +1,21 @@
-#include "console.h"
-#include "helpers/strhelp.h"
 #include "target_hooks.h"
+#include <console.h>
 
-#include "WinSock2.h"
+#include <game/engine/TCPSocket.h>
 
 void __cdecl handle_w_connect_1(SOCKET *sock, LPCWSTR lpString,
                                 u_short hostshort, DWORD *esp) {
-  logf("w_connect_1: sock=%p, lpString='%s', hostshort=%u, esp=%p", sock,
-       wstring_to_string(lpString).c_str(), hostshort, esp);
+  logf("w_connect_1: sock=%p, lpString='%ls', hostshort=%u, esp=%p", sock,
+       lpString, hostshort, esp);
 }
 
 extern "C" void __declspec(naked) hook_w_connect_1() {
+  __asm {
+    jmp TCPSocket::Connect
+  }
+}
+
+extern "C" void __declspec(naked) hook_w_connect_1_old() {
   __asm {
     pushad // esp += 0x20
     pushfd // esp += 0x04
@@ -23,15 +28,15 @@ extern "C" void __declspec(naked) hook_w_connect_1() {
     push ebx
     push ecx ; // 'this' pointer (in ECX for __thiscall)
     
-    call handle_w_connect_1
+    call handle_w_connect_1 ;
 
-        // Clean up stack (3 args * 4 bytes = 12)
+    // Clean up stack (3 args * 4 bytes = 12)
     add esp, 16
 
     popfd
-    popad
+    popad ;
 
-        // Execute original instructions that were overwritten
+    // Execute original instructions that were overwritten
     push 0x0FFFFFFFF
     push 0x00D56220
 

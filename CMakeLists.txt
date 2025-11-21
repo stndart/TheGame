@@ -33,7 +33,7 @@ if(WIN32)
         target_include_directories(TheGame PRIVATE "${MSVC_ATL_INCLUDE_DIR}")
     endif()
 
-    target_link_libraries(TheGame PRIVATE kernel32 user32)
+    target_link_libraries(TheGame PRIVATE kernel32 user32 Ws2_32)
 endif()
 
 # Set output directory

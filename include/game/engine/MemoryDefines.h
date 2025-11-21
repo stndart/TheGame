@@ -1,5 +1,7 @@
 #pragma once
 
+#define SKIP_FREE 0
+
 #define EE_MEM_DEALLOC_SIZE_DEFAULT (size_t)-1
 
 void _Free(void *pvMemory, size_t stSizeInBytes = EE_MEM_DEALLOC_SIZE_DEFAULT);
