@@ -18,7 +18,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call,
     // Initialize and apply all hooks
     HookManager::initialize();
 
-    // HookManager::make_hook(g_target_w_strlen);
+    HookManager::make_hook(g_target_w_strlen);
 
     HookManager::make_hook(g_target_w_connect_2);
     HookManager::make_hook(g_target_w_connect_3);
@@ -47,9 +47,9 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call,
     HookManager::make_hook(g_target_send_2);
     HookManager::make_hook(g_target_send_3);
 
-    // HookManager::make_hook(g_target_sendto_1);
-    // HookManager::make_hook(g_target_sendto_2);
-    // HookManager::make_hook(g_target_sendto_3);
+    HookManager::make_hook(g_target_sendto_1);
+    HookManager::make_hook(g_target_sendto_2);
+    HookManager::make_hook(g_target_sendto_3);
 
     // HookManager::make_hook(g_target_recv_1);
     // HookManager::make_hook(g_target_recvfrom_1);

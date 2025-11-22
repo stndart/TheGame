@@ -10,7 +10,7 @@
             "name": "windows-only",
             "displayName": "Windows-only configuration",
             "description": "This build is only available on Windows",
-            "cmakeExecutable": "C:/Program Files/CMake/bin/cmake.exe",
+            "cmakeExecutable": "${workspaceFolder}/cmake-vs.bat",
             "binaryDir": "${sourceDir}/build/${presetName}",
             "installDir": "${sourceDir}/install/${presetName}",
             "hidden": true,
@@ -18,6 +18,11 @@
                 "type": "equals",
                 "lhs": "${hostSystemName}",
                 "rhs": "Windows"
+            },
+            "cacheVariables": {
+                "CMAKE_EXE_LINKER_FLAGS": "/MANIFEST:NO",
+                "CMAKE_SHARED_LINKER_FLAGS": "/MANIFEST:NO",
+                "CMAKE_MODULE_LINKER_FLAGS": "/MANIFEST:NO"
             }
         },
         {

@@ -11,6 +11,7 @@ class TCPSocket {
 protected:
   TCPSocket();
 
+  // this + 204 is char buffer, this + 200 is it's length
   char _padding[0x12C];
   SOCKET m_socketId; // Socket file descriptor
 
