@@ -37,8 +37,8 @@ void __cdecl handle_send_3(void *_this, int *a2) {
        _this, sock, a2[0], a2[3], n, lpBuffers);
   for (size_t i = 0; i < n; ++i) {
     String s(lpBuffers[i].buf, lpBuffers[i].len);
-    logf("handle_send_3 buf[%u/%u] of len %u: %s", i, n, lpBuffers[i].len,
-         s.c_str());
+    // logf("handle_send_3 buf[%u/%u] of len %u: %s", i, n, lpBuffers[i].len,
+    //      s.c_str());
   }
 }
 
@@ -126,7 +126,7 @@ HookStub g_target_send_1 = {
 };
 HookStub g_target_send_2 = {
     0xD567F0, (uint32_t)(uintptr_t)hook_send_2, "hook_send_2", {0}, false,
-    0xD56807,
+    0xD567F7,
 };
 HookStub g_target_send_3 = {
     0xD569C0, (uint32_t)(uintptr_t)hook_send_3, "hook_send_3", {0}, false,

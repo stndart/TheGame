@@ -1,6 +1,8 @@
 #include "console.h"
 #include "crt/memory.h"
 #include "hook_manager.h"
+
+#include "system_hooks.h"
 #include "target_hooks.h"
 
 // this is just for binding with GAME.exe
@@ -17,6 +19,10 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call,
 
     // Initialize and apply all hooks
     HookManager::initialize();
+    HookManager::make_syshook(g_ws2_send, 0x01588B9C);
+    HookManager::make_syshook(g_ws2_sendto, 0x01588C08);
+    HookManager::make_syshook(g_ws2_wsasend, 0x01588BF8);
+    HookManager::make_syshook(g_ws2_wsasendto, 0x01588C04);
 
     HookManager::make_hook(g_target_w_strlen);
 
