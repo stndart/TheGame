@@ -1,6 +1,8 @@
 #include "console.h"
 #include <windows.h>
 
+#include <iomanip>
+
 void create_console() {
   if (console_created)
     return;
@@ -36,4 +38,33 @@ void logf(const char *format, ...) {
   va_end(args);
 
   log_message(buffer);
+}
+
+void logns(int socket, const char *addr, int port) {
+  if (!netlog_file.is_open()) {
+    netlog_file.open("netlogs.txt", std::ios::app);
+    netlog_file << "log start\n";
+  }
+
+  netlog_file << "Connecting socket " << socket << " to " << addr << ":"
+              << std::dec << port << "\n";
+}
+
+void logn(int socket, size_t len, char *data, bool in) {
+  if (!netlog_file.is_open()) {
+    netlog_file.open("netlogs.txt", std::ios::app);
+    netlog_file << "log start\n";
+  }
+
+  if (in)
+    netlog_file << socket << " < ";
+  else
+    netlog_file << socket << " > ";
+
+  for (size_t i = 0; i < len; ++i) {
+    netlog_file << std::hex << std::setw(2) << std::setfill('0')
+                << static_cast<unsigned int>(
+                       static_cast<unsigned char>(data[i]));
+  }
+  netlog_file << std::endl;
 }

@@ -25,6 +25,7 @@ extern HookStub g_target_rstring_vformat;
 extern HookStub g_target_rstring_vformat_this;
 
 extern HookStub g_target_TCPSocket_connect;
+extern HookStub g_target_TCPSocket_send;
 
 extern HookStub g_target_send_1;
 extern HookStub g_target_send_2;

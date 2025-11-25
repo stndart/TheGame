@@ -23,6 +23,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call,
     HookManager::make_syshook(g_ws2_sendto, 0x01588C08);
     HookManager::make_syshook(g_ws2_wsasend, 0x01588BF8);
     HookManager::make_syshook(g_ws2_wsasendto, 0x01588C04);
+    HookManager::make_syshook(g_ws2_connect, 0x01588BEC);
 
     HookManager::make_hook(g_target_w_strlen);
 
@@ -48,10 +49,11 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call,
     HookManager::make_hook(g_target_rstring_vformat_this);
 
     HookManager::make_hook(g_target_TCPSocket_connect);
+    HookManager::make_hook(g_target_TCPSocket_send);
 
     HookManager::make_hook(g_target_send_1);
     HookManager::make_hook(g_target_send_2);
-    HookManager::make_hook(g_target_send_3);
+    // HookManager::make_hook(g_target_send_3);
 
     HookManager::make_hook(g_target_sendto_1);
     HookManager::make_hook(g_target_sendto_2);

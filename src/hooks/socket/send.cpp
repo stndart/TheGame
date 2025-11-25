@@ -1,15 +1,24 @@
 #include "target_hooks.h"
 #include <console.h>
+#include <cstdint>
+#include <minwindef.h>
 
 #include "game/engine/String.h"
 
 #include "WinSock2.h"
 
 void __cdecl handle_send_1(void *_this, char *buf, int len) {
+  void **v3 = reinterpret_cast<void **>(reinterpret_cast<DWORD *>(_this)[2]);
+  if (v3)
+    _this = *v3;
+  else
+    _this = nullptr;
   SOCKET sock =
       *reinterpret_cast<SOCKET *>(reinterpret_cast<uintptr_t>(_this) + 300);
 
   String s(buf, len);
+  s.TruncateAtFirstOccurrence('\n');
+  s.Truncate(s.GetLength() - 1);
   logf("handle_send_1: obj=%p, socket %p, buf='%s' at %p, len=%u", _this, sock,
        s.c_str(), buf, len);
 }
@@ -19,6 +28,8 @@ void __cdecl handle_send_2(void *_this, char *buf, int len) {
       *reinterpret_cast<SOCKET *>(reinterpret_cast<uintptr_t>(_this) + 300);
 
   String s(buf, len);
+  s.TruncateAtFirstOccurrence('\n');
+  s.Truncate(s.GetLength() - 1);
   logf("handle_send_2: obj=%p, socket %p, buf='%s' at %p, len=%u", _this, sock,
        s.c_str(), buf, len);
 }
@@ -32,13 +43,17 @@ void __cdecl handle_send_3(void *_this, int *a2) {
     lpBuffers = reinterpret_cast<WSABUF *>(a2[1]);
 
   size_t n = a2[2];
-  logf("handle_send_3: obj=%p, socket %p, a2[0]=%u, someflag=%u, buffers[%u] "
+  logf("handle_send_3: conn=%p, socket %p, obj=%p, a2[0]=%u, someflag=%u, "
+       "buffers[%u] "
        "at %p",
-       _this, sock, a2[0], a2[3], n, lpBuffers);
+       _this, sock, a2, a2[0], a2[3], n, lpBuffers);
   for (size_t i = 0; i < n; ++i) {
     String s(lpBuffers[i].buf, lpBuffers[i].len);
+    s.TruncateAtFirstOccurrence('\n');
+    s.Truncate(s.GetLength() - 1);
     // logf("handle_send_3 buf[%u/%u] of len %u: %s", i, n, lpBuffers[i].len,
     //      s.c_str());
+    logn(sock, lpBuffers[i].len, lpBuffers[i].buf);
   }
 }
 
