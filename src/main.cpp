@@ -1,6 +1,6 @@
 #include "console.h"
 #include "crt/memory.h"
-#include "diagnostics.h"
+#include "diagnostics/handlers.hpp"
 #include "hook_manager.h"
 
 #include "system_hooks.h"
@@ -71,7 +71,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call,
 
   case DLL_PROCESS_DETACH:
     log_message("DLL unloaded - hooks removed");
-    Diagnostics::shutdown();
+    Diagnostics::teardown();
     if (log_file.is_open()) {
       log_file.close();
     }

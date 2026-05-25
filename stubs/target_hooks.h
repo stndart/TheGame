@@ -5,6 +5,11 @@ void __cdecl log_str(void **handle);
 
 extern HookStub g_target_entrypoint;
 
+extern HookStub g_target_game_intro;
+extern HookStub g_target_game_login;
+extern HookStub g_target_game_server_select;
+extern HookStub g_target_game_main_menu;
+
 extern HookStub g_target_w_connect_2;
 extern HookStub g_target_w_connect_3;
 

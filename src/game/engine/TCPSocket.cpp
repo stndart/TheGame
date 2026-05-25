@@ -1,4 +1,5 @@
 #include "game/engine/TCPSocket.h"
+#include "diagnostics/handlers.hpp"
 
 #include <string>
 #include <winerror.h>
@@ -67,6 +68,9 @@ int TCPSocket::Connect(WString wideHostname, int port) {
   if (LOG_CONNECT)
     logf("TCPSocket::Connect at %p to %ls:%u", this, wideHostname.c_str(),
          port);
+  if (port == 7000) {
+    Diagnostics::emit_game_state("connecting_to_server");
+  }
 
   // log_structure();
 
