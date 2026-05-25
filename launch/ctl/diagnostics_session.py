@@ -87,6 +87,7 @@ def read_events_to_file(
     output_path: Path,
     *,
     on_event: EventFn | None = None,
+    game_states: list[str] | None = None,
 ) -> int:
     output_path.parent.mkdir(parents=True, exist_ok=True)
     pending = b""
@@ -100,6 +101,17 @@ def read_events_to_file(
             count += 1
             out.write(line + "\n")
             out.flush()
+            if game_states is not None:
+                try:
+                    event = json.loads(line)
+                    if event.get("type") == "game_state":
+                        phase = str(event.get("phase", ""))
+                        if phase and (
+                            not game_states or game_states[-1] != phase
+                        ):
+                            game_states.append(phase)
+                except json.JSONDecodeError:
+                    pass
             if on_event:
                 on_event(line)
 
@@ -153,8 +165,9 @@ def run_diagnostics_session(
         wait_for_diagnostics_client(diag_pipe)
         progress("diagnostics connected")
 
+        game_states: list[str] = []
         event_count = read_events_to_file(
-            diag_pipe, events_file, on_event=on_event
+            diag_pipe, events_file, on_event=on_event, game_states=game_states
         )
         progress(f"diagnostics disconnected after {event_count} events")
 
@@ -177,6 +190,7 @@ def run_diagnostics_session(
             "launcher_pid": proc.pid,
             "events": event_count,
             "events_file": str(events_file.resolve()),
+            "game_states": game_states,
             "game_logs": game_logs,
             **config.extra_meta,
         }

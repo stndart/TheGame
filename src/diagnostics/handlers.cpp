@@ -13,12 +13,13 @@ constexpr DWORD kDbgPrintExceptionWideC = 0x4001000A;
 
 LONG WINAPI vectored_exception_handler(EXCEPTION_POINTERS *info) {
   EXCEPTION_RECORD *rec = info->ExceptionRecord;
-  if (rec->ExceptionCode == 0x40010006 && rec->NumberParameters >= 2) {
+  if (rec->ExceptionCode == kDbgPrintExceptionC && rec->NumberParameters >= 2) {
     const char *msg =
         reinterpret_cast<const char *>(rec->ExceptionInformation[1]);
     Diagnostics::emit_game_log(string_to_string_safe(msg).c_str());
   }
-  if (rec->ExceptionCode == 0x4001000A && rec->NumberParameters >= 2) {
+  if (rec->ExceptionCode == kDbgPrintExceptionWideC &&
+      rec->NumberParameters >= 2) {
     const wchar_t *wmsg =
         reinterpret_cast<const wchar_t *>(rec->ExceptionInformation[1]);
     Diagnostics::emit_game_log(wstring_to_string_safe(wmsg).c_str());

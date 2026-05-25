@@ -21,6 +21,10 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call,
     // Initialize and apply all hooks
     HookManager::initialize();
     HookManager::make_hook(g_target_entrypoint);
+    HookManager::make_hook(g_target_game_intro);
+    HookManager::make_hook(g_target_game_login);
+    HookManager::make_hook(g_target_game_server_select);
+    HookManager::make_hook(g_target_game_main_menu);
 
     HookManager::make_syshook(g_ws2_send, 0x01588B9C);
     HookManager::make_syshook(g_ws2_sendto, 0x01588C08);

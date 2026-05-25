@@ -67,7 +67,10 @@ def print_stream_messages(messages: list[dict[str, Any]]) -> dict[str, Any] | No
             line = msg.get("line", "")
             try:
                 event = json.loads(line)
-                print(f"[{event.get('type', 'event')}] {line}")
+                if event.get("type") == "game_state":
+                    print(f"[game_state] {event.get('phase', '?')}")
+                else:
+                    print(f"[{event.get('type', 'event')}] {line}")
             except json.JSONDecodeError:
                 print(line)
             continue

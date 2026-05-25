@@ -1,5 +1,4 @@
 #include "hook_manager.h"
-#include <cstdint>
 #include <libloaderapi.h>
 #include <minwindef.h>
 
