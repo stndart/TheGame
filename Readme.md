@@ -35,4 +35,33 @@ add this to `.vscode/settings.json`:
 
 ### Launch
 
-Use `launch/launch_game.py` to launch the game. Requires priveligies, so gsudo is usefull.
+**One-time elevated daemon** (confirms UAC once; keeps automation unblocked):
+
+```powershell
+gsudo python launch/ctl/thegame_ctl.py -d
+```
+
+**Non-elevated** (agents, scripts) - or use [just](https://github.com/casey/just) from repo root:
+
+```powershell
+just daemon-bg          # once, via gsudo
+just ping
+just diagnostics-run
+just kill
+just copy-logs
+```
+
+Direct Python equivalents:
+
+```powershell
+python launch/ctl/thegame_ctl.py ping
+python launch/ctl/thegame_ctl.py diagnostics-run
+python launch/ctl/thegame_ctl.py kill --all
+python launch/ctl/thegame_ctl.py copy-logs
+```
+
+Session artifacts live under `logs/runs/<run_id>/` (`events.jsonl`, `game_logs.txt`, `game_netlogs.txt`, `meta.json`).
+
+Legacy wrapper (same as `diagnostics-run`): `python launch/diagnostics_controller.py`
+
+Simple launch without diagnostics pipe: `launch/launch_game.py` (may still need the daemon for elevated spawn in some setups).

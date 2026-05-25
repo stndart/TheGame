@@ -1,5 +1,6 @@
 #include "console.h"
 #include "crt/memory.h"
+#include "diagnostics.h"
 #include "hook_manager.h"
 
 #include "system_hooks.h"
@@ -19,6 +20,8 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call,
 
     // Initialize and apply all hooks
     HookManager::initialize();
+    HookManager::make_hook(g_target_entrypoint);
+
     HookManager::make_syshook(g_ws2_send, 0x01588B9C);
     HookManager::make_syshook(g_ws2_sendto, 0x01588C08);
     HookManager::make_syshook(g_ws2_wsasend, 0x01588BF8);
@@ -68,6 +71,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call,
 
   case DLL_PROCESS_DETACH:
     log_message("DLL unloaded - hooks removed");
+    Diagnostics::shutdown();
     if (log_file.is_open()) {
       log_file.close();
     }

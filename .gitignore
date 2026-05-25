@@ -1,2 +1,11 @@
 build
 .vscode
+
+AGENTS.md
+
+GameBryoWebArch/
+
+logs/
+launch/ctl/.thegame-ctl.pid
+__pycache__
+diagnostics_events.jsonl

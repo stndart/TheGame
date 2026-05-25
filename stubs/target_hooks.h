@@ -3,6 +3,8 @@
 
 void __cdecl log_str(void **handle);
 
+extern HookStub g_target_entrypoint;
+
 extern HookStub g_target_w_connect_2;
 extern HookStub g_target_w_connect_3;
 
