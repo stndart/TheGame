@@ -32,3 +32,7 @@ add this to `.vscode/settings.json`:
     ]
 }
 ```
+
+### Launch
+
+Use `launch/launch_game.py` to launch the game. Requires priveligies, so gsudo is usefull.
