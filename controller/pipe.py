@@ -64,7 +64,10 @@ class PipeServer:
 
     def force_disconnect(self):
         # does not wait for client to read. Client would fail afterwards
-        win32pipe.DisconnectNamedPipe(self.pipe)
+        try:
+            win32pipe.DisconnectNamedPipe(self.pipe)
+        except win32pipe.error:
+            pass
 
     def write(self, data: bytes | str):
         if isinstance(data, str):

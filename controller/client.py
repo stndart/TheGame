@@ -1,3 +1,4 @@
+from commands import StopCommand
 from commands.launch import LaunchCommand
 from commands.ping import PingCommand
 from config import Settings
@@ -18,6 +19,10 @@ class Client:
 
         self.pipe = PipeClient(settings.ctl_pipe_name)
         self.pipe.write(LaunchCommand().model_dump_json())
+        print(self.pipe.read())
+
+        self.pipe = PipeClient(settings.ctl_pipe_name)
+        self.pipe.write(StopCommand().model_dump_json())
         print(self.pipe.read())
 
 

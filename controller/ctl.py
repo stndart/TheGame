@@ -3,7 +3,7 @@ import os
 from threading import Thread
 from time import sleep
 
-from commands import State, command_adapter
+from commands import State, StopCommand, command_adapter
 from config import Settings
 from pipe import PipeServer
 
@@ -46,6 +46,10 @@ class Ctl:
 
     def execute_command(self, command: str) -> str:
         command_data = command_adapter.validate_json(command)
+        if isinstance(command_data, StopCommand):
+            self._running = False
+            return json.dumps({"status": "ok"})
+
         try:
             res = command_data.invoke(self.settings, self.state)
         except Exception as e:
