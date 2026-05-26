@@ -3,9 +3,13 @@ build
 
 AGENTS.md
 
+
+__pycache__
+*.egg-info
+
 GameBryoWebArch/
+GITS-FA-emulation/
 
 logs/
 launch/ctl/.thegame-ctl.pid
-__pycache__
 diagnostics_events.jsonl
