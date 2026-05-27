@@ -1,3 +1,6 @@
 [submodule "ctl"]
 	path = ctl
 	url = git@github.com:stndart/GameController.git
+[submodule "server"]
+	path = server
+	url = git@github.com:stndart/TheGameServer.git

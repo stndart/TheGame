@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 3.15)
 project(TheGame LANGUAGES C CXX)
 
+# log_message() uses OutputDebugStringA; diagnostics VEH forwards those to the pipe (duplicate).
+option(THEGAME_NO_OUTPUT_DEBUG_STRING "Omit OutputDebugStringA from log_message" ON)
+# AllocConsole/printf; controller pipe + log files cover the same use case.
+option(THEGAME_NO_CONSOLE "Do not allocate a debug console window" OFF)
+
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Set MSVC runtime library configuration
@@ -9,7 +14,7 @@ if(MSVC)
     add_compile_options(/GS- /EHs)
 endif()
 
-file(GLOB_RECURSE SOURCES src/*.cpp)
+file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
 
 # Create DLL target
 add_library(TheGame SHARED ${SOURCES})
@@ -22,10 +27,16 @@ target_include_directories(TheGame PRIVATE
 
 # Windows-specific settings
 if(WIN32)
-    target_compile_definitions(TheGame PRIVATE 
+    target_compile_definitions(TheGame PRIVATE
         _CRT_SECURE_NO_WARNINGS
         WIN32_LEAN_AND_MEAN
     )
+    if(THEGAME_NO_OUTPUT_DEBUG_STRING)
+        target_compile_definitions(TheGame PRIVATE THEGAME_NO_OUTPUT_DEBUG_STRING)
+    endif()
+    if(THEGAME_NO_CONSOLE)
+        target_compile_definitions(TheGame PRIVATE THEGAME_NO_CONSOLE)
+    endif()
 
     if (MSVC)
         # Add ATL/MFC include path
