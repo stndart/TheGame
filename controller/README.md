@@ -105,10 +105,10 @@ Credentials are read from `store.json` / `.env` (`launch_game`); the CLI does no
 
 ## Troubleshooting
 
-- **daemon not running** — start with `gsudo ctl -d`; client connect times out after 30s by default.
-- **TheGame.dll not found** — `just build-debug` then `just copy-dll`.
-- **wait-for-stage times out** — watch daemon `[stage]` logs; increase `--timeout` or confirm the hooked build is loaded.
-- **No last run for copy-logs** — run `launch` first or pass `--run-id`.
+- **daemon not running** - start with `gsudo ctl -d`; client connect times out after 30s by default.
+- **TheGame.dll not found** - `just build-debug` then `just copy-dll`.
+- **wait-for-stage times out** - watch daemon `[stage]` logs; increase `--timeout` or confirm the hooked build is loaded.
+- **No last run for copy-logs** - run `launch` first or pass `--run-id`.
 
 ## Legacy
 

@@ -46,7 +46,7 @@ Install the controller package and start the elevated daemon once:
 gsudo uv run ctl -d --background
 ```
 
-**Non-elevated** (agents, scripts) — use [just](https://github.com/casey/just) from repo root:
+**Non-elevated** (agents, scripts) - use [just](https://github.com/casey/just) from repo root:
 
 ```powershell
 just daemon-bg    # once, via gsudo
