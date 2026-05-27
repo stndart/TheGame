@@ -18,12 +18,24 @@ default:
 
 mod ctl
 
-# --- server ---
+# --- server (singleton; prefer ensure-serve for agents) ---
 
 serve:
     cd server | uv run serve
 
+# Idempotent: start detached dummy server on :7000 if not already listening.
+ensure-serve:
+    cd server | uv run ensure-serve
+
+serve-status:
+    cd server | uv run serve-status
+
+# Stop server process recorded in ctl/logs/ctl/server.lock (if still alive).
+serve-stop:
+    cd server | uv run serve-stop
+
 hot-serve:
+    @echo "hot-serve reloads on file changes; use ensure-serve for a stable background listener"
     cd server | uv run hot-serve
 
 # --- build (optional helper) ---

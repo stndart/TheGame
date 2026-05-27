@@ -1,5 +1,6 @@
 #include "game/engine/TCPSocket.h"
 #include "diagnostics/handlers.hpp"
+#include "game/net/socket_trace.hpp"
 #include "game/server_override.hpp"
 
 #include <string>
@@ -7,11 +8,8 @@
 #include <winsock2.h>
 
 #include "game/engine/MemoryDefines.h"
-#include "game/engine/String.h"
 #include "game/engine/StringConverters.h"
 // #include "game/engine/WString.h"
-
-#define LOG_CONNECT 1
 
 using sub_t = int(__thiscall *)(void *thisptr, int arg1, void *arg2);
 sub_t sub_D56170 = (sub_t)0xD56170; // original address
@@ -33,47 +31,12 @@ inline std::string to_ip_string(int addr) {
   return res;
 }
 
-void TCPSocket::log_structure() {
-  logf("this addr 0x%p, size %u", this, sizeof(TCPSocket));
-  logf("m_pCallback offset %u, size %u",
-       (int32_t)(&m_pCallback) - (int32_t)this, sizeof(NetCallbackInterface *));
-  logf("m_sendOverlapped offset %u, size %u",
-       (int32_t)(&m_sendOverlapped) - (int32_t)this, sizeof(m_sendOverlapped));
-  logf("m_sendWarningFlag offset %u, size %u",
-       (int32_t)(&m_sendWarningFlag) - (int32_t)this,
-       sizeof(m_sendWarningFlag));
-  logf("m_sendOperationCount offset %u, size %u",
-       (int32_t)(&m_sendOperationCount) - (int32_t)this,
-       sizeof(m_sendOperationCount));
-  logf("m_sendPending offset %u, size %u",
-       (int32_t)(&m_sendPending) - (int32_t)this, sizeof(m_sendPending));
-  logf("m_socketId offset %u, size %u", (int32_t)(&m_socketId) - (int32_t)this,
-       sizeof(m_socketId));
-}
-
-void TCPSocket::log_message_structure(TCPSocket::MessageToSend *message) {
-  logf("Message layout at %p", message);
-  logf("dataSize with offset %u",
-       (int32_t)&message->dataSize - (int32_t)message);
-  logf("externalBufferPtr with offset %u",
-       (int32_t)&message->externalBufferPtr - (int32_t)message);
-  logf("bufferCount with offset %u",
-       (int32_t)&message->bufferCount - (int32_t)message);
-  logf("bufferType with offset %u",
-       (int32_t)&message->bufferType - (int32_t)message);
-  logf("inlineBufferPtr with offset %u",
-       (int32_t)message->inlineBufferPtr - (int32_t)message);
-}
-
 int TCPSocket::Connect(WString wideHostname, int port) {
-  if (LOG_CONNECT)
-    logf("TCPSocket::Connect at %p to %ls:%u", this, wideHostname.c_str(),
-         port);
   if (port == 7000) {
     Diagnostics::emit_game_state("connecting_to_server");
   }
-
-  // log_structure();
+  if (SocketTrace::is_pn_track_port(static_cast<u_short>(port)))
+    SocketTrace::track_connect(m_socketId, static_cast<u_short>(port));
 
   // Convert wide char hostname to multibyte
   MultiByteHolder multibyteHolder;
@@ -81,8 +44,7 @@ int TCPSocket::Connect(WString wideHostname, int port) {
   std::string host = multibyteHolder.current_ptr ? multibyteHolder.current_ptr : "";
   const std::string override_ip = ServerOverride::remap_host(host.c_str());
   if (!override_ip.empty()) {
-    if (LOG_CONNECT)
-      logf("TCPSocket::Connect remap %s -> %s", host.c_str(), override_ip.c_str());
+    logf("TCPSocket::Connect remap %s -> %s", host.c_str(), override_ip.c_str());
     host = override_ip;
   }
 
@@ -119,12 +81,14 @@ int TCPSocket::Connect(WString wideHostname, int port) {
   }
 
   // Set port and attempt connection
-  serverAddr.sin_port = htons(port);
+  serverAddr.sin_port = htons(static_cast<u_short>(port));
+  ServerOverride::remap_sockaddr_in(&serverAddr);
   std::string ipstr =
       to_ip_string(*reinterpret_cast<int *>(&serverAddr.sin_addr));
 
-  if (LOG_CONNECT)
-    logf("Connecting socket %p to addr %s:%u", m_socketId, ipstr.c_str(), port);
+  logf("Connecting socket %p to addr %s:%u", m_socketId, ipstr.c_str(), port);
+  if (port == ServerOverride::kGameLegPort)
+    logf("TCPSocket:27380 target %s:%u", ipstr.c_str(), port);
 
   logns(m_socketId, ipstr.c_str(), port);
 
@@ -133,12 +97,8 @@ int TCPSocket::Connect(WString wideHostname, int port) {
     int error = WSAGetLastError();
     sub_D56170(this, error,
                (void *)0x15DC0F8); // Report connection error
-    if (LOG_CONNECT) {
-      if (error == WSAEWOULDBLOCK || error == WSA_IO_PENDING)
-        logf("Error connecting to %s: %u (expected)", ipstr.c_str(), error);
-      else
-        logf("Error connecting to %s: %u", ipstr.c_str(), error);
-    }
+    if (error != WSAEWOULDBLOCK && error != WSA_IO_PENDING)
+      logf("Error connecting to %s: %u", ipstr.c_str(), error);
     return error;
   }
 
@@ -146,10 +106,6 @@ int TCPSocket::Connect(WString wideHostname, int port) {
 }
 
 int TCPSocket::Send(TCPSocket::MessageToSend *message) {
-  if (LOG_CONNECT)
-    logf("TCPSocket::Send at %p with %p and bufcnt %u", this, message,
-         message->bufferCount);
-
   // Check if we need to send a warning
   if (m_sendWarningFlag) {
     WString warningMsg = L"WARNING: IssueSend is duplicated!";
@@ -183,17 +139,12 @@ int TCPSocket::Send(TCPSocket::MessageToSend *message) {
       lpBuffers = message->inlineBufferPtr;
     }
 
-    if (LOG_CONNECT)
-      logf("handle TCPSocket::Send: obj=%p, socket %p, datasize=%u, "
-           "buffertype=%u, lpBuffers[%u] at %p",
-           this, this->m_socketId, message->dataSize, message->bufferType,
-           message->bufferCount, lpBuffers);
-
+    const bool log_tx = SocketTrace::is_pn_track_port(
+        SocketTrace::peer_port(m_socketId));
     for (size_t i = 0; i < message->bufferCount; ++i) {
-      String s(lpBuffers[i].buf, lpBuffers[i].len);
-      s.TruncateAtFirstOccurrence('\n');
-      s.Truncate(s.GetLength() - 1);
-      logn(this->m_socketId, lpBuffers[i].len, lpBuffers[i].buf);
+      if (log_tx)
+        logn(SocketTrace::net_log_key(m_socketId), lpBuffers[i].len,
+             lpBuffers[i].buf, false);
     }
 
     // Perform overlapped send

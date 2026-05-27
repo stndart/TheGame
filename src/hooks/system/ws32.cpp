@@ -1,130 +1,139 @@
 #include "hook_manager.h"
 #include "system_hooks.h"
-#include <console.h>
+#include "game/net/socket_trace.hpp"
+#include "game/server_override.hpp"
 
-// #include "WinSock2.h"
+#include <console.h>
+#include <winsock2.h>
 #include <windows.h>
 
-#define WS32_SYSLOGS 1
-
-void __cdecl log_parg(void *retaddr, void *p) {
-  if (WS32_SYSLOGS)
-    logf("Call from 0x%p with arg 0x%p", retaddr, p);
-}
+// Set to 1 to log every WS2_32 send/sendto/wsasend call site (very noisy).
+#ifndef WS32_SYSLOGS
+#define WS32_SYSLOGS 0
+#endif
 
 void __cdecl log_parg_n(int i, void *retaddr, void *p) {
-  if (WS32_SYSLOGS)
-    logf("Call[%i] from 0x%p with arg 0x%p", i, retaddr, p);
+#if WS32_SYSLOGS
+  logf("Call[%i] from 0x%p with arg 0x%p", i, retaddr, p);
+#else
+  (void)i;
+  (void)retaddr;
+  (void)p;
+#endif
 }
 
 extern "C" void __declspec(naked) send_syshandle() {
   __asm {
-    pushad // esp += 0x20
-
-    mov eax, [esp + 0x24]; // Socket
-    mov ebx, [esp + 0x20]; // retaddr
+#if WS32_SYSLOGS
+    pushad
+    mov eax, [esp + 0x24]
+    mov ebx, [esp + 0x20]
     push eax
     push ebx
     push 1
     call log_parg_n
-    add esp, 12;
-
-    popad;
-    
+    add esp, 12
+    popad
+#endif
     jmp g_ws2_send.sym_addr
   }
-
-  // comment the previous if you want the logs disabled
-  __asm { jmp g_ws2_send.sym_addr }
 }
 
 extern "C" void __declspec(naked) sendto_syshandle() {
   __asm {
-    pushad // esp += 0x20
-
-    mov eax, [esp + 0x24]; // Socket
-    mov ebx, [esp + 0x20]; // retaddr
+#if WS32_SYSLOGS
+    pushad
+    mov eax, [esp + 0x24]
+    mov ebx, [esp + 0x20]
     push eax
     push ebx
     push 2
     call log_parg_n
-    add esp, 12;
-
-    popad;
-    
+    add esp, 12
+    popad
+#endif
     jmp g_ws2_sendto.sym_addr
   }
-
-  // comment the previous if you want the logs disabled
-  __asm { jmp g_ws2_sendto.sym_addr }
 }
 
 extern "C" void __declspec(naked) wsasend_syshandle() {
   __asm {
-    pushad // esp += 0x20
-
-    mov eax, [esp + 0x24]; // Socket
-    mov ebx, [esp + 0x20]; // retaddr
+#if WS32_SYSLOGS
+    pushad
+    mov eax, [esp + 0x24]
+    mov ebx, [esp + 0x20]
     push eax
     push ebx
     push 3
     call log_parg_n
-    add esp, 12;
-
-    popad;
-    
+    add esp, 12
+    popad
+#endif
     jmp g_ws2_wsasend.sym_addr
   }
-
-  // comment the previous if you want the logs disabled
-  __asm { jmp g_ws2_wsasend.sym_addr }
 }
 
 extern "C" void __declspec(naked) wsasendto_syshandle() {
   __asm {
-    pushad // esp += 0x20
-
-    mov eax, [esp + 0x24]; // Socket
-    mov ebx, [esp + 0x20]; // retaddr
+#if WS32_SYSLOGS
+    pushad
+    mov eax, [esp + 0x24]
+    mov ebx, [esp + 0x20]
     push eax
     push ebx
     push 4
     call log_parg_n
-    add esp, 12;
-
-    popad;
-    
+    add esp, 12
+    popad
+#endif
     jmp g_ws2_wsasendto.sym_addr
   }
-
-  // comment the previous if you want the logs disabled
-  __asm { jmp g_ws2_wsasendto.sym_addr }
 }
 
-extern "C" void __declspec(naked) connect_syshandle() {
-  __asm {
-    pushad // esp += 0x20
+using ConnectFn = int(WINAPI *)(SOCKET, const sockaddr *, int);
 
-    mov eax, [esp + 0x24]; // Socket
-    mov ebx, [esp + 0x20]; // retaddr
-    push eax
-    push ebx
-    push 5
-    call log_parg_n
-    add esp, 12;
+static int WSAAPI connect_forward(SOCKET s, const sockaddr *name, int namelen) {
+  return reinterpret_cast<ConnectFn>(g_ws2_connect.sym_addr)(s, name, namelen);
+}
 
-    popad;
-    
-    jmp g_ws2_connect.sym_addr
+static int WSAAPI connect_with_remap(SOCKET s, const sockaddr *name, int namelen) {
+  sockaddr_in patched{};
+  const sockaddr *peer = name;
+  if (name && namelen >= static_cast<int>(sizeof(sockaddr_in)) &&
+      name->sa_family == AF_INET) {
+    const auto *in = reinterpret_cast<const sockaddr_in *>(name);
+    patched = *in;
+    if (ServerOverride::remap_sockaddr_in(&patched)) {
+      peer = reinterpret_cast<const sockaddr *>(&patched);
+      const u_short port = ntohs(patched.sin_port);
+      if (port == ServerOverride::kGameLegPort) {
+        in_addr was{};
+        was.S_un.S_addr = in->sin_addr.s_addr;
+        logf("connect:27380 %s -> %s", inet_ntoa(was), inet_ntoa(patched.sin_addr));
+      }
+    }
   }
-
-  // comment the previous if you want the logs disabled
-  __asm { jmp g_ws2_connect.sym_addr }
+  const int rc = connect_forward(s, peer, namelen);
+  if (name && namelen >= static_cast<int>(sizeof(sockaddr_in)) &&
+      name->sa_family == AF_INET) {
+    const auto *in = reinterpret_cast<const sockaddr_in *>(peer);
+    const u_short port = ntohs(in->sin_port);
+    if (SocketTrace::is_pn_track_port(port) &&
+        (rc == 0 || WSAGetLastError() == WSAEWOULDBLOCK))
+      SocketTrace::track_connect(s, port);
+  }
+  return rc;
 }
 
-SysHookStub g_ws2_send = {"ws2_32.dll", "send", send_syshandle};          // 1
-SysHookStub g_ws2_sendto = {"ws2_32.dll", "sendto", sendto_syshandle};    // 2
-SysHookStub g_ws2_wsasend = {"ws2_32.dll", "WSASend", wsasend_syshandle}; // 3
-SysHookStub g_ws2_wsasendto = {"ws2_32.dll", "WSASendTo",
-                               wsasendto_syshandle};                      // 4
-SysHookStub g_ws2_connect = {"ws2_32.dll", "connect", connect_syshandle}; // 5
+extern "C" int WSAAPI connect_syshandle(SOCKET s, const sockaddr *name,
+                                        int namelen) {
+  return connect_with_remap(s, name, namelen);
+}
+
+SysHookStub g_ws2_send = {"ws2_32.dll", "send", send_syshandle};
+SysHookStub g_ws2_sendto = {"ws2_32.dll", "sendto", sendto_syshandle};
+SysHookStub g_ws2_wsasend = {"ws2_32.dll", "WSASend", wsasend_syshandle};
+SysHookStub g_ws2_wsasendto = {"ws2_32.dll", "WSASendTo", wsasendto_syshandle};
+SysHookStub g_ws2_connect = {
+    "ws2_32.dll", "connect",
+    reinterpret_cast<void (*)()>(connect_syshandle)};

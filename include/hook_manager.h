@@ -32,6 +32,10 @@ public:
   static bool restore_syshook(SysHookStub &stub);
   static bool restore_all_hooks();
 
+  // Patch every IAT slot for import_dll!symbol in image (GAME.exe or this DLL).
+  static bool hook_import(HMODULE image, const char *import_dll,
+                          const char *symbol, void *detour);
+
 private:
   static bool write_memory(void *address, const void *data, size_t size);
   static bool make_memory_writable(void *address, size_t size);

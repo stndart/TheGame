@@ -10,7 +10,6 @@ extern HookStub g_target_game_login;
 extern HookStub g_target_game_server_select;
 extern HookStub g_target_game_main_menu;
 
-extern HookStub g_target_w_connect_2;
 extern HookStub g_target_w_connect_3;
 
 extern HookStub g_target_EnsureMStringBufferCapacity;
@@ -33,6 +32,12 @@ extern HookStub g_target_rstring_vformat_this;
 
 extern HookStub g_target_TCPSocket_connect;
 extern HookStub g_target_TCPSocket_send;
+
+extern HookStub g_target_fast_wsasend;
+extern HookStub g_target_fast_wsarecv;
+extern HookStub g_target_pn_upnp;
+extern HookStub g_target_pn_select;
+extern HookStub g_target_pn_recv_append;
 
 extern HookStub g_target_send_1;
 extern HookStub g_target_send_2;

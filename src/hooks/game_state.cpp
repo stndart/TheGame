@@ -5,8 +5,8 @@ extern "C" void __cdecl diagnostics_game_state_intro() {
   Diagnostics::emit_game_state("intro");
 }
 
-extern "C" void __cdecl diagnostics_game_state_connecting() {
-  Diagnostics::emit_game_state("connecting_to_server");
+extern "C" void __cdecl diagnostics_game_state_login() {
+  Diagnostics::emit_game_state("login");
 }
 
 extern "C" void __cdecl diagnostics_game_state_shard_choice() {
@@ -38,7 +38,7 @@ extern "C" void __declspec(naked) hook_game_login() {
   __asm {
     pushad
     pushfd
-    call diagnostics_game_state_connecting
+    call diagnostics_game_state_login
     popfd
     popad
 
@@ -86,7 +86,7 @@ HookStub g_target_game_intro = {
     "hook_game_intro",
     {0},
     false,
-    0x42A015,
+    0x42A016,
 };
 
 HookStub g_target_game_login = {
@@ -95,7 +95,7 @@ HookStub g_target_game_login = {
     "hook_game_login",
     {0},
     false,
-    0x42B285,
+    0x42B286,
 };
 
 HookStub g_target_game_server_select = {
@@ -104,7 +104,7 @@ HookStub g_target_game_server_select = {
     "hook_game_server_select",
     {0},
     false,
-    0x4345B5,
+    0x4345B6,
 };
 
 HookStub g_target_game_main_menu = {

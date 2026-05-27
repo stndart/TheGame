@@ -13,14 +13,12 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call,
                       LPVOID lpReserved) {
   switch (ul_reason_for_call) {
   case DLL_PROCESS_ATTACH:
-    // Disable thread notifications for better performance
     DisableThreadLibraryCalls(hModule);
     CRT::init_CRT();
 #ifndef THEGAME_NO_CONSOLE
     create_console();
 #endif
 
-    // Initialize and apply all hooks
     HookManager::initialize();
     HookManager::make_hook(g_target_entrypoint);
     HookManager::make_hook(g_target_game_intro);
@@ -33,10 +31,12 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call,
     HookManager::make_syshook(g_ws2_wsasend, 0x01588BF8);
     HookManager::make_syshook(g_ws2_wsasendto, 0x01588C04);
     HookManager::make_syshook(g_ws2_connect, 0x01588BEC);
+    HookManager::hook_import(GetModuleHandle(nullptr), "WS2_32.dll", "connect",
+                             reinterpret_cast<void *>(connect_syshandle));
+    HookManager::hook_import(hModule, "WS2_32.dll", "connect",
+                             reinterpret_cast<void *>(connect_syshandle));
 
     HookManager::make_hook(g_target_w_strlen);
-
-    HookManager::make_hook(g_target_w_connect_2);
     HookManager::make_hook(g_target_w_connect_3);
 
     HookManager::make_hook(g_target_EnsureMStringBufferCapacity);
@@ -59,18 +59,20 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call,
 
     HookManager::make_hook(g_target_TCPSocket_connect);
     HookManager::make_hook(g_target_TCPSocket_send);
-
-    HookManager::make_hook(g_target_send_1);
-    HookManager::make_hook(g_target_send_2);
+    // Connect path: TCPSocket::Send @ 0xD569C0 (not hook_send_3 — same RVA).
     // HookManager::make_hook(g_target_send_3);
-
+    // hook_send_2 @ 0xD567F0 — PN worker send trace (conflicts with hook_fast_wsasend).
+    HookManager::make_hook(g_target_send_2);
+    HookManager::make_hook(g_target_send_1);
     HookManager::make_hook(g_target_sendto_1);
     HookManager::make_hook(g_target_sendto_2);
     HookManager::make_hook(g_target_sendto_3);
-
+    // HookManager::make_hook(g_target_fast_wsasend);
+    // HookManager::make_hook(g_target_fast_wsarecv);
     // HookManager::make_hook(g_target_recv_1);
-    // HookManager::make_hook(g_target_recvfrom_1);
-    // HookManager::make_hook(g_target_bind_1);
+    HookManager::make_hook(g_target_pn_upnp);
+    HookManager::make_hook(g_target_pn_recv_append);
+    HookManager::make_hook(g_target_pn_select);
 
     log_message("DLL loaded - hooks installed");
     break;

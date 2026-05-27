@@ -42,106 +42,75 @@ void __cdecl handle_sendto_3(void *_this, char *a2, int a3, int16_t a4, int a5,
   SOCKET sock =
       *reinterpret_cast<SOCKET *>(reinterpret_cast<uintptr_t>(_this) + 300);
 
-  logf("handle_sendto_3: obj=%p, socket=%u, a3=%i, a4=%i, a5=%i, "
-       "a6=%i",
-       _this, sock, a3, a4, a5, a6);
+  logf("handle_sendto_3: obj=%p, socket=%u, a3=%i, a4=%i, a5=%i, a6=%i", _this,
+       sock, a3, a4, a5, a6);
 }
 
 extern "C" void __declspec(naked) hook_sendto_1() {
   __asm {
-    // esp += 0x0C
-    pushad ; // esp += 0x20
-
-    // Push arguments in reverse order (__cdecl convention)
-    mov eax, [esp + 0x30] ;
-    push eax;
-    mov eax, [esp + 0x30] ;
-    push eax;
-    mov eax, [esp + 0x30] ;
-    push eax;
-    mov eax, [esp + 0x30] ;
-    push eax;
-    mov eax, [esp + 0x30] ;
-    push eax;
-    push ecx;
-    
-    call handle_sendto_1 ;
-
+    pushad
+    mov eax, [esp + 0x30]
+    push eax
+    mov eax, [esp + 0x30]
+    push eax
+    mov eax, [esp + 0x30]
+    push eax
+    mov eax, [esp + 0x30]
+    push eax
+    mov eax, [esp + 0x30]
+    push eax
+    push ecx
+    call handle_sendto_1
     add esp, 24
-
-    popad ;
-
-    // Execute original instructions that were overwritten
+    popad
     push -1
     push 0x015119B9
-
-    // Jump back to original code after our patch
     jmp [g_target_sendto_1.return_addr]
   }
 }
 
 extern "C" void __declspec(naked) hook_sendto_2() {
   __asm {
-    // esp += 0x0C
-    pushad ; // esp += 0x20
-
-    // Push arguments in reverse order (__cdecl convention)
-    mov eax, [esp + 0x30] ;
-    push eax;
-    mov eax, [esp + 0x30] ;
-    push eax;
-    mov eax, [esp + 0x30] ;
-    push eax;
-    mov eax, [esp + 0x30] ;
-    push eax;
-    mov eax, [esp + 0x30] ;
-    push eax;
-    push ecx;
-    
-    call handle_sendto_2 ;
-
+    pushad
+    mov eax, [esp + 0x30]
+    push eax
+    mov eax, [esp + 0x30]
+    push eax
+    mov eax, [esp + 0x30]
+    push eax
+    mov eax, [esp + 0x30]
+    push eax
+    mov eax, [esp + 0x30]
+    push eax
+    push ecx
+    call handle_sendto_2
     add esp, 24
-
-    popad ;
-
-    // Execute original instructions that were overwritten
+    popad
     sub esp, 0x14
     mov eax, 0x17D4510
-
-    // Jump back to original code after our patch
     jmp [g_target_sendto_2.return_addr]
   }
 }
 
 extern "C" void __declspec(naked) hook_sendto_3() {
   __asm {
-    // esp += 0x0C
-    pushad ; // esp += 0x20
-
-    // Push arguments in reverse order (__cdecl convention)
-    mov eax, [esp + 0x30] ;
-    push eax;
-    mov eax, [esp + 0x30] ;
-    push eax;
-    mov eax, [esp + 0x30] ;
-    push eax;
-    mov eax, [esp + 0x30] ;
-    push eax;
-    mov eax, [esp + 0x30] ;
-    push eax;
-    push ecx;
-    
-    call handle_sendto_3 ;
-
+    pushad
+    mov eax, [esp + 0x30]
+    push eax
+    mov eax, [esp + 0x30]
+    push eax
+    mov eax, [esp + 0x30]
+    push eax
+    mov eax, [esp + 0x30]
+    push eax
+    mov eax, [esp + 0x30]
+    push eax
+    push ecx
+    call handle_sendto_3
     add esp, 24
-
-    popad ;
-
-    // Execute original instructions that were overwritten
+    popad
     push -1
     push 0x15119E9
-
-    // Jump back to original code after our patch
     jmp [g_target_sendto_3.return_addr]
   }
 }
@@ -150,12 +119,10 @@ HookStub g_target_sendto_1 = {
     0xD57590, (uint32_t)(uintptr_t)hook_sendto_1, "hook_sendto_1", {0}, false,
     0xD57597,
 };
-
 HookStub g_target_sendto_2 = {
     0xD577B0, (uint32_t)(uintptr_t)hook_sendto_2, "hook_sendto_2", {0}, false,
     0xD577B8,
 };
-
 HookStub g_target_sendto_3 = {
     0xD57850, (uint32_t)(uintptr_t)hook_sendto_3, "hook_sendto_3", {0}, false,
     0xD57857,

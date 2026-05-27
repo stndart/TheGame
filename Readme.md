@@ -49,8 +49,9 @@ gsudo uv run ctl -d --background
 **Non-elevated** (agents, scripts) - use [just](https://github.com/casey/just) from repo root:
 
 ```powershell
-just daemon-bg    # once, via gsudo
+just daemon-bg    # once, via gsudo (skips if already up)
 just ping
+just ensure-serve # once, dummy server on :7000 (skips if already listening)
 just run-session  # copy-dll → launch → wait-menu → kill → copy-logs
 ```
 

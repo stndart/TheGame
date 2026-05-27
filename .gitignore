@@ -13,7 +13,7 @@ ProudNet/
 gamebryo-v3.2.0.661/
 
 logs/
-launch/ctl/.thegame-ctl.pid
+ctl/logs/
 diagnostics_events.jsonl
 
 # Agent investigation journals (local); template and long/ readme are tracked

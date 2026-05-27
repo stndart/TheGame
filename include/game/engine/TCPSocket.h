@@ -58,9 +58,6 @@ public:
   TCPSocket(uint16_t listenPort) {}; // TODO
   ~TCPSocket() {};                   // TODO
 
-  void log_structure();
-  void log_message_structure(MessageToSend *message);
-
   int _Send();          // TODO // sub_CF3290, sub_D567F0
   int _SendTo();        // TODO // sub_D57590, sub_D577B0, sub_D57850
   int _Recv();          // TODO // sub_D56470

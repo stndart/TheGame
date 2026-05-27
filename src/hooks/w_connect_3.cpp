@@ -1,13 +1,20 @@
 #include "console.h"
+#include "game/server_override.hpp"
 #include "target_hooks.h"
 
 #include "WinSock2.h"
 
 void __cdecl handle_w_connect_3(DWORD *this_p, int namelen) {
-  sockaddr *name = reinterpret_cast<sockaddr *>(this_p + 1);
-  SOCKET *sock = reinterpret_cast<SOCKET *>(this_p + 5);
-  logf("w_connect_3: this=%p, sock='%s', sa_fam=%u, sa_data=%s, size(16)=%i",
-       this_p, sock, name->sa_family, name->sa_data, namelen);
+  auto *name = reinterpret_cast<sockaddr *>(this_p + 1);
+  if (namelen >= static_cast<int>(sizeof(sockaddr_in)) &&
+      name->sa_family == AF_INET) {
+    auto *in = reinterpret_cast<sockaddr_in *>(name);
+    const u_short port = ntohs(in->sin_port);
+    in_addr was = in->sin_addr;
+    if (ServerOverride::remap_sockaddr_in(in) &&
+        port == ServerOverride::kGameLegPort)
+      logf("w_connect_3:27380 %s -> %s", inet_ntoa(was), inet_ntoa(in->sin_addr));
+  }
 }
 
 extern "C" void __declspec(naked) hook_w_connect_3() {
