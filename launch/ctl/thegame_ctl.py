@@ -129,8 +129,12 @@ def build_parser() -> argparse.ArgumentParser:
     diag_p.add_argument("--session-token", default=None)
     diag_p.add_argument("--username", default=None)
     diag_p.add_argument("--password", default=None)
-    diag_p.add_argument("--run-id", default=None, help="Run folder name under logs/runs/")
-    diag_p.add_argument("--run-dir", type=Path, default=None, help="Advanced run directory override.")
+    diag_p.add_argument(
+        "--run-id", default=None, help="Run folder name under logs/runs/"
+    )
+    diag_p.add_argument(
+        "--run-dir", type=Path, default=None, help="Advanced run directory override."
+    )
     diag_p.add_argument(
         "--dll-config",
         choices=sorted(paths.DLL_CONFIGS),

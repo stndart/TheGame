@@ -26,7 +26,6 @@ if str(_LAUNCH_DIR) not in sys.path:
     sys.path.insert(0, str(_LAUNCH_DIR))
 import launch_game  # noqa: E402
 
-
 ProgressFn = Callable[[str], None]
 EventFn = Callable[[str], None]
 
@@ -106,9 +105,7 @@ def read_events_to_file(
                     event = json.loads(line)
                     if event.get("type") == "game_state":
                         phase = str(event.get("phase", ""))
-                        if phase and (
-                            not game_states or game_states[-1] != phase
-                        ):
+                        if phase and (not game_states or game_states[-1] != phase):
                             game_states.append(phase)
                 except json.JSONDecodeError:
                     pass

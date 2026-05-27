@@ -87,13 +87,17 @@ def handle_request(
             result = cmd_diagnostics_run(args, write_stream=stream, req_id=req_id)
             write_line(handle, encode_response(req_id, ok=True, result=result))
         except Exception as e:
-            log_daemon(f"diagnostics_run error: {e}\n{traceback.format_exc()}", log_file)
+            log_daemon(
+                f"diagnostics_run error: {e}\n{traceback.format_exc()}", log_file
+            )
             write_line(handle, encode_response(req_id, ok=False, error=str(e)))
         return True
 
     handler = HANDLERS.get(cmd)
     if not handler:
-        write_line(handle, encode_response(req_id, ok=False, error=f"unknown cmd: {cmd}"))
+        write_line(
+            handle, encode_response(req_id, ok=False, error=f"unknown cmd: {cmd}")
+        )
         return True
 
     try:

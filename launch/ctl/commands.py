@@ -10,13 +10,14 @@ from pathlib import Path
 from typing import Any, Callable
 
 import paths
-from protocol import encode_response
 from diagnostics_session import (
     DiagnosticsSessionConfig,
     copy_dll,
     copy_game_logs_to_run,
     run_diagnostics_session,
 )
+from protocol import encode_response
+
 _LAUNCH_DIR = paths.LAUNCH_DIR
 if str(_LAUNCH_DIR) not in sys.path:
     sys.path.insert(0, str(_LAUNCH_DIR))
@@ -106,14 +107,10 @@ def cmd_diagnostics_run(
     run_id = args.get("run_id") or paths.new_run_id()
 
     def on_progress(msg: str) -> None:
-        write_stream(
-            encode_response(req_id, ok=True, msg_type="progress", message=msg)
-        )
+        write_stream(encode_response(req_id, ok=True, msg_type="progress", message=msg))
 
     def on_event(line: str) -> None:
-        write_stream(
-            encode_response(req_id, ok=True, msg_type="event", line=line)
-        )
+        write_stream(encode_response(req_id, ok=True, msg_type="event", line=line))
 
     config = DiagnosticsSessionConfig(
         game_exe=game_exe,
@@ -126,9 +123,7 @@ def cmd_diagnostics_run(
         no_copy_dll=bool(args.get("no_copy_dll")),
         collect_game_logs=not bool(args.get("no_collect_game_logs")),
     )
-    return run_diagnostics_session(
-        config, on_progress=on_progress, on_event=on_event
-    )
+    return run_diagnostics_session(config, on_progress=on_progress, on_event=on_event)
 
 
 HANDLERS: dict[str, Callable[..., dict[str, Any]]] = {

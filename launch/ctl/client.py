@@ -23,8 +23,7 @@ if str(_LAUNCH_DIR) not in sys.path:
 import launch_game  # noqa: E402
 
 DAEMON_HINT = (
-    "daemon not running; start once with:\n"
-    "  gsudo python launch/ctl/thegame_ctl.py -d"
+    "daemon not running; start once with:\n  gsudo python launch/ctl/thegame_ctl.py -d"
 )
 
 
@@ -32,7 +31,9 @@ class DaemonNotRunningError(RuntimeError):
     pass
 
 
-def rpc(req_id: int, cmd: str, args: dict[str, Any] | None = None) -> list[dict[str, Any]]:
+def rpc(
+    req_id: int, cmd: str, args: dict[str, Any] | None = None
+) -> list[dict[str, Any]]:
     if not daemon_pid_running(paths.PID_FILE):
         raise DaemonNotRunningError(DAEMON_HINT)
 
@@ -224,8 +225,5 @@ def cmd_diagnostics_run(
     if not final or not final.get("ok"):
         return 1
     result = final["result"]
-    print(
-        f"done: events={result.get('events')} "
-        f"dir={result.get('run_dir')}"
-    )
+    print(f"done: events={result.get('events')} dir={result.get('run_dir')}")
     return 0

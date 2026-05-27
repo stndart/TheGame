@@ -23,7 +23,6 @@ for p in (_LAUNCH_DIR, _CTL_DIR, _REPO_ROOT):
         sys.path.insert(0, str(p))
 
 import launch_game  # noqa: E402
-
 import paths as ctl_paths  # noqa: E402
 from client import DaemonNotRunningError, cmd_diagnostics_run  # noqa: E402
 
@@ -50,7 +49,9 @@ def main() -> int:
         default=None,
         help="Account session token (login uuid). Default: store.json next to launcher",
     )
-    parser.add_argument("--username", default=None, help="Login instead of store.json session")
+    parser.add_argument(
+        "--username", default=None, help="Login instead of store.json session"
+    )
     parser.add_argument("--password", default=None, help="Password for --username")
     parser.add_argument(
         "--dll-config",

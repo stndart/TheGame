@@ -7,7 +7,9 @@ from typing import Any
 
 
 def encode_request(req_id: int, cmd: str, args: dict[str, Any] | None = None) -> str:
-    return json.dumps({"id": req_id, "cmd": cmd, "args": args or {}}, separators=(",", ":"))
+    return json.dumps(
+        {"id": req_id, "cmd": cmd, "args": args or {}}, separators=(",", ":")
+    )
 
 
 def encode_response(

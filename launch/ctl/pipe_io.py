@@ -120,9 +120,7 @@ def _ctl_pipe_security_attributes() -> SECURITY_ATTRIBUTES:
 
     sa = SECURITY_ATTRIBUTES()
     sa.nLength = ctypes.sizeof(SECURITY_ATTRIBUTES)
-    sa.lpSecurityDescriptor = ctypes.cast(
-        ctypes.byref(_ctl_pipe_sd), wintypes.LPVOID
-    )
+    sa.lpSecurityDescriptor = ctypes.cast(ctypes.byref(_ctl_pipe_sd), wintypes.LPVOID)
     sa.bInheritHandle = False
     _ctl_pipe_sa = sa
     return sa
