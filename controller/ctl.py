@@ -1,6 +1,9 @@
+"""Elevated thegame-ctl daemon: named-pipe RPC and diagnostics session state."""
+
+from __future__ import annotations
+
 import json
 import os
-from threading import Thread
 from time import sleep
 
 from commands import State, StopCommand, command_adapter
@@ -9,12 +12,12 @@ from pipe import PipeServer
 
 
 class Ctl:
+    """Accepts JSON commands on the control pipe and mutates shared session state."""
+
     settings: Settings
     ctl_pipe: PipeServer
     diag_pipe: PipeServer
     state: State
-
-    ctl_thread: Thread
     _running: bool = False
 
     def __init__(self, settings: Settings):
@@ -23,7 +26,7 @@ class Ctl:
         self.diag_pipe = PipeServer(settings.diagnostics_pipe_name)
         self.state = State(self.diag_pipe)
 
-    def run_daemon(self):
+    def run_daemon(self) -> None:
         self._running = True
         print(
             f"thegame-ctl daemon pid={os.getpid()} pipe={self.settings.ctl_pipe_name}"
@@ -63,9 +66,8 @@ class Ctl:
         return json.dumps({"status": "ok", **json.loads(res)})
 
 
-def main():
-    ctl = Ctl(Settings())
-    ctl.run_daemon()
+def main() -> None:
+    Ctl(Settings()).run_daemon()
 
 
 if __name__ == "__main__":

@@ -27,9 +27,13 @@ def _pipe_security_attributes() -> _win32typing.PySECURITY_ATTRIBUTES:
 
 
 class PipeServer:
+    """Named pipe server for ctl or diagnostics sessions."""
+
     pipe: int  # pipe handle
+    _pending: bytes
 
     def __init__(self, name: str):
+        self._pending = b""
         self.pipe = win32pipe.CreateNamedPipe(
             _pipe_name(name),
             win32pipe.PIPE_ACCESS_DUPLEX,
@@ -78,6 +82,36 @@ class PipeServer:
         pending, message = win32file.ReadFile(self.pipe, 4096)
         message = cast(bytes, message)
         return message.decode("utf-8")
+
+    def read_line(self) -> str | None:
+        """Read one newline-delimited line; None on pipe close."""
+        while True:
+            if b"\n" in self._pending:
+                raw, self._pending = self._pending.split(b"\n", 1)
+                line = raw.decode("utf-8", errors="replace").rstrip("\r")
+                return line if line else None
+
+            try:
+                _hr, chunk = win32file.ReadFile(self.pipe, 4096)
+            except win32file.error as e:
+                if e.winerror == ERROR_BROKEN_PIPE:
+                    if self._pending:
+                        line = self._pending.decode("utf-8", errors="replace").rstrip(
+                            "\r"
+                        )
+                        self._pending = b""
+                        return line if line else None
+                    return None
+                raise
+
+            chunk = cast(bytes, chunk)
+            if not chunk:
+                if self._pending:
+                    line = self._pending.decode("utf-8", errors="replace").rstrip("\r")
+                    self._pending = b""
+                    return line if line else None
+                return None
+            self._pending += chunk
 
 
 class PipeClient:

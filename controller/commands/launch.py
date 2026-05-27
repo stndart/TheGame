@@ -1,7 +1,11 @@
+"""Launch GAME.exe via GameLauncher with fresh launch credentials."""
+
+from __future__ import annotations
+
 import urllib.error
 from json import dumps
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
 from config import Settings
 from launch_game import (
@@ -16,6 +20,7 @@ from launch_game import (
 )
 
 from .common import Command
+from .copy_logs import clear_shipping_game_logs
 from .state import CommandError, State
 
 
@@ -41,6 +46,7 @@ class LaunchCommand(Command):
         if not game_exe.is_file():
             raise LaunchCommandError("GAME.exe not found")
 
+        launch_data: dict[str, Any] = {}
         try:
             if not self.offline:
                 account_token = load_account_token(launch_settings)
@@ -52,6 +58,7 @@ class LaunchCommand(Command):
             server_ip = resolve_server_ip(launch_settings, self.server_ip, launch_data)
             kernel_check_disable = launch_data.get("kernel_check_disable") is True
 
+            clear_shipping_game_logs(game_exe)
             write_config(launch_settings, game_exe, launch_token, server_ip)
             proc = spawn_game_launcher(
                 launch_settings, launch_token, kernel_check_disable
@@ -66,4 +73,10 @@ class LaunchCommand(Command):
             f"game={game_exe} server={server_ip} "
             f"kernel_check_disable={kernel_check_disable} pid={proc.pid}"
         )
-        return dumps({"run_id": state.run_id, "pid": proc.pid})
+        return dumps(
+            {
+                "run_id": state.run_id,
+                "pid": proc.pid,
+                "run_dir": str(state.run_dir_path) if state.run_dir_path else None,
+            }
+        )

@@ -1,3 +1,7 @@
+"""Copy shipping game logs into the run directory."""
+
+from __future__ import annotations
+
 import shutil
 from json import dumps
 from pathlib import Path
@@ -10,6 +14,8 @@ from paths import (
     GAME_NETLOGS_FILE,
     SHIPPING_LOGS_FILE,
     SHIPPING_NETLOGS_FILE,
+    merge_meta,
+    resolve_run_id,
     run_dir,
 )
 
@@ -19,6 +25,14 @@ from .state import CommandError, State
 
 class CopyLogsCommandError(CommandError):
     pass
+
+
+def clear_shipping_game_logs(game_exe: Path) -> None:
+    shipping = game_exe.parent
+    for name in (SHIPPING_LOGS_FILE, SHIPPING_NETLOGS_FILE):
+        path = shipping / name
+        if path.is_file():
+            path.unlink()
 
 
 def copy_game_logs_to_run(game_exe: Path, run_id: str) -> dict[str, str]:
@@ -44,9 +58,10 @@ class CopyLogsCommand(Command):
     game_exe: str | None = None
 
     def invoke(self, settings: Settings, state: State) -> str:
-        run_id = self.run_id or state.run_id
-        if run_id is None:
-            raise CopyLogsCommandError("No run_id; launch the game first or pass run_id")
+        try:
+            run_id = resolve_run_id(self.run_id or state.run_id)
+        except ValueError as e:
+            raise CopyLogsCommandError(str(e)) from e
 
         launch_settings = LaunchSettings()
         if self.game_exe is not None:
@@ -54,4 +69,7 @@ class CopyLogsCommand(Command):
 
         game_exe = launch_settings.GAME_PATH.resolve()
         copied = copy_game_logs_to_run(game_exe, run_id)
+        if copied:
+            merge_meta(run_id, {"game_logs": copied})
+
         return dumps({"run_id": run_id, "copied": copied})

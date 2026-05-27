@@ -1,16 +1,14 @@
-# FA-EMU launch control - wraps launch/ctl/thegame_ctl.py (PowerShell on Windows).
+# FA-EMU launch control via controller/ (pip install -e . → `ctl` on PATH).
 #
 # One-time elevated daemon:
 #   just daemon-bg
 # Then (non-elevated):
 #   just ping
-#   just diagnostics-run
-#   just kill
+#   just run-session
 
 set windows-shell := ["powershell.exe", "-NoLogo", "-Command"]
 
-python := "python"
-ctl := "launch/ctl/thegame_ctl.py"
+ctl := "uv run ctl"
 game_exe := 'G:\Games\FA\FA-EMU\Shipping\GAME.exe'
 
 default:
@@ -18,55 +16,62 @@ default:
 
 # --- daemon (elevated; gsudo / UAC once) ---
 
-# Foreground daemon (blocks terminal)
 daemon:
-    gsudo {{python}} {{ctl}} -d
+    gsudo {{ctl}} -d
 
-# Detached daemon (recommended)
 daemon-bg:
-    gsudo {{python}} {{ctl}} -d --background
+    gsudo {{ctl}} -d --background
 
 # --- client (non-elevated; requires daemon) ---
 
 ping:
-    {{python}} {{ctl}} ping
+    {{ctl}} ping
+
+processes:
+    {{ctl}} processes
 
 status:
-    {{python}} {{ctl}} status
+    {{ctl}} status
+
+stages:
+    {{ctl}} stages
+
+stop:
+    {{ctl}} stop
 
 kill:
-    {{python}} {{ctl}} kill --all
+    {{ctl}} kill
 
-# Stops the daemon
-stop:
-    {{python}} {{ctl}} stop
+kill-all:
+    {{ctl}} kill --all
 
 copy-dll dll_config="debug":
-    {{python}} {{ctl}} copy-dll --dll-config {{dll_config}} -p "{{game_exe}}"
+    {{ctl}} copy-dll --dll-config {{dll_config}} -p "{{game_exe}}"
 
-copy-dll-release:
-    just copy-dll dll_config=release
-
-# Uses logs/ctl/last_run.json when run_id omitted
 copy-logs:
-    {{python}} {{ctl}} copy-logs -p "{{game_exe}}"
+    {{ctl}} copy-logs -p "{{game_exe}}"
 
 copy-logs-run run_id:
-    {{python}} {{ctl}} copy-logs --run-id {{run_id}} -p "{{game_exe}}"
+    {{ctl}} copy-logs --run-id {{run_id}} -p "{{game_exe}}"
 
-diagnostics-run dll_config="debug":
-    {{python}} {{ctl}} diagnostics-run --dll-config {{dll_config}} -p "{{game_exe}}"
+launch server_ip="":
+    {{ctl}} launch -p "{{game_exe}}" -s "{{server_ip}}"
 
-diagnostics-run-release:
-    just diagnostics-run dll_config=release
+launch-offline server_ip="127.0.0.1":
+    {{ctl}} launch -p "{{game_exe}}" -s "{{server_ip}}" --offline
 
-# Pass extra flags through, e.g.: just diagnostics-run-args --run-id 20260525T113124Z
-diagnostics-run-args *ARGS:
-    {{python}} {{ctl}} diagnostics-run -p "{{game_exe}}" {{ARGS}}
+wait-menu:
+    {{ctl}} wait-for-stage main_menu --timeout 120
 
-# Legacy wrapper (same RPC as diagnostics-run)
-diagnostics-controller *ARGS:
-    {{python}} launch/diagnostics_controller.py {{ARGS}}
+wait-stage stage timeout="120":
+    {{ctl}} wait-for-stage {{stage}} --timeout {{timeout}}
+
+run-session dll_config="debug":
+    just copy-dll dll_config={{dll_config}}
+    just launch
+    just wait-menu
+    just kill-all
+    just copy-logs
 
 # --- build (optional helper) ---
 

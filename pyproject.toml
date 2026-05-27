@@ -23,8 +23,7 @@ dev = [
 where = ["controller"]
 
 [project.scripts]
-ctl = "ctl:main"
-client = "client:main"
+ctl = "cli:main"
 
 [tool.ruff]
 target-version = 'py312'

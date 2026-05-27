@@ -1,3 +1,7 @@
+"""Kill game processes (tracked launcher PID or by image name)."""
+
+from __future__ import annotations
+
 import subprocess
 from json import dumps
 from typing import Any, Literal
@@ -6,7 +10,7 @@ from config import Settings
 
 from .common import Command
 from .processes import DEFAULT_KILL_IMAGES
-from .state import CommandError, State
+from .state import CommandError, State, Status
 
 
 class KillCommandError(CommandError):
@@ -50,8 +54,8 @@ class KillCommand(Command):
     def invoke(self, settings: Settings, state: State) -> str:
         if self.all:
             killed = [_taskkill_by_image(image) for image in DEFAULT_KILL_IMAGES]
-            if state.game_pid is not None:
-                state.stop()
+            if state.status == Status.started:
+                state.end_session()
             return dumps({"killed": killed})
 
         if state.game_pid is None:
@@ -59,5 +63,5 @@ class KillCommand(Command):
 
         pid = state.game_pid
         result = _taskkill_by_pid(pid)
-        state.stop()
+        state.end_session()
         return dumps({"killed": [result]})

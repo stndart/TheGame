@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file="ctl.env")
 
     ctl_pipe_name: str = "thegame-ctl"
-    diagnostics_pipe_name: str = r"\\.\pipe\thegame-diagnostics"
+    diagnostics_pipe_name: str = "thegame-diagnostics"
 
     dll_debug_path: Path = (
         REPO_ROOT / "build" / "msvc-x86-debug" / "bin" / "TheGame.dll"
