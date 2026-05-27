@@ -1,4 +1,5 @@
 import urllib.error
+from json import dumps
 from pathlib import Path
 from typing import Literal
 
@@ -61,7 +62,8 @@ class LaunchCommand(Command):
         state.start(proc.pid)
 
         print(
-            f"config={launch_settings.get_config_path()} game={game_exe} server={server_ip} "
+            f"run_id={state.run_id} config={launch_settings.get_config_path()} "
+            f"game={game_exe} server={server_ip} "
             f"kernel_check_disable={kernel_check_disable} pid={proc.pid}"
         )
-        return f"Game is launched: pid={proc.pid}"
+        return dumps({"run_id": state.run_id, "pid": proc.pid})

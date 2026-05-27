@@ -13,6 +13,7 @@ class StatusCommand(Command):
     def invoke(self, settings: Settings, state: State) -> str:
         return dumps(
             {
+                "run_id": state.run_id,
                 "game_status": state.status,
                 "game_pid": state.game_pid,
                 "log_filepath": (

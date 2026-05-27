@@ -5,6 +5,8 @@ from pydantic import TypeAdapter
 
 from .common import Command
 from .copy_dll import CopyDllCommand
+from .copy_logs import CopyLogsCommand
+from .kill import KillCommand
 from .launch import LaunchCommand
 from .ping import PingCommand
 from .processes import ProcessesCommand
@@ -25,6 +27,8 @@ command_adapter = TypeAdapter(
     | ProcessesCommand
     | StatusCommand
     | CopyDllCommand
+    | CopyLogsCommand
+    | KillCommand
     | StopCommand
 )
 
