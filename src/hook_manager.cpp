@@ -1,5 +1,4 @@
 #include "hook_manager.h"
-#include <cstdint>
 #include <libloaderapi.h>
 #include <minwindef.h>
 
@@ -61,7 +60,8 @@ bool HookManager::restore_hook(HookStub &stub) {
     return true;
 
   HMODULE main_module = GetModuleHandle(nullptr);
-  BYTE *target_address = reinterpret_cast<BYTE *>(stub.addr);
+  BYTE *target_address = reinterpret_cast<BYTE *>(
+      stub.addr + (int32_t)main_module - (int32_t)0x400000);
 
   if (!make_memory_writable(target_address, sizeof(stub.original_bytes))) {
     return false;
@@ -144,6 +144,11 @@ bool HookManager::restore_all_hooks() {
   for (auto hook : HookManager::hooks) {
     if (hook) {
       status = status && HookManager::restore_hook(*hook);
+    }
+  }
+  for (auto syshook : HookManager::syshooks) {
+    if (syshook) {
+      status = status && HookManager::restore_syshook(*syshook);
     }
   }
   return status;

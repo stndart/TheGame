@@ -1,6 +1,6 @@
 #include <windows.h>
 
-#include "console.h"
+#include "console.h" // IWYU pragma: keep
 #include "target_hooks.h"
 
 unsigned int __cdecl handle_w_strlen(const char *str) {

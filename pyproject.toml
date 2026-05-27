@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools >= 77.0.3"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "thegame"
+version = "0.1.0"
+requires-python = ">=3.10"
+dependencies = [
+    "pydantic>=2.13.4",
+    "pydantic-settings>=2.14.1",
+    "pywin32>=311",
+    "types-pywin32>=311.0.0.20260521",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.15.14",
+    "ty>=0.0.39",
+]
+
+[tool.setuptools.packages.find]
+where = ["controller"]
+
+[project.scripts]
+ctl = "cli:main"
+
+[tool.ruff]
+target-version = 'py312'
+extend-include = ["*.ipynb"]
+exclude = [
+    '.git',
+    '.ruff_cache',
+    '.venv',
+    'celery-exporter',
+]
+
+# Configure double quotes
+[tool.ruff.format]
+quote-style = 'double'
+
+[tool.ruff.lint]
+extend-select = ["I"]
+
+[tool.ty.environment]
+python-version = '3.12'
+root = ["./controller"]
+
+[tool.ty.src]
+exclude = ["src/"]

@@ -1,6 +1,8 @@
 #include "console.h"
 #include <windows.h>
 
+#include "diagnostics/handlers.hpp"
+
 #include <iomanip>
 
 void create_console() {
@@ -28,6 +30,7 @@ void log_message(const char *message) {
     log_file.open("logs.txt", std::ios::app);
   }
   log_file << message << std::endl;
+  Diagnostics::emit_game_log(message);
 }
 
 void logf(const char *format, ...) {

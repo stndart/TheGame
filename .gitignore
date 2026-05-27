@@ -1,2 +1,21 @@
 build
 .vscode
+
+AGENTS.md
+
+
+__pycache__
+*.egg-info
+
+GameBryoWebArch/
+GITS-FA-emulation/
+
+logs/
+launch/ctl/.thegame-ctl.pid
+diagnostics_events.jsonl
+
+# Agent investigation journals (local); template and long/ readme are tracked
+journals/*
+!journals/template.md
+!journals/long/
+!journals/long/README.md
