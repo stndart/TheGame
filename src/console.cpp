@@ -6,6 +6,7 @@
 #include <iomanip>
 
 void create_console() {
+#ifndef THEGAME_NO_CONSOLE
   if (console_created)
     return;
 
@@ -14,17 +15,16 @@ void create_console() {
   freopen("CONOUT$", "w", stderr);
 
   console_created = true;
+#endif
 }
 
 void log_message(const char *message) {
-  // Create console on first log
+#ifndef THEGAME_NO_CONSOLE
   if (!console_created) {
     create_console();
   }
-
   printf("%s\n", message);
-  OutputDebugStringA(message);
-
+#endif
   // Write to file (auto-flushes with endl)
   if (!log_file.is_open()) {
     log_file.open("logs.txt", std::ios::app);

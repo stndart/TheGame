@@ -16,7 +16,9 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call,
     // Disable thread notifications for better performance
     DisableThreadLibraryCalls(hModule);
     CRT::init_CRT();
+#ifndef THEGAME_NO_CONSOLE
     create_console();
+#endif
 
     // Initialize and apply all hooks
     HookManager::initialize();
@@ -79,9 +81,11 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call,
     if (log_file.is_open()) {
       log_file.close();
     }
+#ifndef THEGAME_NO_CONSOLE
     if (console_created) {
       FreeConsole();
     }
+#endif
 
     HookManager::restore_all_hooks();
     break;

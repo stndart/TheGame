@@ -11,21 +11,40 @@ namespace {
 constexpr DWORD kDbgPrintExceptionC = 0x40010006;
 constexpr DWORD kDbgPrintExceptionWideC = 0x4001000A;
 
+// Re-entrancy guard: emit_game_log / pipe I/O must not recurse through this VEH.
+thread_local bool g_in_vectored_handler = false;
+
+bool is_dbgprint_exception(DWORD code) {
+  return code == kDbgPrintExceptionC || code == kDbgPrintExceptionWideC;
+}
+
 LONG WINAPI vectored_exception_handler(EXCEPTION_POINTERS *info) {
+  if (g_in_vectored_handler)
+    return EXCEPTION_CONTINUE_SEARCH;
+  g_in_vectored_handler = true;
+
   EXCEPTION_RECORD *rec = info->ExceptionRecord;
-  if (rec->ExceptionCode == kDbgPrintExceptionC && rec->NumberParameters >= 2) {
+  const DWORD code = rec->ExceptionCode;
+
+  if (code == kDbgPrintExceptionC && rec->NumberParameters >= 2) {
     const char *msg =
         reinterpret_cast<const char *>(rec->ExceptionInformation[1]);
     Diagnostics::emit_game_log(string_to_string_safe(msg).c_str());
+    g_in_vectored_handler = false;
+    return EXCEPTION_CONTINUE_SEARCH;
   }
-  if (rec->ExceptionCode == kDbgPrintExceptionWideC &&
-      rec->NumberParameters >= 2) {
+  if (code == kDbgPrintExceptionWideC && rec->NumberParameters >= 2) {
     const wchar_t *wmsg =
         reinterpret_cast<const wchar_t *>(rec->ExceptionInformation[1]);
     Diagnostics::emit_game_log(wstring_to_string_safe(wmsg).c_str());
+    g_in_vectored_handler = false;
+    return EXCEPTION_CONTINUE_SEARCH;
   }
 
-  Diagnostics::emit_exception_event("exception", info);
+  if (!is_dbgprint_exception(code))
+    Diagnostics::emit_exception_event("exception", info);
+
+  g_in_vectored_handler = false;
   return EXCEPTION_CONTINUE_SEARCH;
 }
 
@@ -40,6 +59,7 @@ namespace Diagnostics {
 
 PVOID g_veh_handle = nullptr;
 LONG g_handling_exception = 0;
+bool g_diagnostics_started = false;
 char g_last_game_phase[32] = "";
 
 NamedPipe *g_pipe = nullptr;
@@ -47,19 +67,19 @@ NamedPipe *g_pipe = nullptr;
 NamedPipe *connect_pipe() {
   if (!g_pipe) {
     g_pipe = new NamedPipe(kPipeName);
-    if (!g_pipe)
-      return nullptr;
   }
-  if (!g_pipe->connect_pipe()) {
-    delete g_pipe;
-    g_pipe = nullptr;
+  if (!g_pipe || !g_pipe->connect_pipe())
     return nullptr;
-  }
   return g_pipe;
 }
 
 void startup() {
-  g_veh_handle = AddVectoredExceptionHandler(1, vectored_exception_handler);
+  if (g_diagnostics_started)
+    return;
+  g_diagnostics_started = true;
+
+  if (!g_veh_handle)
+    g_veh_handle = AddVectoredExceptionHandler(1, vectored_exception_handler);
   SetUnhandledExceptionFilter(unhandled_exception_handler);
 
   g_pipe = connect_pipe();
@@ -76,6 +96,8 @@ void startup() {
 }
 
 void teardown() {
+  g_diagnostics_started = false;
+
   if (g_veh_handle) {
     RemoveVectoredExceptionHandler(g_veh_handle);
     g_veh_handle = nullptr;
