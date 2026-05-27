@@ -37,6 +37,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call,
                              reinterpret_cast<void *>(connect_syshandle));
 
     HookManager::make_hook(g_target_w_strlen);
+    HookManager::make_hook(g_target_w_connect_2);
     HookManager::make_hook(g_target_w_connect_3);
 
     HookManager::make_hook(g_target_EnsureMStringBufferCapacity);
@@ -61,7 +62,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call,
     HookManager::make_hook(g_target_TCPSocket_send);
     // Connect path: TCPSocket::Send @ 0xD569C0 (not hook_send_3 — same RVA).
     // HookManager::make_hook(g_target_send_3);
-    // hook_send_2 @ 0xD567F0 — PN worker send trace (conflicts with hook_fast_wsasend).
+    // w_wsasend_1 @ 0xD567F0 — PNFastSocket::send (do not also enable hook_fast_wsasend).
     HookManager::make_hook(g_target_send_2);
     HookManager::make_hook(g_target_send_1);
     HookManager::make_hook(g_target_sendto_1);

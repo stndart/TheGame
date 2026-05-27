@@ -10,6 +10,7 @@ extern HookStub g_target_game_login;
 extern HookStub g_target_game_server_select;
 extern HookStub g_target_game_main_menu;
 
+extern HookStub g_target_w_connect_2;
 extern HookStub g_target_w_connect_3;
 
 extern HookStub g_target_EnsureMStringBufferCapacity;

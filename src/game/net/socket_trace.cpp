@@ -7,6 +7,7 @@
 namespace {
 
 std::unordered_map<u_short, std::unordered_set<SOCKET>> g_sockets_by_port;
+void *g_last_fast_socket_ctx = nullptr;
 
 } // namespace
 
@@ -98,6 +99,14 @@ static SOCKET pick_tracked_entry_socket() {
       return tracked;
   }
   return INVALID_SOCKET;
+}
+
+void note_fast_socket_ctx(void *fast_socket_ctx) {
+  g_last_fast_socket_ctx = fast_socket_ctx;
+}
+
+SOCKET socket_from_last_fast_ctx() {
+  return read_fast_socket_slot(g_last_fast_socket_ctx);
 }
 
 void sync_fast_socket_handle(void *fast_socket_ctx) {

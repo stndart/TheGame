@@ -5,6 +5,7 @@
 #include <minwindef.h>
 
 #include "game/engine/String.h"
+#include "game/net/pn_fast_send.hpp"
 #include "game/net/socket_trace.hpp"
 
 #include "WinSock2.h"
@@ -27,20 +28,6 @@ void __cdecl handle_send_1(void *_this, char *buf, int len) {
   s.TruncateAtFirstOccurrence('\n');
   s.Truncate(s.GetLength() - 1);
   logf("handle_send_1: obj=%p, socket %p, buf='%s' at %p, len=%u", _this, sock,
-       s.c_str(), buf, len);
-}
-
-void __cdecl handle_send_2(void *_this, char *buf, int len) {
-  SOCKET sock =
-      *reinterpret_cast<SOCKET *>(reinterpret_cast<uintptr_t>(_this) + 300);
-
-  if (should_hex_log(sock) && buf && len > 0)
-    logn(SocketTrace::net_log_key(sock), static_cast<size_t>(len), buf, false);
-
-  String s(buf, len);
-  s.TruncateAtFirstOccurrence('\n');
-  s.Truncate(s.GetLength() - 1);
-  logf("handle_send_2: obj=%p, socket %p, buf='%s' at %p, len=%u", _this, sock,
        s.c_str(), buf, len);
 }
 
@@ -80,20 +67,10 @@ extern "C" void __declspec(naked) hook_send_1() {
   }
 }
 
+// w_wsasend_1 @ 0xD567F0 — full replacement (PNFastSocket::send).
 extern "C" void __declspec(naked) hook_send_2() {
   __asm {
-    pushad
-    mov eax, [esp + 0x28]
-    mov ebx, [esp + 0x24]
-    push eax
-    push ebx
-    push ecx
-    call handle_send_2
-    add esp, 12
-    popad
-    push -1
-    push 0x1511866
-    jmp [g_target_send_2.return_addr]
+    jmp PNFastSocket::send
   }
 }
 
@@ -117,8 +94,7 @@ HookStub g_target_send_1 = {
     0xCF3295,
 };
 HookStub g_target_send_2 = {
-    0xD567F0, (uint32_t)(uintptr_t)hook_send_2, "hook_send_2", {0}, false,
-    0xD567F7,
+    0xD567F0, (uint32_t)(uintptr_t)hook_send_2, "hook_send_2", {0}, false, 0,
 };
 // Same RVA as TCPSocket::Send — enable hook_send_3 OR hook_TCPSocket_send, not both.
 HookStub g_target_send_3 = {
