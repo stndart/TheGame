@@ -22,6 +22,56 @@ void ensure_log_open() {
     g_pn_tcp_file << "# proudnet-tcp headers (tid port dir chunk frames)\n";
 }
 
+void append_raw_preview(std::ostream &out, const uint8_t *data, size_t len) {
+  constexpr size_t kPreview = 24;
+  const size_t n = len < kPreview ? len : kPreview;
+  if (n == 0)
+    return;
+  out << " raw=";
+  for (size_t i = 0; i < n; ++i) {
+    out << std::hex << std::setw(2) << std::setfill('0')
+        << static_cast<unsigned>(data[i]) << std::dec;
+  }
+  if (len > n)
+    out << "...";
+}
+
+u_short resolve_log_port(SOCKET sock, void *fast_socket_ctx) {
+  u_short port = SocketTrace::pn_log_port(sock);
+  if (SocketTrace::is_pn_track_port(port))
+    return port;
+
+  if (fast_socket_ctx) {
+    port = SocketTrace::fast_socket_log_port(fast_socket_ctx);
+    if (SocketTrace::is_pn_track_port(port))
+      return port;
+  }
+
+  void *last = SocketTrace::last_fast_socket_ctx();
+  if (last) {
+    port = SocketTrace::fast_socket_log_port(last);
+    if (SocketTrace::is_pn_track_port(port))
+      return port;
+  }
+
+  if (SocketTrace::is_tracked_pn_socket(sock))
+    return SocketTrace::pn_log_port(sock);
+
+  return port;
+}
+
+bool should_log_pn_chunk(SOCKET sock, u_short port, void *fast_socket_ctx) {
+  if (SocketTrace::is_pn_track_port(port))
+    return true;
+  if (SocketTrace::is_tracked_pn_socket(sock))
+    return true;
+  if (fast_socket_ctx)
+    return true;
+  if (SocketTrace::last_fast_socket_ctx())
+    return true;
+  return false;
+}
+
 void append_frames_text(std::ostream &out,
                         const ProudFrameParse::ParsedFrame *frames,
                         size_t frame_count) {
@@ -51,8 +101,8 @@ void append_frames_text(std::ostream &out,
 }
 
 void log_line(SOCKET sock, u_short port, const char *dir, size_t chunk_len,
-              const ProudFrameParse::ParsedFrame *frames, size_t frame_count,
-              size_t incomplete_tail) {
+              const uint8_t *raw, const ProudFrameParse::ParsedFrame *frames,
+              size_t frame_count, size_t incomplete_tail) {
   ensure_log_open();
   if (!g_pn_tcp_file.is_open())
     return;
@@ -64,6 +114,8 @@ void log_line(SOCKET sock, u_short port, const char *dir, size_t chunk_len,
   if (incomplete_tail)
     g_pn_tcp_file << " incomplete=" << incomplete_tail;
   append_frames_text(g_pn_tcp_file, frames, frame_count);
+  if (frame_count == 0 && raw && chunk_len)
+    append_raw_preview(g_pn_tcp_file, raw, chunk_len);
   g_pn_tcp_file << "\n";
   g_pn_tcp_file.flush();
 
@@ -109,16 +161,13 @@ void log_connect(SOCKET sock, const char *addr, u_short port) {
 #endif
 }
 
-void log_chunk(SOCKET sock, const void *data, size_t len, bool inbound) {
+void log_chunk(SOCKET sock, const void *data, size_t len, bool inbound,
+               void *fast_socket_ctx) {
   if (!data || len == 0)
     return;
 
-  u_short port = SocketTrace::pn_log_port(sock);
-  if (!SocketTrace::is_pn_track_port(port))
-    port = SocketTrace::fast_socket_log_port(SocketTrace::last_fast_socket_ctx());
-
-  if (port == 0 && sock == INVALID_SOCKET &&
-      !SocketTrace::last_fast_socket_ctx())
+  const u_short port = resolve_log_port(sock, fast_socket_ctx);
+  if (!should_log_pn_chunk(sock, port, fast_socket_ctx))
     return;
 
   if (SocketTrace::is_pn_track_port(port) && sock != INVALID_SOCKET &&
@@ -137,7 +186,7 @@ void log_chunk(SOCKET sock, const void *data, size_t len, bool inbound) {
   const size_t incomplete =
       ProudFrameParse::trailing_unparsed(bytes, len, parsed_wire);
 
-  log_line(sock, port, inbound ? "rx" : "tx", len, frames, frame_count,
+  log_line(sock, port, inbound ? "rx" : "tx", len, bytes, frames, frame_count,
            incomplete);
 }
 

@@ -1,5 +1,6 @@
 #include "hook_manager.h"
 #include "system_hooks.h"
+#include "game/net/pn_tcp_trace.hpp"
 #include "game/net/socket_trace.hpp"
 #include "game/server_override.hpp"
 
@@ -56,21 +57,39 @@ extern "C" void __declspec(naked) sendto_syshandle() {
   }
 }
 
-extern "C" void __declspec(naked) wsasend_syshandle() {
-  __asm {
-#if WS32_SYSLOGS
-    pushad
-    mov eax, [esp + 0x24]
-    mov ebx, [esp + 0x20]
-    push eax
-    push ebx
-    push 3
-    call log_parg_n
-    add esp, 12
-    popad
-#endif
-    jmp g_ws2_wsasend.sym_addr
+using WSASendFn = int(WINAPI *)(SOCKET, LPWSABUF, DWORD, LPDWORD, DWORD,
+                                LPWSAOVERLAPPED,
+                                LPWSAOVERLAPPED_COMPLETION_ROUTINE);
+
+static void log_pn_wsasend_buffers(SOCKET s, LPWSABUF bufs, DWORD count) {
+  if (!bufs || count == 0)
+    return;
+  const u_short peer = SocketTrace::pn_log_port(s);
+  if (!SocketTrace::is_pn_track_port(peer) &&
+      !SocketTrace::is_tracked_pn_socket(s))
+    return;
+  for (DWORD i = 0; i < count; ++i) {
+    if (bufs[i].buf && bufs[i].len)
+      PnTcpTrace::log_chunk(s, bufs[i].buf, bufs[i].len, false, nullptr);
   }
+}
+
+static int WSAAPI wsasend_forward(SOCKET s, LPWSABUF bufs, DWORD buffer_count,
+                                  LPDWORD bytes_sent, DWORD flags,
+                                  LPWSAOVERLAPPED overlapped,
+                                  LPWSAOVERLAPPED_COMPLETION_ROUTINE completion) {
+  log_pn_wsasend_buffers(s, bufs, buffer_count);
+  return reinterpret_cast<WSASendFn>(g_ws2_wsasend.sym_addr)(
+      s, bufs, buffer_count, bytes_sent, flags, overlapped, completion);
+}
+
+extern "C" int WSAAPI wsasend_syshandle(SOCKET s, LPWSABUF bufs,
+                                        DWORD buffer_count, LPDWORD bytes_sent,
+                                        DWORD flags, LPWSAOVERLAPPED overlapped,
+                                        LPWSAOVERLAPPED_COMPLETION_ROUTINE
+                                            completion) {
+  return wsasend_forward(s, bufs, buffer_count, bytes_sent, flags, overlapped,
+                         completion);
 }
 
 extern "C" void __declspec(naked) wsasendto_syshandle() {
@@ -132,7 +151,9 @@ extern "C" int WSAAPI connect_syshandle(SOCKET s, const sockaddr *name,
 
 SysHookStub g_ws2_send = {"ws2_32.dll", "send", send_syshandle};
 SysHookStub g_ws2_sendto = {"ws2_32.dll", "sendto", sendto_syshandle};
-SysHookStub g_ws2_wsasend = {"ws2_32.dll", "WSASend", wsasend_syshandle};
+SysHookStub g_ws2_wsasend = {
+    "ws2_32.dll", "WSASend",
+    reinterpret_cast<void (*)()>(wsasend_syshandle)};
 SysHookStub g_ws2_wsasendto = {"ws2_32.dll", "WSASendTo", wsasendto_syshandle};
 SysHookStub g_ws2_connect = {
     "ws2_32.dll", "connect",

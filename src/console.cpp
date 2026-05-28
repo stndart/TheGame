@@ -19,6 +19,9 @@ void create_console() {
 }
 
 void log_message(const char *message) {
+  if (Diagnostics::should_suppress_game_log(message))
+    return;
+
 #ifndef THEGAME_NO_CONSOLE
   if (!console_created) {
     create_console();

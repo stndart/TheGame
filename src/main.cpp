@@ -59,8 +59,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call,
     HookManager::make_hook(g_target_rstring_vformat);
     HookManager::make_hook(g_target_rstring_vformat_this);
 
-    // TCPSocket_connect: validated safe offline. TCPSocket_send stays OFF: overlaps
-    // send_2 / fast-send RVA; dual hook caused intro AV; send_2 owns fast send.
+    // TCPSocket_connect only; TX proudnet-tcp via WSASend IAT (ws32.cpp).
     HookManager::make_hook(g_target_TCPSocket_connect);
     // HookManager::make_hook(g_target_TCPSocket_send);
     HookManager::make_hook(g_target_send_2);
@@ -74,6 +73,8 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call,
     HookManager::make_hook(g_target_pn_fsm_state1);
     HookManager::make_hook(g_target_pn_fsm_state2);
     HookManager::make_hook(g_target_pn_fsm_state3);
+    HookManager::make_hook(g_target_pn_net_client_factory);
+    HookManager::make_hook(g_target_pn_net_client_ctor);
 
     log_message("DLL loaded - hooks installed");
     break;

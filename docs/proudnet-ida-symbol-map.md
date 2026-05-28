@@ -2,7 +2,7 @@
 
 RVAs are for **this debug build** of `GAME.exe`. Rebase in IDA if your image base differs; hooks use the same numeric addresses as in `HookStub` definitions.
 
-**ProudNet SDK (`ProudNet/`):** Bundled tree is **~1.8 sample**; the game ships **~1.7**-era binaries. A search for magic `0x5713`, `CFastSocket`, and `NetUserConnect` in the SDK tree did **not** yield symbols at these RVAs. Treat SDK names below as **conceptual analogues** only (e.g. `CNetClient::Connect` in `Sample/Simple/Client/Client.cpp`), not proof of mangled names in `GAME.exe`.
+**ProudNet SDK (`ProudNet/`):** Bundled tree is **~1.8 sample**; the game ships **~1.7**-era binaries statically linked. For **DLL cross-reference** (v1.8 PDB @ IDA port **13338**, v1.7 x64 @ **13339**): see **[proudnet-sdk-crossmap.md](proudnet-sdk-crossmap.md)** — `CFastSocket` offsets, `CTcpLayer` splitters, `MessageType` vs transport opcodes, and mangled-name ↔ GAME RVA table.
 
 **Wire protocol:** Field layouts for `0x3F3E` and framing are in [proudnet-offline-protocol.md](proudnet-offline-protocol.md).
 
@@ -93,6 +93,35 @@ sub_D668B0   PNCliWorker thread
 | `0xD6DC70` | `sub_D6DC70` | 4 | Copy accumulated buffer to `String`. | - | - |
 | `0xD6E180` | `sub_D6E180` | 1 (pre-send) | **UPnP AddPortMapping** SOAP; blocks offline if not skipped. | `pn_upnp_skip.cpp` (**full jmp**) | - |
 | `0xD6D160` | `sub_D6D160` | 0 | Calls into **TCPSocket::Connect** for hostname/port. | via `TCPSocket::Connect` | Analogous to `CNetClient::Connect` + worker |
+
+### 2a. CNetClient construction (IDA + hook run 098)
+
+```text
+sub_D0C0A0   CNetClient factory
+  operator new(0x17A8)
+  sub_D0A340   CNetClient / CNetClientImpl ctor
+  return iface @ result+44
+
+sub_D17000   CNetClientManager singleton
+  w_heap_alloc(0xD0)
+  sub_D66A30   CNetClientManager ctor
+    CreateThread(entry 0xD66A20)
+      sub_D668B0   PNCliWorker thread  (§2 above)
+
+sub_CF6F10 / sub_D6AF00   CVizAgent alternate
+  operator new(0x17A8) + sub_D0A340
+```
+
+| RVA | IDA / inferred name | Role | Hook | ProudNet SDK |
+|-----|---------------------|------|------|----------------|
+| `0xD0C0A0` | `sub_D0C0A0` | **CNetClient factory** — `operator new(0x17A8)`, ctor `0xD0A340`, returns iface @ `result+44`. | `pn_net_client_factory.cpp` (**trace**) | `CNetClient` construction |
+| `0xD0A340` | `sub_D0A340` | **CNetClient / CNetClientImpl ctor** — vtables `Proud::CNetClient`. | `pn_net_client_factory.cpp` (**trace**) | - |
+| `0xD17000` | `sub_D17000` | Manager singleton — `w_heap_alloc(0xD0)` → manager ctor. | - | - |
+| `0xD66A30` | `sub_D66A30` | **CNetClientManager ctor** — `CreateThread` entry `0xD66A20` → **PNCliWorker** `0xD668B0`. | - | - |
+| `0xCF6F10` | `sub_CF6F10` | **CVizAgent** path — `new(0x17A8)` + ctor `0xD0A340`. | - | - |
+| `0xD6AF00` | `sub_D6AF00` | Alternate **CVizAgent** path — same `new(0x17A8)` + `0xD0A340`. | - | - |
+
+**Layout:** `pn_layout.hpp` — `pn::rva::kNetClientFactory`, `kNetClientCtor`.
 
 ---
 
@@ -203,6 +232,8 @@ ProudNet / connect hooks registered in `DllMain` (not generic Win32 IAT except `
 | `0xD56470` | `w_wsarecv_1` | `proud_fast_socket.cpp` | **full jmp** | `PNFastSocket::recv` reimpl. |
 | `0x014F6DC0` | `w_connect_3` | `w_connect_3.cpp` | **full jmp** | `ProudConnect::Socket::w_connect_3` - remap + `connect_syshandle` (`proud_connect.cpp`). |
 | `0x14314E0` | `w_connect_2` | `w_connect_2.cpp` | **full jmp** | `ProudConnect::w_connect_2` - full `sub_14314E0` reimpl; remap via `connect_syshandle` on connect leg. |
+| `0xD0C0A0` | `sub_D0C0A0` | `pn_net_client_factory.cpp` | **trace** | CNetClient factory — restore/call/log `ret` iface (`pn::rva::kNetClientFactory`). |
+| `0xD0A340` | `sub_D0A340` | `pn_net_client_factory.cpp` | **trace** | CNetClient ctor — restore/call/log `this`/`ret` (`kNetClientCtor`; naked `hook_pn_net_client_ctor` → impl). |
 
 **Related (same path, different mode):**
 
@@ -278,4 +309,4 @@ Cross-reference only - see protocol doc.
 
 ---
 
-*Last updated: 2026-05-28 -- `w_connect_2` DONE, `game_exe` helpers DONE, trace hooks DELETED. Matches `src/main.cpp`.*
+*Last updated: 2026-05-28 -- CNetClient factory/ctor trace hooks (`pn_net_client_factory.cpp`, run 098). Matches `src/main.cpp`.*

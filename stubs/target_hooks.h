@@ -44,6 +44,9 @@ extern HookStub g_target_pn_fsm_state1;
 extern HookStub g_target_pn_fsm_state2;
 extern HookStub g_target_pn_fsm_state3;
 
+extern HookStub g_target_pn_net_client_factory;
+extern HookStub g_target_pn_net_client_ctor;
+
 extern HookStub g_target_send_2;
 // extern HookStub g_target_recv_1;
 // extern HookStub g_target_recvfrom_1;

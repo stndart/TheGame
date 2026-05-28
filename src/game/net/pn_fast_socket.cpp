@@ -2,7 +2,6 @@
 
 #include "console.h"
 #include "game/net/pn_growable.hpp"
-#include "game/net/pn_tcp_trace.hpp"
 #include "game/net/pn_socket_error.hpp"
 #include "game/net/socket_trace.hpp"
 #include <cstring>
@@ -35,16 +34,6 @@ std::uint16_t addr_port_update(PNAddrPort *addr_port, SOCKET sock) {
   std::memcpy(addr_port->addr + 12, &peer.sin_addr.s_addr, 4);
   addr_port->port = ntohs(peer.sin_port);
   return addr_port->port;
-}
-
-void log_tx_if_tracked(PNFastSocket *self, const void *data, int len) {
-  if (!data || len <= 0)
-    return;
-  auto *base = reinterpret_cast<char *>(self);
-  SocketTrace::note_fast_socket_ctx(self);
-  const SOCKET sock =
-      *reinterpret_cast<SOCKET *>(base + pn::fast_socket::kSocket);
-  PnTcpTrace::log_chunk(sock, data, static_cast<size_t>(len), false);
 }
 
 } // namespace
@@ -237,8 +226,6 @@ int PNFastSocket::send(void *data, int len) {
 
   if (!staging)
     return WSAEINVAL;
-
-  log_tx_if_tracked(this, data, len);
 
   WSABUF buf{};
   buf.buf = staging;

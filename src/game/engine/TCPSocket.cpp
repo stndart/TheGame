@@ -135,12 +135,7 @@ int TCPSocket::Send(TCPSocket::MessageToSend *message) {
       lpBuffers = message->inlineBufferPtr;
     }
 
-    for (size_t i = 0; i < message->bufferCount; ++i) {
-      PnTcpTrace::log_chunk(m_socketId, lpBuffers[i].buf, lpBuffers[i].len,
-                            false);
-    }
-
-    // Perform overlapped send
+    // Perform overlapped send (PnTcpTrace on WSASend IAT hook)
     if (WSASend(this->m_socketId, lpBuffers, message->bufferCount, &bytesSent,
                 0, &m_sendOverlapped, NULL) >= 0) {
       // Success

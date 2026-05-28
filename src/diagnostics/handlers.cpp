@@ -1,4 +1,5 @@
 #include <cstdio> // IWYU pragma: keep
+#include <cstring>
 
 #include "diagnostics/handlers.hpp"
 #include "diagnostics/namedpipe.hpp"
@@ -56,6 +57,19 @@ LONG WINAPI unhandled_exception_handler(EXCEPTION_POINTERS *info) {
 }; // namespace
 
 namespace Diagnostics {
+
+bool should_suppress_game_log(const char *message) {
+  if (!message)
+    return false;
+  if (std::strstr(message, "Error 7") != nullptr &&
+      std::strstr(message, "StorageSystem::Registry::CNativeValue::Write") !=
+          nullptr)
+    return true;
+  if (std::strstr(message, "Error 20") != nullptr &&
+      std::strstr(message, "AVolute::GetProductInfoT") != nullptr)
+    return true;
+  return false;
+}
 
 PVOID g_veh_handle = nullptr;
 LONG g_handling_exception = 0;
@@ -131,6 +145,9 @@ void emit_game_state(const char *phase) {
 }
 
 void emit_game_log(const char *message) {
+  if (should_suppress_game_log(message))
+    return;
+
   g_pipe = connect_pipe();
   if (!g_pipe)
     return;

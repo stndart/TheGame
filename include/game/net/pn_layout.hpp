@@ -31,6 +31,8 @@ constexpr std::uintptr_t kRecvAppend = 0xD71CE0;
 constexpr std::uintptr_t kRecvEnsure = 0xD71610;
 constexpr std::uintptr_t kUpnpAddPort = 0xD6E180;
 constexpr std::uintptr_t kUpnpDeletePort = 0xD6E5B0;
+constexpr std::uintptr_t kNetClientCtor = 0xD0A340;
+constexpr std::uintptr_t kNetClientFactory = 0xD0C0A0;
 
 } // namespace rva
 
