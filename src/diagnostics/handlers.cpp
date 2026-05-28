@@ -145,6 +145,67 @@ void emit_game_log(const char *message) {
   g_pipe->write_line_locked(line);
 }
 
+void emit_proudnet_tcp(DWORD thread_id, unsigned port, const char *direction,
+                       unsigned long long sock, size_t chunk_len,
+                       const PnTcpFrameHeader *frames, size_t frame_count,
+                       size_t incomplete_tail) {
+  g_pipe = connect_pipe();
+  if (!g_pipe)
+    return;
+
+  char line[2048];
+  int pos = _snprintf_s(
+      line, sizeof(line), _TRUNCATE,
+      "{\"type\":\"proudnet-tcp\",\"pid\":%lu,\"thread_id\":%lu,\"port\":%u,"
+      "\"dir\":\"%s\",\"sock\":\"0x%llX\",\"chunk_len\":%zu,\"incomplete\":%zu,"
+      "\"frames\":[",
+      GetCurrentProcessId(), thread_id, static_cast<unsigned>(port),
+      direction ? direction : "", static_cast<unsigned long long>(sock),
+      chunk_len, incomplete_tail);
+
+  if (pos < 0)
+    return;
+
+  for (size_t i = 0; i < frame_count && pos > 0; ++i) {
+    const PnTcpFrameHeader &f = frames[i];
+    const int n = _snprintf_s(
+        line + pos, sizeof(line) - static_cast<size_t>(pos), _TRUNCATE,
+        "%s{\"payload_len\":%u,\"opcode\":%u,\"rmi_id\":%u,\"body_len\":%u,"
+        "\"has_rmi\":%s}",
+        (i ? "," : ""), f.payload_len, f.opcode, f.rmi_id, f.body_len,
+        f.has_rmi ? "true" : "false");
+    if (n < 0)
+      break;
+    pos += n;
+    if (static_cast<size_t>(pos) >= sizeof(line) - 4)
+      break;
+  }
+
+  if (pos > 0 && static_cast<size_t>(pos) < sizeof(line) - 2)
+    _snprintf_s(line + pos, sizeof(line) - static_cast<size_t>(pos), _TRUNCATE,
+                "]}");
+
+  g_pipe->write_line_locked(line);
+}
+
+void emit_proudnet_tcp_connect(DWORD thread_id, unsigned long long sock,
+                               const char *addr, unsigned port) {
+  g_pipe = connect_pipe();
+  if (!g_pipe)
+    return;
+
+  char escaped[128];
+  json_escape(escaped, sizeof(escaped), addr ? addr : "");
+
+  char line[384];
+  _snprintf_s(line, sizeof(line), _TRUNCATE,
+              "{\"type\":\"proudnet-tcp\",\"event\":\"connect\",\"pid\":%lu,"
+              "\"thread_id\":%lu,\"port\":%u,\"sock\":\"0x%llX\",\"addr\":\"%s\"}",
+              GetCurrentProcessId(), thread_id, static_cast<unsigned>(port),
+              static_cast<unsigned long long>(sock), escaped);
+  g_pipe->write_line_locked(line);
+}
+
 void emit_exception_event(const char *type, EXCEPTION_POINTERS *info) {
   g_pipe = connect_pipe();
   if (!g_pipe)

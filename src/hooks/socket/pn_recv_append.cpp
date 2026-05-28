@@ -2,7 +2,7 @@
 
 #include "game/net/pn_recv_append.hpp"
 
-// sub_D71CE0 — __thiscall append of completed WSARecv bytes (PN FSM state 3).
+// sub_D71CE0 - __thiscall append of completed WSARecv bytes (PN FSM state 3).
 
 extern "C" void __declspec(naked) hook_pn_recv_append() {
   __asm {

@@ -2,7 +2,7 @@
 
 #include "game/net/pn_upnp.hpp"
 
-// sub_D6E180 — UPnP AddPortMapping SOAP before first PN send (state 1).
+// sub_D6E180 - UPnP AddPortMapping SOAP before first PN send (state 1).
 
 extern "C" void __declspec(naked) hook_pn_upnp() {
   __asm {

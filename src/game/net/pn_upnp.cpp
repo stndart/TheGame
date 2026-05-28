@@ -3,15 +3,16 @@
 #include "console.h"
 #include "game/server_override.hpp"
 
-using OrigFn = void(__thiscall *)(void *self);
-
-static OrigFn g_orig_upnp_add_port_mapping =
-    reinterpret_cast<OrigFn>(0xD6E187);
-
 void PNUpnpClient::AddPortMapping() {
   if (ServerOverride::override_active()) {
     logf("PN connect: skip UPnP (offline server override)");
     return;
   }
-  g_orig_upnp_add_port_mapping(this);
+  // sub_D6E180 is void; online paths unwind without a success flag in eax.
+}
+
+void PNUpnpClient::DeletePortMapping() {
+  if (ServerOverride::override_active())
+    return;
+  // sub_D6E5B0 is void; same no-op contract as AddPortMapping.
 }

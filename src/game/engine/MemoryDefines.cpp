@@ -63,3 +63,10 @@ void *_HeapAlloc(size_t dwBytes) {
   HANDLE ProcessHeap = CRT::get_proc_heap();
   return CRT::heap_alloc(ProcessHeap, 0, dwBytes);
 }
+
+void *_HeapReAlloc(void *lpMem, size_t dwBytes) {
+  if (dwBytes == 0)
+    dwBytes = 1;
+  HANDLE ProcessHeap = CRT::get_proc_heap();
+  return CRT::heap_realloc(ProcessHeap, 0, lpMem, dwBytes);
+}

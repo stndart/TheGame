@@ -51,6 +51,7 @@ void logns(int socket, const char *addr, int port) {
 
   netlog_file << "Connecting socket " << socket << " to " << addr << ":"
               << std::dec << port << "\n";
+  netlog_file.flush();
 }
 
 void logn(int socket, size_t len, char *data, bool in) {
@@ -70,4 +71,5 @@ void logn(int socket, size_t len, char *data, bool in) {
                        static_cast<unsigned char>(data[i]));
   }
   netlog_file << std::endl;
+  netlog_file.flush();
 }

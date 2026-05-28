@@ -70,7 +70,4 @@ public:
 
   int Connect(WString wideHostname, int port); // sub_D56220
   int Send(MessageToSend *message);            // sub_D569C0
-
-public:
-  // void sub_D56170(int, void *);
 };

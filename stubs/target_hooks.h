@@ -39,13 +39,12 @@ extern HookStub g_target_fast_wsarecv;
 extern HookStub g_target_pn_upnp;
 extern HookStub g_target_pn_select;
 extern HookStub g_target_pn_recv_append;
+extern HookStub g_target_pn_recv_complete;
+extern HookStub g_target_pn_fsm_state1;
+extern HookStub g_target_pn_fsm_state2;
+extern HookStub g_target_pn_fsm_state3;
 
-extern HookStub g_target_send_1;
 extern HookStub g_target_send_2;
-extern HookStub g_target_send_3;
-extern HookStub g_target_sendto_1;
-extern HookStub g_target_sendto_2;
-extern HookStub g_target_sendto_3;
 // extern HookStub g_target_recv_1;
 // extern HookStub g_target_recvfrom_1;
 // extern HookStub g_target_bind_1;

@@ -1,4 +1,5 @@
-#include "console.h"
+﻿#include "console.h"
+#include "game/net/pn_tcp_trace.hpp"
 #include "crt/memory.h"
 #include "diagnostics/handlers.hpp"
 #include "hook_manager.h"
@@ -58,22 +59,21 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call,
     HookManager::make_hook(g_target_rstring_vformat);
     HookManager::make_hook(g_target_rstring_vformat_this);
 
+    // TCPSocket_connect: validated safe offline. TCPSocket_send stays OFF: overlaps
+    // send_2 / fast-send RVA; dual hook caused intro AV; send_2 owns fast send.
     HookManager::make_hook(g_target_TCPSocket_connect);
-    HookManager::make_hook(g_target_TCPSocket_send);
-    // Connect path: TCPSocket::Send @ 0xD569C0 (not hook_send_3 — same RVA).
-    // HookManager::make_hook(g_target_send_3);
-    // w_wsasend_1 @ 0xD567F0 — PNFastSocket::send (do not also enable hook_fast_wsasend).
+    // HookManager::make_hook(g_target_TCPSocket_send);
     HookManager::make_hook(g_target_send_2);
-    HookManager::make_hook(g_target_send_1);
-    HookManager::make_hook(g_target_sendto_1);
-    HookManager::make_hook(g_target_sendto_2);
-    HookManager::make_hook(g_target_sendto_3);
-    // HookManager::make_hook(g_target_fast_wsasend);
-    // HookManager::make_hook(g_target_fast_wsarecv);
+    // HookManager::make_hook(g_target_fast_wsasend); // same RVA as send_2
+    HookManager::make_hook(g_target_fast_wsarecv);
     // HookManager::make_hook(g_target_recv_1);
     HookManager::make_hook(g_target_pn_upnp);
     HookManager::make_hook(g_target_pn_recv_append);
     HookManager::make_hook(g_target_pn_select);
+    HookManager::make_hook(g_target_pn_recv_complete);
+    HookManager::make_hook(g_target_pn_fsm_state1);
+    HookManager::make_hook(g_target_pn_fsm_state2);
+    HookManager::make_hook(g_target_pn_fsm_state3);
 
     log_message("DLL loaded - hooks installed");
     break;
@@ -84,6 +84,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call,
     if (log_file.is_open()) {
       log_file.close();
     }
+    PnTcpTrace::close_log_file();
 #ifndef THEGAME_NO_CONSOLE
     if (console_created) {
       FreeConsole();

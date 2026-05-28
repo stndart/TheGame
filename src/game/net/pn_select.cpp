@@ -1,5 +1,7 @@
 #include "game/net/pn_select.hpp"
 
+#include "game/net/pn_layout.hpp"
+
 #include "game/net/socket_trace.hpp"
 #include "game/server_override.hpp"
 
@@ -7,9 +9,9 @@
 
 namespace {
 
-constexpr std::uintptr_t kFastSocketHandleOff = 300; // CFastSocket+0x12C
-constexpr std::uintptr_t kReadFdSetOff = 0x104;
-constexpr std::uintptr_t kExceptFdSetOff = 0x208;
+constexpr std::uintptr_t kFastSocketHandleOff = pn::fast_socket::kSocket;
+constexpr std::uintptr_t kReadFdSetOff = pn::select_ctx::kReadFdSet;
+constexpr std::uintptr_t kExceptFdSetOff = pn::select_ctx::kExceptFdSet;
 
 } // namespace
 

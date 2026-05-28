@@ -7,19 +7,22 @@ struct sockaddr_in;
 
 namespace ServerOverride {
 
-// Path beside GAME.exe: TheGame.server_ip (written by ctl launch / launch_game.py).
+// Path beside GAME.exe: TheGame.server_ip (written by ctl launch /
+// launch_game.py).
 constexpr const char *kOverrideFileName = "TheGame.server_ip";
 
-// Hostnames from encrypted options.dat / redirects (see GITS-FA-emulation NETWORKING.md).
+// Hostnames from encrypted options.dat / redirects (see GITS-FA-emulation
+// NETWORKING.md).
 constexpr const char *kEntryHost = "137.184.201.52";
 constexpr const char *kLobbyHost = "216.131.86.188";
 
-// ProudNet legs (ENTRY / GAME / PROBE) — remap these ports in offline mode.
+// ProudNet legs (ENTRY / GAME / PROBE) - remap these ports in offline mode.
 constexpr uint16_t kEntryPort = 7000;
 constexpr uint16_t kGameLegPort = 27380;
 constexpr uint16_t kProbePort = 20009;
 
-// True when TheGame.server_ip / THEGAME_SERVER_IP is set (offline / local entry).
+// True when TheGame.server_ip / THEGAME_SERVER_IP is set (offline / local
+// entry).
 bool override_active();
 
 bool is_pn_port(uint16_t port);

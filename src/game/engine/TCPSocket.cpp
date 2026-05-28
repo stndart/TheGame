@@ -1,5 +1,8 @@
 #include "game/engine/TCPSocket.h"
 #include "diagnostics/handlers.hpp"
+#include "game/net/pn_growable.hpp"
+#include "game/net/pn_socket_error.hpp"
+#include "game/net/pn_tcp_trace.hpp"
 #include "game/net/socket_trace.hpp"
 #include "game/server_override.hpp"
 
@@ -10,13 +13,6 @@
 #include "game/engine/MemoryDefines.h"
 #include "game/engine/StringConverters.h"
 // #include "game/engine/WString.h"
-
-using sub_t = int(__thiscall *)(void *thisptr, int arg1, void *arg2);
-sub_t sub_D56170 = (sub_t)0xD56170; // original address
-// skips if error is WSA_IO_PENDING (997) or WSAEWOULDBLOCK (10035)
-
-using fmt_t = void(__cdecl *)(int a1);
-fmt_t fmt_out_of_range_error = (fmt_t)0xCEFB40;
 
 inline std::string to_ip_string(int addr) {
   unsigned char *caddr = reinterpret_cast<unsigned char *>(&addr);
@@ -32,6 +28,9 @@ inline std::string to_ip_string(int addr) {
 }
 
 int TCPSocket::Connect(WString wideHostname, int port) {
+  if (!this)
+    return WSAEFAULT;
+
   if (port == 7000) {
     Diagnostics::emit_game_state("connecting_to_server");
   }
@@ -68,9 +67,8 @@ int TCPSocket::Connect(WString wideHostname, int port) {
     hostent *hostEntry = gethostbyname(host.c_str());
 
     if (!hostEntry) {
-      // DNS resolution failed
       int error = WSAGetLastError();
-      sub_D56170(this, error, (void *)0x15DC0C0); // Report DNS error
+      pn::socket_report_error(this, error, nullptr);
       return error;
     }
     serverAddr.sin_addr.s_addr = *(ULONG *)hostEntry->h_addr_list[0];
@@ -90,13 +88,13 @@ int TCPSocket::Connect(WString wideHostname, int port) {
   if (port == ServerOverride::kGameLegPort)
     logf("TCPSocket:27380 target %s:%u", ipstr.c_str(), port);
 
-  logns(m_socketId, ipstr.c_str(), port);
+  PnTcpTrace::log_connect(m_socketId, ipstr.c_str(),
+                          static_cast<u_short>(port));
 
   if (connect(m_socketId, (sockaddr *)&serverAddr, sizeof(serverAddr)) ==
       SOCKET_ERROR) {
     int error = WSAGetLastError();
-    sub_D56170(this, error,
-               (void *)0x15DC0F8); // Report connection error
+    pn::socket_report_error(this, error, nullptr);
     if (error != WSAEWOULDBLOCK && error != WSA_IO_PENDING)
       logf("Error connecting to %s: %u", ipstr.c_str(), error);
     return error;
@@ -108,8 +106,7 @@ int TCPSocket::Connect(WString wideHostname, int port) {
 int TCPSocket::Send(TCPSocket::MessageToSend *message) {
   // Check if we need to send a warning
   if (m_sendWarningFlag) {
-    WString warningMsg = L"WARNING: IssueSend is duplicated!";
-    m_pCallback->OnWarning(this, &warningMsg);
+    logf("TCPSocket::Send: IssueSend duplicated sock=%p", m_socketId);
   }
 
   // Validate send parameters
@@ -123,8 +120,7 @@ int TCPSocket::Send(TCPSocket::MessageToSend *message) {
 
   // Range check for buffer count
   if (((uint64_t)message->bufferCount + 0x80000000) >> 32) {
-    // Throw if buffer count is too large
-    fmt_out_of_range_error(0x15DC310);
+    pn::growable::throw_send_buffer_count_out_of_range();
   }
 
   // Use WSASend for overlapped I/O
@@ -139,12 +135,9 @@ int TCPSocket::Send(TCPSocket::MessageToSend *message) {
       lpBuffers = message->inlineBufferPtr;
     }
 
-    const bool log_tx = SocketTrace::is_pn_track_port(
-        SocketTrace::peer_port(m_socketId));
     for (size_t i = 0; i < message->bufferCount; ++i) {
-      if (log_tx)
-        logn(SocketTrace::net_log_key(m_socketId), lpBuffers[i].len,
-             lpBuffers[i].buf, false);
+      PnTcpTrace::log_chunk(m_socketId, lpBuffers[i].buf, lpBuffers[i].len,
+                            false);
     }
 
     // Perform overlapped send
@@ -168,15 +161,12 @@ int TCPSocket::Send(TCPSocket::MessageToSend *message) {
       break;
     }
 
-    // For interrupted calls, increment global counter and retry
-    unsigned long g_interruptCount =
-        *reinterpret_cast<unsigned long *>(0x180DF00);
-    InterlockedIncrement(&g_interruptCount);
+    pn::growable::note_wsa_interrupt_retry();
   }
 
   // Handle other errors
   this->m_sendWarningFlag = false;
-  sub_D56170(this, lastError, (void *)0x15DC360); // Report send error
+  pn::socket_report_error(this, lastError, nullptr);
 
   return lastError;
 }
