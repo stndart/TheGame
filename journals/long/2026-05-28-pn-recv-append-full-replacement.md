@@ -1,6 +1,6 @@
 # pn_recv_append full replacement (long)
 
-## IDA — sub_D71CE0 @ 0xD71CE0
+## IDA - sub_D71CE0 @ 0xD71CE0
 
 Prototype: `void __thiscall(_DWORD *this, const char *src, int len)`  
 Size: 81 bytes, CC=5.
@@ -23,13 +23,13 @@ Callees: `sub_D71610` (ensure capacity + resize), `fmt_error_x2` @ `0xCEFAE0`.
 
 Assembly tail: `retn 8` (two stack args after `this` in ecx).
 
-## Caller — sub_D6C9C0 (FSM state 3 recv complete)
+## Caller - sub_D6C9C0 (FSM state 3 recv complete)
 
 After `sub_D55510` (WSAGetOverlappedResult):
 
 - `len` = cbTransfer in local struct (`v12`)
 - `fast_socket` = `*(* (conn+8))` when present
-- `src` = `sub_D558A0(fast_socket)` — staging buffer ptr (+0x94 when flag +0x98 set)
+- `src` = `sub_D558A0(fast_socket)` - staging buffer ptr (+0x94 when flag +0x98 set)
 - `this` for append = **`conn+0x20`** (accumulator), **not** fast socket
 
 ## sub_D71610
@@ -47,9 +47,9 @@ hook_pn_recv_append:
   jmp PNRecvBuffer::append
 ```
 
-`HookStub.return_rva = 0` — no trampoline.
+`HookStub.return_rva = 0` - no trampoline.
 
-## Verify — run 028_62449749
+## Verify - run 028_62449749
 
 - Build: `just build-debug` OK
 - Launch offline after `ctl::copy-dll`

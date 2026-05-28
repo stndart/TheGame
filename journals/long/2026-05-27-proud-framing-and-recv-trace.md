@@ -1,6 +1,6 @@
 # Proud framing, recv trace, NetUserConnectRES (long)
 
-## IDA — client expectations
+## IDA - client expectations
 
 ### Transport (`sub_D84BB0` / `sub_D84970`)
 
@@ -8,7 +8,7 @@
 - Length: varint via `sub_D9DEC0` (tag `1` + 1 byte if len≤127; tag `2` + WORD if larger)
 - Payload: Proud message stream → type **`0x13`** RMI → dispatch by **`WORD` at message desc +40**
 
-### NetUserConnectRES — `sub_4BA070`, RMI id **16190 (`0x3F3E`)**
+### NetUserConnectRES - `sub_4BA070`, RMI id **16190 (`0x3F3E`)**
 
 Payload at `*(MsgDelegateArg+8)`:
 
@@ -38,11 +38,11 @@ States 0–5: connect → send (`w_wsasend_1`) → recv (`w_wsarecv_1`, 32KiB) �
 
 ## Code changes
 
-- `include/game/net/proud_frame.hpp`, `net_user_connect_res.hpp` — layouts
-- `src/hooks/socket/pn_recv_append.cpp` — log RX at append (`7000 < hex`)
-- `src/hooks/socket/send.cpp` — `logn` on `:7000` for `hook_send_2`
-- `src/main.cpp` — `pn_recv_append`, `pn_select` enabled
-- `server/server/proud_frame.py`, `serve.py` — wrap stub body in `13 57` frame
+- `include/game/net/proud_frame.hpp`, `net_user_connect_res.hpp` - layouts
+- `src/hooks/socket/pn_recv_append.cpp` - log RX at append (`7000 < hex`)
+- `src/hooks/socket/send.cpp` - `logn` on `:7000` for `hook_send_2`
+- `src/main.cpp` - `pn_recv_append`, `pn_select` enabled
+- `server/server/proud_frame.py`, `serve.py` - wrap stub body in `13 57` frame
 
 ## WIP
 
@@ -61,7 +61,7 @@ States 0–5: connect → send (`w_wsasend_1`) → recv (`w_wsarecv_1`, 32KiB) �
 
 **S2C** (373 B): `13 57 02 70 01` + 0x170-byte NetUserConnectRES-shaped body (err=0 @ +2).
 
-Client reached TCP :7000 and sent Proud-framed data; `connecting_to_server` stage not seen in `events.jsonl` (still `intro`). PN recv-append (`7000 <`) not seen — PN path may differ from `TCPSocket::Send` for this first packet.
+Client reached TCP :7000 and sent Proud-framed data; `connecting_to_server` stage not seen in `events.jsonl` (still `intro`). PN recv-append (`7000 <`) not seen - PN path may differ from `TCPSocket::Send` for this first packet.
 
 ## Verify
 

@@ -2,7 +2,7 @@
 
 ## IDA `sub_D55300` @ `0xD55300`
 
-**Prototype:** `char __thiscall(fd_set *this, int optval, _DWORD *a3)` — decompiler misnames args; asm is authoritative.
+**Prototype:** `char __thiscall(fd_set *this, int optval, _DWORD *a3)` - decompiler misnames args; asm is authoritative.
 
 **Prologue (7 bytes, old trampoline resume @ +7):**
 ```
@@ -22,11 +22,11 @@ mov esi, ecx                ; fd-set bundle
 
 ## Sync insertion point
 
-Trampoline called `sync_fast_socket_handle(optval)` **before** original prologue body — i.e. before first read of `[edi+12Ch]`. Full replacement calls sync at top of `PnSelect::poll` when offline override active.
+Trampoline called `sync_fast_socket_handle(optval)` **before** original prologue body - i.e. before first read of `[edi+12Ch]`. Full replacement calls sync at top of `PnSelect::poll` when offline override active.
 
 ## Guard semantics (`socket_trace.cpp`)
 
-`sync_fast_socket_handle` returns early when slot peer is `:27380`, `:20009`, or already `:7000` — prevents ENTRY fd stomping GAME fd (documented in `2026-05-27-offline-proud-handshake` journal).
+`sync_fast_socket_handle` returns early when slot peer is `:27380`, `:20009`, or already `:7000` - prevents ENTRY fd stomping GAME fd (documented in `2026-05-27-offline-proud-handshake` journal).
 
 ## Verification run `022_624ce004`
 

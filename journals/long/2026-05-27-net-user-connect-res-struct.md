@@ -28,7 +28,7 @@ NetUserConnectRES body layout so the Python server emits correct bytes.
 ```
 
 - `13 57`: magic word 0x5713 (LE). Confirmed at D84BB0+d84c68: `cmp word ptr ..., 5713h`.
-  The byte 0x13 is **only** the low byte of the magic — not a separate protocol type.
+  The byte 0x13 is **only** the low byte of the magic - not a separate protocol type.
 - `tag`: 1-byte tag indicating length field width:
   - `01` → 1 byte length (signed char; max 127; D9DFA0 case 0)
   - `02` → 2 bytes LE (signed int16; max 32767; D9DFA0 case 1)
@@ -48,7 +48,7 @@ stores RMI ID 0x3F3E in the dispatch entry for sub_4BA070.
 
 ### "48-byte elements" (sub_D85800)
 
-Sub_D85800 manages an **internal** message queue with 48-byte (0x30) elements —
+Sub_D85800 manages an **internal** message queue with 48-byte (0x30) elements -
 stride `sub esi,30h`, field copies at -12, -4, +0, +4 from the "main pointer" at +0x28.
 This is the game's network layer internal representation. **Not a wire format.** Server
 need not know about it.
@@ -80,7 +80,7 @@ Offset  Size  Field           Assembly evidence
 | Bug | Fix |
 |-----|-----|
 | `account_id` was at +0x08 (was session_uid); real account_id at +0xEC was missing | Split into `session_uid`@+0x08 and `account_id`@+0xEC |
-| `name.encode("utf-16-le")[:260*2]` — could overwrite `field_5c` at +0x5C | Cap name to 37 chars (`[:37*2]`) |
+| `name.encode("utf-16-le")[:260*2]` - could overwrite `field_5c` at +0x5C | Cap name to 37 chars (`[:37*2]`) |
 | `describe_frame` only handled tag=1,2; tag=4 used wrong header size | Added tag=4 → hdr=7 |
 
 ## Changes made

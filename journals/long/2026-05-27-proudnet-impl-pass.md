@@ -8,10 +8,10 @@
 
 ## Code
 
-- `server/server/proud_rmi.py` — 0x180 body, session_uid/account_id split, name cap 37 wchars.
-- `include/game/net/net_user_connect_res.hpp` — IDA field map.
-- `include/game/net/proud_message.hpp` — inner opcode/RMI summarize.
-- `src/hooks/socket/pn_recv_append.cpp` — fix __thiscall stack (was wrong fastcall + duplicate push); log RMI summary.
+- `server/server/proud_rmi.py` - 0x180 body, session_uid/account_id split, name cap 37 wchars.
+- `include/game/net/net_user_connect_res.hpp` - IDA field map.
+- `include/game/net/proud_message.hpp` - inner opcode/RMI summarize.
+- `src/hooks/socket/pn_recv_append.cpp` - fix __thiscall stack (was wrong fastcall + duplicate push); log RMI summary.
 
 ## WIP
 

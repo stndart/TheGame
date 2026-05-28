@@ -1,4 +1,4 @@
-# pn_upnp full replacement — long journal
+# pn_upnp full replacement - long journal
 
 **Date:** 2026-05-27
 
@@ -25,7 +25,7 @@ IDA types `this` as `struct in_addr *` but offsets used (`+72`, `+76`, `+100`, `
 
 ### Return value
 
-**None** (`void`). Success and failure paths both unwind locals and return without `eax` semantics. Offline skip: empty return — matches original “give up / don’t block” behaviour from the old hook’s `ret`.
+**None** (`void`). Success and failure paths both unwind locals and return without `eax` semantics. Offline skip: empty return - matches original “give up / don’t block” behaviour from the old hook’s `ret`.
 
 ### Size / tail-call decision
 
@@ -33,7 +33,7 @@ IDA types `this` as `struct in_addr *` but offsets used (`+72`, `+76`, `+100`, `
 
 ### Callers
 
-- `sub_D6EF90` @ `0xD6EC7A`, `0xD6F066` — PN connect FSM state 1.
+- `sub_D6EF90` @ `0xD6EC7A`, `0xD6F066` - PN connect FSM state 1.
 
 ## Hook pattern (matches TCPSocket)
 
@@ -49,7 +49,7 @@ MSVC requires `__thiscall` on a **member** function (not namespace free function
 
 - DLL copied from `build/msvc-x86-debug/bin/TheGame.dll`
 - `just ctl::launch-offline` (daemon briefly unavailable; launch still succeeded)
-- `events.jsonl`: `connecting_to_server` line 97, `shard_choice` line 114 — fast progression (no multi-minute UPnP stall)
+- `events.jsonl`: `connecting_to_server` line 97, `shard_choice` line 114 - fast progression (no multi-minute UPnP stall)
 - `skip UPnP` log line not present in events/game_logs (same as prior runs with old trampoline hook); behaviour confirms skip or non-invocation on this path
 
 ## Collateral build fix

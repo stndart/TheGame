@@ -2,7 +2,7 @@
 
 ## IDA sessions
 
-### sub_D84BB0 @ 0xD84BB0 — TCP recv / frame parser
+### sub_D84BB0 @ 0xD84BB0 - TCP recv / frame parser
 
 ```
 d84c50  push 2              ; read 2 bytes
@@ -24,7 +24,7 @@ Frame format confirmed: `[13 57] [VarInt len] [payload]`
 VarInt from sub_D59250 / sub_D59DB0 uses the tag scheme already in proud_frame.hpp
 (tag 1 → 1B length; tag 2 → 2B LE; tag 4 → 4B LE).
 
-### sub_D84970 @ 0xD84970 — send path
+### sub_D84970 @ 0xD84970 - send path
 
 ```
 d849a2  push 5713h
@@ -35,13 +35,13 @@ d849c1  call sub_D59DB0     ; write size as VarInt (64-bit input → same tag sc
 
 Symmetric to recv, confirms framing.
 
-### sub_D85740 — write magic
+### sub_D85740 - write magic
 
-`sub_D85740(stream, byte_arg)` — the decompiler says arg = 19 decimal but asm shows
+`sub_D85740(stream, byte_arg)` - the decompiler says arg = 19 decimal but asm shows
 `push 5713h` before the call; it writes the two-byte magic to the stream buffer.
 The decompiler confused two separate pushes.
 
-### sub_4B8630 @ 0x4B8630 — RMI dispatch (contains NetUserConnectRES handler registration)
+### sub_4B8630 @ 0x4B8630 - RMI dispatch (contains NetUserConnectRES handler registration)
 
 ```
 4b865c  mov eax, offset sub_4BA070   ; handler fn pointer
@@ -60,7 +60,7 @@ The RmiMsg descriptor (48-byte queue element, stride confirmed in sub_D85800) ha
 at offset +0xC as a uint16_t. After the vtable pop, the body pointer is at descriptor+8,
 which becomes `a1` to sub_4BA070; the handler reads `*(a1+8)` for the actual body.
 
-### sub_4BA070 @ 0x4BA070 — "onNetUserConnectRES Begin"
+### sub_4BA070 @ 0x4BA070 - "onNetUserConnectRES Begin"
 
 Full assembly, key field reads:
 
@@ -100,7 +100,7 @@ Full assembly, key field reads:
 4ba312  mov eax, [edx+16Ch]       ; num_char_slots @ +0x16C
 ```
 
-### sub_65EAA0 @ 0x65EAA0 — alternate handler (registered via sub_660550)
+### sub_65EAA0 @ 0x65EAA0 - alternate handler (registered via sub_660550)
 
 Shares the same body pointer protocol. Additional reads:
 
@@ -115,7 +115,7 @@ Confirms: total struct reaches 0x17C+4 = 0x180.
 
 ### sub_401720 @ 0x401720
 
-Singleton pattern — ignores all pushed args, returns global `dword_1C1530C`.
+Singleton pattern - ignores all pushed args, returns global `dword_1C1530C`.
 The `push eax` before each call is actually the argument to the NEXT function that
 receives two items off the stack.
 
@@ -140,7 +140,7 @@ struct NetUserConnectRES_Body {
     uint32_t field_e0;         // +0xE0: obj+0x278 (sub_65EAA0 path)
     uint32_t field_e4;         // +0xE4: obj+0x27C (sub_65EAA0 path)
     uint32_t pad_e8;           // +0xE8: unknown
-    uint32_t account_id;       // +0xEC: *** CRITICAL — netmgr+136,+140 ***
+    uint32_t account_id;       // +0xEC: *** CRITICAL - netmgr+136,+140 ***
     uint8_t  farm_slots[3][40];// +0xF0..+0x167: 3 farm slot records
     uint32_t num_char_slots;   // +0x16C
     uint8_t  pad_170[0x10];    // +0x170..+0x17F: pad to 0x180
@@ -180,4 +180,4 @@ longer usernames (though "Player" = 6 chars was fine in practice).
 - `field_e0`, `field_e4`: only used by sub_65EAA0 path (alternate handler). May be irrelevant if
   sub_4BA070 is the one actually called at runtime.
 - Whether advancing past `connecting_to_server` requires also sending RMI_NET_CONNECT_RES (0x3E8E)
-  and/or NOTIFY (0x3E99) before or after — not yet verified with a fresh run.
+  and/or NOTIFY (0x3E99) before or after - not yet verified with a fresh run.
