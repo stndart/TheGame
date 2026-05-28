@@ -49,14 +49,16 @@ gsudo uv run ctl -d --background
 **Non-elevated** (agents, scripts) - use [just](https://github.com/casey/just) from repo root:
 
 ```powershell
-just daemon-bg    # once, via gsudo (skips if already up)
-just ping
-just ensure-serve # once, dummy server on :7000 (skips if already listening)
-just run-session  # copy-dll → launch → wait-menu → kill → copy-logs
+just daemon-bg              # once, via gsudo (skips if already up)
+just ctl::ping              # daemon must answer (alias: `just ping`)
+just ensure-serve           # once, dummy server on :7000 (skips if already listening)
+just ctl::run-session-offline  # copy-dll → launch-offline → wait-menu → kill → copy-logs
 ```
 
-Or compose steps yourself: `just launch`, `just wait-menu`, `just kill`, `just copy-logs`.
+Controller recipes live under the **`ctl`** module - always use the `ctl::` prefix from repo root (e.g. `just ctl::copy-dll`, `just ctl::launch-offline`, `just ctl::wait-stage shard_choice`). There is no bare `just launch` at the root.
+
+Or compose steps yourself: `just ctl::copy-dll`, `just ctl::launch-offline`, `just ctl::wait-stage main_menu`, `just ctl::kill-all`, `just ctl::copy-logs`.
 
 See [controller/README.md](controller/README.md) for stages, `wait-for-stage`, and config.
 
-Session artifacts live under `logs/runs/<run_id>/` (`events.jsonl`, `game_logs.txt`, `game_netlogs.txt`, `meta.json`).
+Session artifacts live under `logs/runs/<run_id>/` (`events.jsonl`, `game_logs.txt`, `game_netlogs.txt`, `game_proudnet_tcp.txt`, `meta.json`).

@@ -1,10 +1,10 @@
-# FA-EMU launch control via controller/ (pip install -e . → `ctl` on PATH).
+# FA-EMU launch control via ctl/
 #
 # One-time elevated daemon:
-#   just daemon-bg
-# Then (non-elevated):
-#   just ping
-#   just run-session
+#   just ctl::daemon-bg
+# Then (non-elevated, from repo root - use ctl:: prefix):
+#   just ctl::ping
+#   just ctl::run-session-offline
 
 set windows-shell := ["powershell.exe", "-NoLogo", "-Command"]
 
