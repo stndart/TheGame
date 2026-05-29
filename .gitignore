@@ -23,3 +23,6 @@ journals/*
 !journals/template.md
 !journals/long/
 !journals/long/README.md
+
+# docs
+!docs/proudnet
