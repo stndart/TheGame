@@ -1,14 +1,14 @@
 #include "target_hooks.h"
 
 #include "console.h"
-#include "game/net/pn_layout.hpp"
+#include "ProudNet/Layout.hpp"
 
 #ifndef THEGAME_PN_PROCESS_FULL_REIMPL
 #define THEGAME_PN_PROCESS_FULL_REIMPL 1
 #endif
 
 #if THEGAME_PN_PROCESS_FULL_REIMPL
-#include "game/net/pn_process_message.hpp"
+#include "ProudNet/ProcessProudNetLayer.hpp"
 #endif
 
 // sub_D653B0: char __thiscall(worker, wstr_body, received_msg)
@@ -36,7 +36,7 @@ extern "C" void __cdecl pn_process_message_trace_log(void *worker,
 
 extern "C" char __cdecl
 pn_process_message_reimpl_c(void *worker, void *wstr_body, void *received_msg) {
-  return process_message_proudnet_layer(worker, wstr_body, received_msg) ? 1
+  return Proud::ProcessMessageProudNetLayer(worker, wstr_body, received_msg) ? 1
                                                                          : 0;
 }
 
@@ -77,7 +77,7 @@ extern "C" void __declspec(naked) hook_pn_process_proudnet_layer() {
 #endif
 
 HookStub g_target_pn_process_proudnet_layer = {
-    static_cast<uint32_t>(pn::rva::kProcessProudNetLayer),
+    static_cast<uint32_t>(Proud::Rva::kProcessProudNetLayer),
     static_cast<uint32_t>(
         reinterpret_cast<uintptr_t>(hook_pn_process_proudnet_layer)),
     "hook_pn_process_proudnet_layer",

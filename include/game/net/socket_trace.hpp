@@ -33,11 +33,11 @@ bool peer_is_entry_server(SOCKET s);
 
 SOCKET read_fast_socket_slot(void *fast_socket_ctx);
 
-// When PN FSM polls CFastSocket+300, fix only an empty/wrong ENTRY slot - never
+// When PN FSM polls Proud::CFastSocket+300, fix only an empty/wrong ENTRY slot - never
 // stomp :27380.
 void sync_fast_socket_handle(void *fast_socket_ctx);
 
-// Last CFastSocket ctx seen in sub_D55300 (pn_select); used by recv-append
+// Last Proud::CFastSocket ctx seen in sub_D55300 (pn_select); used by recv-append
 // logging.
 void note_fast_socket_ctx(void *fast_socket_ctx);
 void *last_fast_socket_ctx();

@@ -1,6 +1,6 @@
 #include "hook_manager.h"
 #include "system_hooks.h"
-#include "game/net/pn_tcp_trace.hpp"
+#include "ProudNet/TcpTrace.hpp"
 #include "game/net/socket_trace.hpp"
 #include "game/server_override.hpp"
 
@@ -70,7 +70,7 @@ static void log_pn_wsasend_buffers(SOCKET s, LPWSABUF bufs, DWORD count) {
     return;
   for (DWORD i = 0; i < count; ++i) {
     if (bufs[i].buf && bufs[i].len)
-      PnTcpTrace::log_chunk(s, bufs[i].buf, bufs[i].len, false, nullptr);
+      Proud::TcpTrace::log_chunk(s, bufs[i].buf, bufs[i].len, false, nullptr);
   }
 }
 

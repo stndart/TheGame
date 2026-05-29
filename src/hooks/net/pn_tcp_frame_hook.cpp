@@ -1,8 +1,8 @@
 #include "target_hooks.h"
 
 #include "console.h"
-#include "game/net/pn_layout.hpp"
-#include "game/net/pn_tcp_frame.hpp"
+#include "ProudNet/Layout.hpp"
+#include "ProudNet/TcpLayerMessageExtractor.hpp"
 
 #include <windows.h>
 
@@ -32,7 +32,7 @@ void ensure_tcp_frame_send_body() {
 } // namespace
 
 extern "C" char tcp_frame_extract_c(void *self, void *stream_ctx) {
-  return reinterpret_cast<PNTcpFrame *>(self)->extract(stream_ctx);
+  return reinterpret_cast<Proud::CTcpLayerMessageExtractor *>(self)->extract(stream_ctx);
 }
 
 // Full replacement: __thiscall (ecx=this, [esp+4]=stream_ctx, ret 4).
@@ -69,7 +69,7 @@ extern "C" void __declspec(naked) hook_pn_tcp_frame_send() {
 }
 
 HookStub g_target_pn_tcp_frame_recv = {
-    static_cast<uint32_t>(pn::rva::kTcpFrameRecvHook),
+    static_cast<uint32_t>(Proud::Rva::kTcpFrameRecvHook),
     static_cast<uint32_t>(reinterpret_cast<uintptr_t>(hook_pn_tcp_frame_recv)),
     "hook_pn_tcp_frame_recv",
     {0},
@@ -78,7 +78,7 @@ HookStub g_target_pn_tcp_frame_recv = {
 };
 
 HookStub g_target_pn_tcp_frame_send = {
-    static_cast<uint32_t>(pn::rva::kTcpFrameSendHook),
+    static_cast<uint32_t>(Proud::Rva::kTcpFrameSendHook),
     static_cast<uint32_t>(reinterpret_cast<uintptr_t>(hook_pn_tcp_frame_send)),
     "hook_pn_tcp_frame_send",
     {0},

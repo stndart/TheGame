@@ -1,7 +1,7 @@
 ﻿#include "console.h"
 #include "crt/memory.h"
 #include "diagnostics/handlers.hpp"
-#include "game/net/pn_tcp_trace.hpp"
+#include "ProudNet/TcpTrace.hpp"
 #include "hook_manager.h"
 
 
@@ -110,7 +110,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call,
     if (log_file.is_open()) {
       log_file.close();
     }
-    PnTcpTrace::close_log_file();
+    Proud::TcpTrace::close_log_file();
 #ifndef THEGAME_NO_CONSOLE
     if (console_created) {
       FreeConsole();

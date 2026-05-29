@@ -1,6 +1,6 @@
 # ProudNet - IDA / reimpl index
 
-RVAs for **this debug build** of `GAME.exe`. Rebase in IDA if image base differs; hooks use the same addresses as `HookStub` in `src/main.cpp`. Layout constants: [`include/game/net/pn_layout.hpp`](../../include/game/net/pn_layout.hpp).
+RVAs for **this debug build** of `GAME.exe`. Rebase in IDA if image base differs; hooks use the same addresses as `HookStub` in `src/main.cpp`. Layout constants: [`include/ProudNet/Layout.hpp`](../../include/ProudNet/Layout.hpp).
 
 **Wire protocol:** [proudnet/protocol.md](proudnet/protocol.md). **Reimpl files:** [proudnet/implementation.md](proudnet/implementation.md). **Current hook matrix:** [plans/proudnet-hook-status.md](plans/proudnet-hook-status.md). **SDK crossmap (historical):** [proudnet-sdk-crossmap.md](proudnet-sdk-crossmap.md).
 

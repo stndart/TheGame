@@ -1,5 +1,5 @@
 #include "diagnostics/handlers.hpp"
-#include "game/net/pn_rmi_inject.hpp"
+#include "ProudNet/RmiInject.hpp"
 #include "hook_manager.h"
 #include "target_hooks.h"
 
@@ -24,7 +24,7 @@ extern "C" void __cdecl log_c2s_rmi_proxy(unsigned rmi_id, unsigned len) {
   const unsigned id = rmi_id & 0xFFFFu;
   wsprintfA(buf, "c2s_grmi proxy id=0x%04X (%u) len=%u", id, id, len);
   Diagnostics::emit_game_log(buf);
-  pn_inject_note_c2s_send(id);
+  Proud::RmiInject::NoteC2sSend(id);
 }
 
 extern "C" void __cdecl log_c2s_rmi_floor(unsigned rmi_id, unsigned len) {

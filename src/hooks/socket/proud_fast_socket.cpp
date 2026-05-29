@@ -1,27 +1,27 @@
 #include "target_hooks.h"
 
-#include "game/net/pn_fast_socket.hpp"
+#include "ProudNet/FastSocket.hpp"
 
 extern "C" void __declspec(naked) hook_fast_wsasend() {
   __asm {
-    jmp PNFastSocket::send
+    jmp Proud::CFastSocket::send
   }
 }
 
 extern "C" void __declspec(naked) hook_fast_wsarecv() {
   __asm {
-    jmp PNFastSocket::recv
+    jmp Proud::CFastSocket::recv
   }
 }
 
-HookStub g_target_fast_wsasend = {pn::rva::kFastSend,
+HookStub g_target_fast_wsasend = {Proud::Rva::kFastSend,
                                   (uint32_t)(uintptr_t)hook_fast_wsasend,
                                   "hook_fast_wsasend",
                                   {0},
                                   false,
                                   0};
 
-HookStub g_target_fast_wsarecv = {pn::rva::kFastRecv,
+HookStub g_target_fast_wsarecv = {Proud::Rva::kFastRecv,
                                   (uint32_t)(uintptr_t)hook_fast_wsarecv,
                                   "hook_fast_wsarecv",
                                   {0},

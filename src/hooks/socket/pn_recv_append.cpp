@@ -1,12 +1,12 @@
 #include "target_hooks.h"
 
-#include "game/net/pn_recv_append.hpp"
+#include "ProudNet/RecvAppend.hpp"
 
 // sub_D71CE0 - __thiscall append of completed WSARecv bytes (PN FSM state 3).
 
 extern "C" void __declspec(naked) hook_pn_recv_append() {
   __asm {
-    jmp PNRecvBuffer::append
+    jmp Proud::RecvBuffer::append
   }
 }
 

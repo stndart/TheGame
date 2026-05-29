@@ -1,12 +1,12 @@
 #include "target_hooks.h"
 
-#include "game/net/pn_upnp.hpp"
+#include "ProudNet/UpnpClient.hpp"
 
 // sub_D6E180 - UPnP AddPortMapping SOAP before first PN send (state 1).
 
 extern "C" void __declspec(naked) hook_pn_upnp() {
   __asm {
-    jmp PNUpnpClient::AddPortMapping
+    jmp Proud::UpnpClient::AddPortMapping
   }
 }
 

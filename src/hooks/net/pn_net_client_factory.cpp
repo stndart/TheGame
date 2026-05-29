@@ -2,7 +2,7 @@
 #include "target_hooks.h"
 
 #include "console.h"
-#include "game/net/pn_layout.hpp"
+#include "ProudNet/Layout.hpp"
 
 #include <windows.h>
 
@@ -28,7 +28,7 @@ extern "C" void log_pn_net_client_factory() {
 extern "C" void *__fastcall hook_pn_net_client_ctor_impl(void *self) {
   HookManager::restore_hook(g_target_pn_net_client_ctor);
   const auto orig = reinterpret_cast<NetClientCtorFn>(
-      game_va(static_cast<uint32_t>(pn::rva::kNetClientCtor)));
+      game_va(static_cast<uint32_t>(Proud::Rva::kNetClientCtor)));
   void *const ret = orig(self);
   HookManager::make_hook(g_target_pn_net_client_ctor);
   logf("CNetClient ctor tid=%lu this=%p ret=%p",
@@ -59,7 +59,7 @@ extern "C" void __declspec(naked) hook_pn_net_client_ctor() {
 }
 
 HookStub g_target_pn_net_client_factory = {
-    static_cast<uint32_t>(pn::rva::kNetClientFactory),
+    static_cast<uint32_t>(Proud::Rva::kNetClientFactory),
     static_cast<uint32_t>(
         reinterpret_cast<uintptr_t>(hook_pn_net_client_factory)),
     "hook_pn_net_client_factory",
@@ -69,10 +69,10 @@ HookStub g_target_pn_net_client_factory = {
 };
 
 HookStub g_target_pn_net_client_ctor = {
-    static_cast<uint32_t>(pn::rva::kNetClientCtor),
+    static_cast<uint32_t>(Proud::Rva::kNetClientCtor),
     static_cast<uint32_t>(reinterpret_cast<uintptr_t>(hook_pn_net_client_ctor)),
     "hook_pn_net_client_ctor",
     {0},
     false,
-    static_cast<uint32_t>(pn::rva::kNetClientCtor) + 5,
+    static_cast<uint32_t>(Proud::Rva::kNetClientCtor) + 5,
 };

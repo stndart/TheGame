@@ -1,11 +1,11 @@
 #include "target_hooks.h"
 
-#include "game/net/pn_fast_socket.hpp"
+#include "ProudNet/FastSocket.hpp"
 
-// w_wsasend_1 @ 0xD567F0 - full replacement (PNFastSocket::send).
+// w_wsasend_1 @ 0xD567F0 - full replacement (Proud::CFastSocket::send).
 extern "C" void __declspec(naked) hook_send_2() {
   __asm {
-    jmp PNFastSocket::send
+    jmp Proud::CFastSocket::send
   }
 }
 

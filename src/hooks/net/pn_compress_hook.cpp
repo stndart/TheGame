@@ -2,7 +2,7 @@
 #include "target_hooks.h"
 
 #include "console.h"
-#include "game/net/pn_layout.hpp"
+#include "ProudNet/Layout.hpp"
 
 #include <windows.h>
 
@@ -37,7 +37,7 @@ extern "C" char process_compressed_c(void *core, std::uint32_t type,
 
   HookManager::restore_hook(g_target_pn_process_compressed);
   const auto orig = reinterpret_cast<ProcessCompressedFn>(
-      game_va(static_cast<std::uint32_t>(pn::rva::kProcessCompressed)));
+      game_va(static_cast<std::uint32_t>(Proud::Rva::kProcessCompressed)));
   const char result = orig(core, type, received_msg, stack_mem);
   HookManager::make_hook(g_target_pn_process_compressed);
   return result;
@@ -66,7 +66,7 @@ extern "C" char process_encrypted_c(void *core, void *received_msg,
 
   HookManager::restore_hook(g_target_pn_process_encrypted);
   const auto orig = reinterpret_cast<ProcessEncryptedFn>(
-      game_va(static_cast<std::uint32_t>(pn::rva::kProcessEncrypted)));
+      game_va(static_cast<std::uint32_t>(Proud::Rva::kProcessEncrypted)));
   const char result = orig(core, received_msg, stack_mem);
   HookManager::make_hook(g_target_pn_process_encrypted);
   return result;
@@ -84,21 +84,21 @@ extern "C" void __declspec(naked) hook_pn_process_encrypted() {
 }
 
 HookStub g_target_pn_process_compressed = {
-    static_cast<uint32_t>(pn::rva::kProcessCompressed),
+    static_cast<uint32_t>(Proud::Rva::kProcessCompressed),
     static_cast<uint32_t>(
         reinterpret_cast<uintptr_t>(hook_pn_process_compressed)),
     "hook_pn_process_compressed",
     {0},
     false,
-    static_cast<uint32_t>(pn::rva::kProcessCompressedResume),
+    static_cast<uint32_t>(Proud::Rva::kProcessCompressedResume),
 };
 
 HookStub g_target_pn_process_encrypted = {
-    static_cast<uint32_t>(pn::rva::kProcessEncrypted),
+    static_cast<uint32_t>(Proud::Rva::kProcessEncrypted),
     static_cast<uint32_t>(
         reinterpret_cast<uintptr_t>(hook_pn_process_encrypted)),
     "hook_pn_process_encrypted",
     {0},
     false,
-    static_cast<uint32_t>(pn::rva::kProcessEncryptedResume),
+    static_cast<uint32_t>(Proud::Rva::kProcessEncryptedResume),
 };

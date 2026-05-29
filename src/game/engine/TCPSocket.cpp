@@ -1,8 +1,8 @@
 #include "game/engine/TCPSocket.h"
 #include "diagnostics/handlers.hpp"
-#include "game/net/pn_growable.hpp"
-#include "game/net/pn_socket_error.hpp"
-#include "game/net/pn_tcp_trace.hpp"
+#include "ProudNet/GrowableBuffer.hpp"
+#include "ProudNet/SocketError.hpp"
+#include "ProudNet/TcpTrace.hpp"
 #include "game/net/socket_trace.hpp"
 #include "game/server_override.hpp"
 
@@ -68,7 +68,7 @@ int TCPSocket::Connect(WString wideHostname, int port) {
 
     if (!hostEntry) {
       int error = WSAGetLastError();
-      pn::socket_report_error(this, error, nullptr);
+      Proud::SocketReportError(this, error, nullptr);
       return error;
     }
     serverAddr.sin_addr.s_addr = *(ULONG *)hostEntry->h_addr_list[0];
@@ -88,13 +88,13 @@ int TCPSocket::Connect(WString wideHostname, int port) {
   if (port == ServerOverride::kGameLegPort)
     logf("TCPSocket:27380 target %s:%u", ipstr.c_str(), port);
 
-  PnTcpTrace::log_connect(m_socketId, ipstr.c_str(),
+  Proud::TcpTrace::log_connect(m_socketId, ipstr.c_str(),
                           static_cast<u_short>(port));
 
   if (connect(m_socketId, (sockaddr *)&serverAddr, sizeof(serverAddr)) ==
       SOCKET_ERROR) {
     int error = WSAGetLastError();
-    pn::socket_report_error(this, error, nullptr);
+    Proud::SocketReportError(this, error, nullptr);
     if (error != WSAEWOULDBLOCK && error != WSA_IO_PENDING)
       logf("Error connecting to %s: %u", ipstr.c_str(), error);
     return error;
@@ -120,7 +120,7 @@ int TCPSocket::Send(TCPSocket::MessageToSend *message) {
 
   // Range check for buffer count
   if (((uint64_t)message->bufferCount + 0x80000000) >> 32) {
-    pn::growable::throw_send_buffer_count_out_of_range();
+    Proud::growable::throw_send_buffer_count_out_of_range();
   }
 
   // Use WSASend for overlapped I/O
@@ -156,12 +156,12 @@ int TCPSocket::Send(TCPSocket::MessageToSend *message) {
       break;
     }
 
-    pn::growable::note_wsa_interrupt_retry();
+    Proud::growable::note_wsa_interrupt_retry();
   }
 
   // Handle other errors
   this->m_sendWarningFlag = false;
-  pn::socket_report_error(this, lastError, nullptr);
+  Proud::SocketReportError(this, lastError, nullptr);
 
   return lastError;
 }

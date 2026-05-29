@@ -1,10 +1,10 @@
 #include "target_hooks.h"
 
-#include "game/net/pn_select.hpp"
+#include "ProudNet/SelectContext.hpp"
 
 extern "C" void __declspec(naked) hook_pn_select() {
   __asm {
-    jmp PNSelectContext::poll
+    jmp Proud::CSelectContext::poll
   }
 }
 
