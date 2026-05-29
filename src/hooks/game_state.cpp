@@ -1,5 +1,6 @@
 #include "diagnostics/handlers.hpp"
 #include "RMI/Inject.hpp"
+#include "RMI/Nav.hpp"
 #include "target_hooks.h"
 
 extern "C" void __cdecl diagnostics_game_state_intro() {
@@ -20,14 +21,20 @@ extern "C" void __cdecl diagnostics_game_state_shard_choice() {
 // deceptive "main_menu" label. Real screens are staged below (lobby, room, ...).
 extern "C" void __cdecl diagnostics_game_state_main_menu() {
   Diagnostics::emit_game_state("server_ready");
+  Rmi::NavOnStage("server_ready");
+  Rmi::NavPump("server_ready");
 }
 
 extern "C" void __cdecl diagnostics_game_state_lobby() {
   Diagnostics::emit_game_state("lobby");
+  Rmi::NavOnStage("lobby");
+  Rmi::NavPump("lobby");
 }
 
 extern "C" void __cdecl diagnostics_game_state_room_list() {
   Diagnostics::emit_game_state("room_list");
+  Rmi::NavOnStage("room_list");
+  Rmi::NavPump("room_list");
   // Main-thread pump: run a pending Create-Room transition RES here (the frame
   // thread) instead of the ProudNet worker thread.
   Rmi::PumpLobby();

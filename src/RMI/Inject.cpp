@@ -16,6 +16,7 @@ std::uintptr_t game_va(const std::uint32_t va) {
 
 // C2S REQ ids (proxy band, sub_65AEA0 explicit id) we trigger on.
 constexpr unsigned kReqCreateRoom = 0x3F30; // Custom-match Create Room
+constexpr unsigned kReqRoomEnter = 0x3ED3;  // auto room-enter REQ on scene 9
 constexpr unsigned kReqRoomReady = 0x3F2B;  // waiting-room Ready toggle
 
 // S2C RES leaf handlers (RVA == IDA EA). Signature: int __stdcall(MsgDelegateArg
@@ -23,6 +24,8 @@ constexpr unsigned kReqRoomReady = 0x3F2B;  // waiting-room Ready toggle
 //
 // 0x3F30 (sub_437160): on result==0 requests scene 9 (CGameRoom).
 constexpr std::uint32_t kLeafCreateRoomRes = 0x437160;
+// 0x3F41 lobby-enter RES (after C2S 0x3F40).
+constexpr std::uint32_t kLeafLobbyEnterRes = 0x4BA740;
 // 0x3F3D (sub_43D9B0): game-start. On result==0, if flt_1C25E2C set, copies
 // body+4 (wstring) via sub_65C1C0, stores body+0x28 -> flt_1C25E2C[0x210], then
 // requests scene 11 (CGamePlay -> CBasePlayLoading map load).
@@ -75,6 +78,13 @@ void call_res_leaf(std::uint32_t leaf_rva, const void *body) {
   fn(arg);
 }
 
+void inject_lobby_enter_res() {
+  unsigned char body[8] = {0};
+  Diagnostics::emit_game_log(
+      "inject: lobby-enter RES 0x3F41 result=0 -> GameLobby");
+  call_res_leaf(kLeafLobbyEnterRes, body);
+}
+
 void inject_create_room_res() {
   // body+0: pad (ignored), body+2: result u16 == 0 -> success -> RequestState(9).
   unsigned char body[8] = {0};
@@ -92,38 +102,55 @@ void put_u32(unsigned char *p, std::size_t off, std::uint32_t v) {
   p[off + 3] = static_cast<unsigned char>((v >> 24) & 0xFF);
 }
 
+void put_u64(unsigned char *p, std::size_t off, std::uint64_t v) {
+  put_u32(p, off + 0, static_cast<std::uint32_t>(v & 0xFFFFFFFFu));
+  put_u32(p, off + 4, static_cast<std::uint32_t>((v >> 32) & 0xFFFFFFFFu));
+}
+
+// 32B compact record (server/server/proud_rmi.py room_enter_compact_record).
+constexpr std::size_t kCompactMemberStride = 32;
+
+void fill_room_enter_compact(unsigned char *rec, std::uint32_t account_id,
+                             std::uint32_t slot, std::uint32_t team) {
+  put_u32(rec, 0x00, account_id); // map key in sub_962020 / off_1C28684
+  put_u32(rec, 0x04, slot);
+  put_u32(rec, 0x08, team);
+  // +0x10 name_ref left 0: display name comes from NetUserConnectRES char DB.
+}
+
+// 168B UI record (server/server/proud_rmi.py room_members_ui_record).
+void fill_room_members_ui(unsigned char *rec, std::uint32_t slot,
+                          std::uint32_t team) {
+  put_u32(rec, 0x00, slot); // map key for sub_8DCBF0(slot), NOT account_id
+  put_u32(rec, 0x04, 1);    // present (sub_8F98B0 path)
+  put_u32(rec, 0x08, team);
+  put_u32(rec, 0x14, 1);    // sub_4F8670 checks stored member +0x14 == 1
+  put_u64(rec, 0x20, 0);    // isLockIn QWORD: not locked
+  rec[0x28] = 1;            // sub_8DCBF0 validity (else +0x2C must be 1)
+}
+
 // Populate CGameRoom's COMPACT member map (off_1C28684). body+2 count=1, one 32B
 // record whose key (record+0) is the local account id. The UI does not read this
 // map directly; injected for real-server parity / coherence.
 void inject_room_enter_res() {
-  unsigned char body[6 + 32] = {0};
-  put_u32(body, 2, 1);                       // count = 1
-  put_u32(body, 6 + 0x00, kLocalAccountId);  // record+0: account_id (map key)
-  // record+4 slot, +8 team, +0x10 name-handle left 0: name binds off the char DB
-  // (dword_1C15354), not this record.
-  Diagnostics::emit_game_log(
-      "inject: room-enter RES 0x3ED4 count=1 (compact map, acct=1)");
+  unsigned char body[6 + kCompactMemberStride] = {0};
+  put_u32(body, 2, 1);
+  fill_room_enter_compact(body + 6, kLocalAccountId, 0, 0);
+  char msg[96];
+  wsprintfA(msg,
+            "inject: room-enter RES 0x3ED4 count=1 acct=%u slot=0 team=0",
+            kLocalAccountId);
+  Diagnostics::emit_game_log(msg);
   call_res_leaf(kLeafRoomEnterRes, body);
 }
 
-// Populate the UI member map (dword_1C28898) the room script actually binds. One
-// 168B slot-0 record with the validity fields sub_8DCBF0 / sub_4F8670 gate on:
-//   record+0    = slot index (0)
-//   record+4    = 1   (sub_8F98B0 present path)
-//   record+0x14 = 1   (sub_4F8670 checks == 1)
-//   record+0x28 = 1   (sub_8DCBF0 validity byte; else +0x2C == 1)
-//   record+0x20 = 0   (isLockIn QWORD: not locked)
-// Field semantics are inferred (subagent [S]); validate at runtime.
+// Populate the UI member map (dword_1C28898) the room script actually binds.
 void inject_room_members_res() {
   unsigned char body[6 + kUiMemberStride] = {0};
-  put_u32(body, 2, 1);             // count = 1
-  const std::size_t r = 6;         // record base
-  put_u32(body, r + 0x00, 0);      // slot index 0 (key for sub_8DCBF0(0))
-  put_u32(body, r + 0x04, 1);      // present path
-  put_u32(body, r + 0x14, 1);      // sub_4F8670 == 1
-  body[r + 0x28] = 1;              // sub_8DCBF0 validity
+  put_u32(body, 2, 1);
+  fill_room_members_ui(body + 6, 0, 0);
   Diagnostics::emit_game_log(
-      "inject: room-members RES 0x3ED8 count=1 slot=0 (UI map)");
+      "inject: room-members RES 0x3ED8 count=1 slot=0 team=0 (UI map)");
   call_res_leaf(kLeafRoomMembersRes, body);
 }
 
@@ -145,6 +172,14 @@ void Rmi::NoteC2sSend(unsigned rmi_id) {
   const unsigned id = rmi_id & 0xFFFFu;
   if (id == kReqCreateRoom) {
     InterlockedExchange(&g_pending_create_room, 1);
+    // Arm populate even when the server answers create-room on the wire first
+    // (worker thread). PumpRoom must re-run 0x3ED4+0x3ED8 on the main thread
+    // before CGameRoom::onPreProcess binds slot-0 UI fields.
+    InterlockedExchange(&g_pending_populate, 1);
+  } else if (id == kReqRoomEnter) {
+    // Client auto-sends enter after scene 9; server may answer 0x3ED4/0x3ED8 on the
+    // worker thread with empty records. Re-populate on the next PumpRoom frame.
+    InterlockedExchange(&g_pending_populate, 1);
   } else if (id == kReqRoomReady) {
     // One-shot: first Ready press in the room launches the match offline.
     if (InterlockedCompareExchange(&g_start_fired, 1, 0) == 0) {
@@ -177,4 +212,10 @@ void Rmi::PumpRoom() {
   if (InterlockedCompareExchange(&g_pending_start, 0, 1) == 1) {
     inject_start_res();
   }
+}
+
+void Rmi::InjectLobbyEnterRes() {
+  if (rmi_inject_disabled())
+    return;
+  inject_lobby_enter_res();
 }

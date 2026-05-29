@@ -2,7 +2,7 @@
 
 End-to-end **transport** bytes for the offline dummy server (`127.0.0.1`, ports **7000 / 27380 / 20009**). Normative reference for framing and transport opcodes. Game RMI body layouts: [../rmi/server.md](../rmi/server.md), [../rmi/client.md](../rmi/client.md).
 
-**Scope:** TCP framing and transport FSM - not a complete ProudNet 1.7 specification.
+**Scope:** TCP framing and transport FSM - not a complete ProudNet 1.5 specification.
 
 **Evidence:**
 

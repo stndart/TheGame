@@ -96,6 +96,7 @@ Full stage → RVA table: [../plans/proudnet-rmi-server-plan.md](../plans/proudn
 | Topic | Doc |
 | --- | --- |
 | C2S send, S2C receive, registrars | [client.md](client.md) |
+| Autonomous lobby → create room (ctl) | [autonav.md](autonav.md) |
 | Wire builders, replay, triggers | [server.md](server.md) |
 | RVA / handler tables | [../rmi-ida-reimpl.md](../rmi-ida-reimpl.md) |
 

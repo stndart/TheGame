@@ -18,6 +18,7 @@
 | --- | --- |
 | [rmi/overview.md](rmi/overview.md) | Intent - numbering spaces, end-to-end flow |
 | [rmi/client.md](rmi/client.md) | Client - C2S send, S2C receive, leaf convention, registrars |
+| [rmi/autonav.md](rmi/autonav.md) | **Autonav** - `THEGAME_NAV_AUTO`, UI handlers, ctl verify |
 | [rmi/server.md](rmi/server.md) | Server - wire builders, triggers, opaque replay artifacts |
 | [rmi-ida-reimpl.md](rmi-ida-reimpl.md) | IDA ↔ reimpl - game RMI RVAs, handler tables, hooks |
 

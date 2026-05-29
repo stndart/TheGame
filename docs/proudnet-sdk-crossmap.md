@@ -1,6 +1,6 @@
 # ProudNet SDK ↔ GAME.exe crossmap (historical)
 
-Maps **structures, enums, and signatures** between bundled ProudNet **v1.8** sample DLL and statically linked **~1.7** code in `GAME.exe`. For current wire specs see [proudnet/protocol.md](proudnet/protocol.md); for GAME-only RVAs see [proudnet-ida-reimpl.md](proudnet-ida-reimpl.md).
+Maps **structures, enums, and signatures** between bundled ProudNet **v1.8** sample DLL and statically linked **~1.5** code in `GAME.exe`. For current wire specs see [proudnet/protocol.md](proudnet/protocol.md); for GAME-only RVAs see [proudnet-ida-reimpl.md](proudnet-ida-reimpl.md).
 
 | IDA instance | Port | Binary | Role |
 | --- | --- | --- | --- |
