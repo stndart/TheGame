@@ -28,5 +28,6 @@ void PumpRoom();
 
 // Minimal S2C RES for offline nav (main thread only).
 void InjectLobbyEnterRes();
+void InjectLeaveRoomRes();
 
 } // namespace Rmi

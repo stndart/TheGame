@@ -29,6 +29,8 @@ extern "C" void __cdecl diagnostics_game_state_lobby() {
   Diagnostics::emit_game_state("lobby");
   Rmi::NavOnStage("lobby");
   Rmi::NavPump("lobby");
+  // Answer pending lobby-enter REQ (0x3F40) before shard UI regression.
+  Rmi::PumpLobby();
 }
 
 extern "C" void __cdecl diagnostics_game_state_room_list() {
@@ -46,6 +48,8 @@ extern "C" void __cdecl diagnostics_game_state_party_room() {
 
 extern "C" void __cdecl diagnostics_game_state_room() {
   Diagnostics::emit_game_state("room");
+  Rmi::NavOnStage("room");
+  Rmi::NavPump("room");
   // Main-thread pump, BEFORE the original CGameRoom::onPreProcess binds room
   // data: populate the room (first frame), then honour a pending Ready->start.
   Rmi::PumpRoom();

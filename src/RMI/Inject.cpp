@@ -15,9 +15,11 @@ std::uintptr_t game_va(const std::uint32_t va) {
 }
 
 // C2S REQ ids (proxy band, sub_65AEA0 explicit id) we trigger on.
+constexpr unsigned kReqLobbyEnter = 0x3F40; // lobby-enter notify on scene 4
 constexpr unsigned kReqCreateRoom = 0x3F30; // Custom-match Create Room
 constexpr unsigned kReqRoomEnter = 0x3ED3;  // auto room-enter REQ on scene 9
 constexpr unsigned kReqRoomReady = 0x3F2B;  // waiting-room Ready toggle
+constexpr unsigned kReqLeaveRoom = 0x3F45;  // leave room (custom match)
 
 // S2C RES leaf handlers (RVA == IDA EA). Signature: int __stdcall(MsgDelegateArg
 // const* a1); body = *(u32*)(a1+8). gating result(u16) at body+2 (0 == success).
@@ -30,6 +32,8 @@ constexpr std::uint32_t kLeafLobbyEnterRes = 0x4BA740;
 // body+4 (wstring) via sub_65C1C0, stores body+0x28 -> flt_1C25E2C[0x210], then
 // requests scene 11 (CGamePlay -> CBasePlayLoading map load).
 constexpr std::uint32_t kLeafStartRes = 0x43D9B0;
+// 0x3F45 leave-room RES (sub_43D020): dword_1C1A87C selects target scene.
+constexpr std::uint32_t kLeafLeaveRoomRes = 0x43D020;
 // 0x3ED4 (sub_4BB560): room-enter ACK / COMPACT member list. body+2 int count,
 // then count * 32B records at body+6. Fills the compact member map (off_1C28684
 // keyed by record+0 = account_id, plus key-set dword_1C2EA08). NOTE: this is NOT
@@ -62,9 +66,11 @@ bool rmi_inject_disabled() {
 #endif
 }
 
+volatile LONG g_pending_lobby_enter = 0;
 volatile LONG g_pending_create_room = 0;
 volatile LONG g_pending_populate = 0;
 volatile LONG g_pending_start = 0;
+volatile LONG g_pending_leave_room = 0;
 volatile LONG g_start_fired = 0;
 
 // Invoke an RES leaf with a flat body buffer. The leaf only dereferences
@@ -95,11 +101,28 @@ void inject_create_room_res() {
   call_res_leaf(kLeafCreateRoomRes, body);
 }
 
+void inject_leave_room_res() {
+  unsigned char body[8] = {0};
+  char msg[128];
+  wsprintfA(msg,
+            "inject: leave-room RES 0x3F45 mode=%u scene=%d (tid=%lu)",
+            *reinterpret_cast<unsigned *>(game_va(0x1C1A87C)),
+            *reinterpret_cast<int *>(game_va(0x1C15644)),
+            GetCurrentThreadId());
+  Diagnostics::emit_game_log(msg);
+  call_res_leaf(kLeafLeaveRoomRes, body);
+}
+
 void put_u32(unsigned char *p, std::size_t off, std::uint32_t v) {
   p[off + 0] = static_cast<unsigned char>(v & 0xFF);
   p[off + 1] = static_cast<unsigned char>((v >> 8) & 0xFF);
   p[off + 2] = static_cast<unsigned char>((v >> 16) & 0xFF);
   p[off + 3] = static_cast<unsigned char>((v >> 24) & 0xFF);
+}
+
+void put_u16(unsigned char *p, std::size_t off, std::uint16_t v) {
+  p[off + 0] = static_cast<unsigned char>(v & 0xFF);
+  p[off + 1] = static_cast<unsigned char>((v >> 8) & 0xFF);
 }
 
 void put_u64(unsigned char *p, std::size_t off, std::uint64_t v) {
@@ -155,11 +178,25 @@ void inject_room_members_res() {
 }
 
 void inject_start_res() {
-  // 0x40 zeroed: result(+2)=0, empty wstring(+4), mode(+38)=0, param(+40)=0.
+  // sub_43D9B0 success path needs LODWORD(flt_1C25E2C) != 0 and result@+2==0.
+  const std::uintptr_t play_ctx =
+      *reinterpret_cast<std::uintptr_t *>(game_va(0x1C25E2C));
+  if (!play_ctx) {
+    Diagnostics::emit_game_log(
+        "inject: start RES 0x3F3D skipped (flt_1C25E2C null)");
+    return;
+  }
+
   unsigned char body[0x40] = {0};
-  char msg[96];
-  wsprintfA(msg, "inject: start RES 0x3F3D result=0 -> CGamePlay (tid=%lu)",
-            GetCurrentThreadId());
+  put_u16(body, 0x02, 0);       // result = success
+  put_u16(body, 0x26, 1);       // game mode @ body+0x26 (sub_65C1C0 arg)
+  put_u32(body, 0x28, 1);       // -> flt_1C25E2C[0x210] match handle
+
+  char msg[128];
+  wsprintfA(msg,
+            "inject: start RES 0x3F3D result=0 mode=1 handle=1 ctx=%08X "
+            "(tid=%lu)",
+            static_cast<unsigned>(play_ctx), GetCurrentThreadId());
   Diagnostics::emit_game_log(msg);
   call_res_leaf(kLeafStartRes, body);
 }
@@ -170,7 +207,9 @@ void Rmi::NoteC2sSend(unsigned rmi_id) {
   if (rmi_inject_disabled())
     return;
   const unsigned id = rmi_id & 0xFFFFu;
-  if (id == kReqCreateRoom) {
+  if (id == kReqLobbyEnter) {
+    InterlockedExchange(&g_pending_lobby_enter, 1);
+  } else if (id == kReqCreateRoom) {
     InterlockedExchange(&g_pending_create_room, 1);
     // Arm populate even when the server answers create-room on the wire first
     // (worker thread). PumpRoom must re-run 0x3ED4+0x3ED8 on the main thread
@@ -185,12 +224,18 @@ void Rmi::NoteC2sSend(unsigned rmi_id) {
     if (InterlockedCompareExchange(&g_start_fired, 1, 0) == 0) {
       InterlockedExchange(&g_pending_start, 1);
     }
+  } else if (id == kReqLeaveRoom) {
+    InterlockedExchange(&g_pending_leave_room, 1);
   }
 }
 
 void Rmi::PumpLobby() {
   if (rmi_inject_disabled())
     return;
+  // Answer lobby-enter REQ (0x3F40) so offline clients do not regress to shard UI.
+  if (InterlockedCompareExchange(&g_pending_lobby_enter, 0, 1) == 1) {
+    inject_lobby_enter_res();
+  }
   // Create-Room transition: success RES -> RequestState(9) (CGameRoom). Arm the
   // room-populate so the data is in place before CGameRoom's first frame binds.
   if (InterlockedCompareExchange(&g_pending_create_room, 0, 1) == 1) {
@@ -202,6 +247,9 @@ void Rmi::PumpLobby() {
 void Rmi::PumpRoom() {
   if (rmi_inject_disabled())
     return;
+  if (InterlockedCompareExchange(&g_pending_leave_room, 0, 1) == 1) {
+    inject_leave_room_res();
+  }
   // Runs in CGameRoom::onPreProcess prologue, BEFORE the original binds room
   // data. Populate first (compact map then the UI map the script reads), then
   // honour a pending Ready -> start-match.
@@ -218,4 +266,10 @@ void Rmi::InjectLobbyEnterRes() {
   if (rmi_inject_disabled())
     return;
   inject_lobby_enter_res();
+}
+
+void Rmi::InjectLeaveRoomRes() {
+  if (rmi_inject_disabled())
+    return;
+  inject_leave_room_res();
 }

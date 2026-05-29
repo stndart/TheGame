@@ -40,5 +40,12 @@ copy-dll-wire: build-debug-wire
 launch-offline-nav:
     just ctl::launch-offline-nav
 
+# Offline launch with THEGAME_NAV_AUTO=exit_lobby (lobby back to shard picker).
+launch-offline-exit-nav:
+    just ctl::launch-offline-exit-nav
+
+run-exit-lobby-test:
+    just ctl::run-exit-lobby-test
+
 build-release:
     .\cmake-vs.bat --build --preset release

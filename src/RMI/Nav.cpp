@@ -10,6 +10,7 @@
 
 namespace {
 
+constexpr int kSceneServer = 2;
 constexpr int kSceneLobby = 4;
 constexpr int kSceneRoomList = 5;
 constexpr int kSceneRoom = 9;
@@ -30,6 +31,10 @@ void *state_machine() {
 
 void *proxy_singleton() {
   return reinterpret_cast<void *>(game_va(0x1C1ABA0));
+}
+
+void *floor_singleton() {
+  return reinterpret_cast<void *>(game_va(0x1C1ABB0));
 }
 
 bool transition_locked() {
@@ -86,9 +91,32 @@ bool send_proxy_rmi(unsigned id, const void *msg, int len) {
             static_cast<short>(id & 0xFFFFu)) != 0;
 }
 
+// sub_A0B290: char __userpurge(proxy@<eax>, msg, len) — proxy dword_1C1ABB0 in EAX.
+bool send_floor_rmi(const void *msg, int len) {
+  void *proxy = floor_singleton();
+  char ok = 0;
+  const auto fn_va = game_va(0xA0B290);
+  __asm {
+    mov eax, proxy
+    push len
+    push msg
+    call fn_va
+    add esp, 8
+    mov ok, al
+  }
+  return ok != 0;
+}
+
 void build_word_payload(unsigned char out[2], std::uint16_t floor_id) {
   out[0] = static_cast<unsigned char>(floor_id & 0xFF);
   out[1] = static_cast<unsigned char>((floor_id >> 8) & 0xFF);
+}
+
+void put_u32(unsigned char *p, std::size_t off, std::uint32_t v) {
+  p[off + 0] = static_cast<unsigned char>(v & 0xFF);
+  p[off + 1] = static_cast<unsigned char>((v >> 8) & 0xFF);
+  p[off + 2] = static_cast<unsigned char>((v >> 16) & 0xFF);
+  p[off + 3] = static_cast<unsigned char>((v >> 24) & 0xFF);
 }
 
 void build_create_room_req(unsigned char out[98], const wchar_t *name) {
@@ -154,19 +182,51 @@ const char *nav_auto_mode() {
   return buf[0] ? buf : nullptr;
 }
 
-bool nav_enabled() {
+const char *nav_action() {
+  static int cached = -1;
+  static char buf[32];
+  if (cached < 0) {
+    const DWORD n =
+        GetEnvironmentVariableA("THEGAME_NAV_ACTION", buf, sizeof(buf));
+    if (n > 0 && n < sizeof(buf)) {
+      cached = 1;
+    } else {
+      buf[0] = '\0';
+      cached = 0;
+    }
+  }
+  return buf[0] ? buf : nullptr;
+}
+
+bool nav_is_create_mode() {
   const char *mode = nav_auto_mode();
   if (!mode)
     return false;
   return std::strcmp(mode, "create_room") == 0 || std::strcmp(mode, "full") == 0;
 }
 
+bool nav_is_exit_only_mode() {
+  const char *mode = nav_auto_mode();
+  return mode && std::strcmp(mode, "exit_lobby") == 0;
+}
+
+bool nav_enabled() {
+  if (nav_action())
+    return true;
+  const char *mode = nav_auto_mode();
+  if (!mode)
+    return false;
+  return nav_is_create_mode() || nav_is_exit_only_mode();
+}
+
 volatile LONG g_nav_logged = 0;
 volatile LONG g_want_lobby = 0;
 volatile LONG g_want_room_list = 0;
 volatile LONG g_want_create_room = 0;
+volatile LONG g_want_exit_server = 0;
 volatile LONG g_did_server_ready = 0;
 volatile LONG g_did_create_send = 0;
+volatile LONG g_action_done = 0;
 
 bool want_flag(volatile LONG *flag) {
   return InterlockedCompareExchange(flag, 0, 0) != 0;
@@ -176,8 +236,10 @@ void log_nav_enabled_once() {
   if (InterlockedCompareExchange(&g_nav_logged, 1, 0) != 0)
     return;
   const char *mode = nav_auto_mode();
-  char line[96];
-  wsprintfA(line, "nav: enabled mode=%s", mode ? mode : "?");
+  const char *action = nav_action();
+  char line[128];
+  wsprintfA(line, "nav: enabled mode=%s action=%s", mode ? mode : "-",
+            action ? action : "-");
   Diagnostics::emit_game_log(line);
 }
 
@@ -189,6 +251,15 @@ void send_server_ready_pair() {
   log_nav("c2s 0x3E99 notify");
   build_word_payload(word, 0x3AD4);
   send_proxy_rmi(0x3E99, word, 2);
+}
+
+void send_server_leave() {
+  unsigned char word[2];
+  log_nav("c2s 0x3F0C server leave");
+  build_word_payload(word, 0x3AD1);
+  send_proxy_rmi(0x3F0C, word, 2);
+  // Human exit also sends floor 0x3ACD len 6 (run 179). Direct sub_A0B290 call
+  // from the DLL still faults — wire-only path until the wrapper is RE'd.
 }
 
 void send_room_list_refresh() {
@@ -203,6 +274,46 @@ void send_create_room_rmi() {
   log_nav("c2s 0x3F30 create room (98B body)");
   build_create_room_req(body, L"re_room");
   send_proxy_rmi(0x3F30, body, 98);
+}
+
+void send_leave_room_rmi(int param) {
+  unsigned char body[6] = {};
+  build_word_payload(body, 0x3AA3);
+  put_u32(body, 2, static_cast<std::uint32_t>(param));
+  log_nav("c2s 0x3F45 leave room (6B)");
+  send_proxy_rmi(0x3F45, body, 6);
+}
+
+void send_quick_match_rmi() {
+  unsigned char body[3] = {};
+  build_word_payload(body, 0x3AAF);
+  body[2] = 0;
+  log_nav("c2s 0x3EE4 quick match (3B)");
+  send_proxy_rmi(0x3EE4, body, 3);
+}
+
+void send_global_chat_rmi(const wchar_t *text) {
+  unsigned char body[36] = {};
+  build_word_payload(body, 0x3AD2);
+  std::size_t n = 0;
+  if (text) {
+    while (text[n] && n < 12)
+      ++n;
+  }
+  put_u32(body, 4, static_cast<std::uint32_t>(n));
+  if (n)
+    std::memcpy(body + 8, text, n * sizeof(wchar_t));
+  log_nav("c2s floor 0x3AD2 global chat");
+  send_floor_rmi(body, 36);
+}
+
+bool action_is(const char *name) {
+  const char *action = nav_action();
+  return action && std::strcmp(action, name) == 0;
+}
+
+bool action_blocks_create_forward() {
+  return action_is("chat_ping") || action_is("quick_match");
 }
 
 bool try_goto_lobby() {
@@ -233,30 +344,119 @@ bool try_create_room() {
   return true;
 }
 
+bool try_exit_to_server() {
+  const int scene = current_scene();
+  if (scene == kSceneRoom) {
+    send_leave_room_rmi(0);
+    // Leave RES is pumped on this frame in PumpRoom (after NavPump).
+    return current_scene() != kSceneRoom;
+  }
+  if (scene == kSceneRoomList || scene == kSceneLobby) {
+    if (!request_scene(kSceneServer))
+      return false;
+    send_server_leave();
+    return current_scene() == kSceneServer;
+  }
+  if (scene == kSceneServer)
+    return true;
+  char msg[64];
+  wsprintfA(msg, "exit_to_server skipped (scene=%d)", scene);
+  log_nav(msg);
+  return false;
+}
+
+void run_one_shot_action() {
+  if (InterlockedCompareExchange(&g_action_done, 1, 0) != 0)
+    return;
+
+  if (action_is("chat_ping")) {
+    if (current_scene() == kSceneLobby) {
+      send_global_chat_rmi(L"nav_ping");
+      return;
+    }
+    InterlockedExchange(&g_action_done, 0);
+    return;
+  }
+
+  if (action_is("quick_match")) {
+    if (current_scene() == kSceneLobby) {
+      send_quick_match_rmi();
+      return;
+    }
+    InterlockedExchange(&g_action_done, 0);
+    return;
+  }
+
+  if (action_is("leave_room")) {
+    if (current_scene() == kSceneRoom) {
+      send_leave_room_rmi(0);
+      return;
+    }
+    InterlockedExchange(&g_action_done, 0);
+    return;
+  }
+
+  InterlockedExchange(&g_action_done, 0);
+}
+
 void nav_on_server_ready() {
   if (InterlockedCompareExchange(&g_did_server_ready, 1, 0) != 0)
     return;
-  send_server_ready_pair();
-  InterlockedExchange(&g_want_lobby, 1);
+  if (nav_is_create_mode() || nav_is_exit_only_mode() || action_is("exit_lobby")) {
+    send_server_ready_pair();
+    InterlockedExchange(&g_want_lobby, 1);
+  }
 }
 
 void nav_on_lobby() {
-  InterlockedExchange(&g_want_room_list, 1);
+  if (action_is("exit_lobby") || nav_is_exit_only_mode())
+    InterlockedExchange(&g_want_exit_server, 1);
+  else if (nav_is_create_mode() && !action_blocks_create_forward())
+    InterlockedExchange(&g_want_room_list, 1);
 }
 
 void nav_on_room_list() {
-  InterlockedExchange(&g_want_create_room, 1);
-  if (current_scene() == kSceneRoomList)
-    send_room_list_refresh();
+  if (action_is("exit_lobby") || nav_is_exit_only_mode())
+    InterlockedExchange(&g_want_exit_server, 1);
+  else if (nav_is_create_mode()) {
+    InterlockedExchange(&g_want_create_room, 1);
+    if (current_scene() == kSceneRoomList)
+      send_room_list_refresh();
+  }
+}
+
+void nav_on_room() {
+  if (action_is("exit_lobby"))
+    InterlockedExchange(&g_want_exit_server, 1);
+}
+
+void pump_one_shot_actions() {
+  if (!nav_action() || action_is("exit_lobby"))
+    return;
+  if (transition_locked())
+    return;
+  if (action_is("chat_ping") || action_is("quick_match")) {
+    if (current_scene() != kSceneLobby)
+      return;
+    run_one_shot_action();
+    return;
+  }
+  if (action_is("leave_room")) {
+    if (current_scene() != kSceneRoom)
+      return;
+    run_one_shot_action();
+  }
 }
 
 } // namespace
 
 void Rmi::NavLogStartup() {
   const char *mode = nav_auto_mode();
-  if (mode) {
-    char line[96];
-    wsprintfA(line, "nav: startup enabled mode=%s", mode);
+  const char *action = nav_action();
+  if (mode || action) {
+    char line[128];
+    wsprintfA(line, "nav: startup enabled mode=%s action=%s",
+              mode ? mode : "-", action ? action : "-");
     Diagnostics::emit_game_log(line);
   } else {
     Diagnostics::emit_game_log("nav: startup disabled (no env/sidecar)");
@@ -284,6 +484,12 @@ void Rmi::NavOnStage(const char *phase) {
   if (std::strcmp(phase, "room_list") == 0) {
     nav_on_room_list();
     NavPump(phase);
+    return;
+  }
+
+  if (std::strcmp(phase, "room") == 0) {
+    nav_on_room();
+    NavPump(phase);
   }
 }
 
@@ -295,19 +501,32 @@ void Rmi::NavPump(const char *phase) {
   if (want_flag(&g_want_lobby)) {
     if (try_goto_lobby()) {
       InterlockedExchange(&g_want_lobby, 0);
-      InterlockedExchange(&g_want_room_list, 1);
+      if (nav_is_create_mode() && !action_blocks_create_forward())
+        InterlockedExchange(&g_want_room_list, 1);
+      else if (nav_is_exit_only_mode() || action_is("exit_lobby"))
+        InterlockedExchange(&g_want_exit_server, 1);
     }
   }
 
-  if (want_flag(&g_want_room_list)) {
+  if (want_flag(&g_want_room_list) && nav_is_create_mode()) {
     if (try_goto_room_list()) {
       InterlockedExchange(&g_want_room_list, 0);
       InterlockedExchange(&g_want_create_room, 1);
     }
   }
 
-  if (want_flag(&g_want_create_room) && current_scene() == kSceneRoomList) {
+  if (want_flag(&g_want_create_room) && nav_is_create_mode() &&
+      current_scene() == kSceneRoomList) {
     try_create_room();
     InterlockedExchange(&g_want_create_room, 0);
   }
+
+  if (want_flag(&g_want_exit_server)) {
+    if (try_exit_to_server()) {
+      InterlockedExchange(&g_want_exit_server, 0);
+      log_nav("exit_to_server done");
+    }
+  }
+
+  pump_one_shot_actions();
 }
