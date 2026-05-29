@@ -1,5 +1,5 @@
 #include "diagnostics/handlers.hpp"
-#include "ProudNet/RmiInject.hpp"
+#include "RMI/Inject.hpp"
 #include "target_hooks.h"
 
 extern "C" void __cdecl diagnostics_game_state_intro() {
@@ -30,7 +30,7 @@ extern "C" void __cdecl diagnostics_game_state_room_list() {
   Diagnostics::emit_game_state("room_list");
   // Main-thread pump: run a pending Create-Room transition RES here (the frame
   // thread) instead of the ProudNet worker thread.
-  Proud::RmiInject::PumpLobby();
+  Rmi::PumpLobby();
 }
 
 extern "C" void __cdecl diagnostics_game_state_party_room() {
@@ -41,7 +41,7 @@ extern "C" void __cdecl diagnostics_game_state_room() {
   Diagnostics::emit_game_state("room");
   // Main-thread pump, BEFORE the original CGameRoom::onPreProcess binds room
   // data: populate the room (first frame), then honour a pending Ready->start.
-  Proud::RmiInject::PumpRoom();
+  Rmi::PumpRoom();
 }
 
 extern "C" void __cdecl diagnostics_game_state_char_select() {

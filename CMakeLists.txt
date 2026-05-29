@@ -7,7 +7,7 @@ option(THEGAME_NO_OUTPUT_DEBUG_STRING "Omit OutputDebugStringA from log_message"
 option(THEGAME_NO_CONSOLE "Do not allocate a debug console window" OFF)
 option(THEGAME_PN_TCP_PIPE "Emit proudnet-tcp header events on diagnostics pipe" OFF)
 # Wire-only offline tests: no in-process S2C RES injection (server must answer on TCP).
-option(THEGAME_DISABLE_RMI_INJECT "Compile out pn_rmi_inject pumps/leaves" OFF)
+option(THEGAME_DISABLE_RMI_INJECT "Compile out RMI/Inject offline pumps/leaves" OFF)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 

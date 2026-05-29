@@ -93,7 +93,7 @@ The application RMI frame handed to the floor is **`[rmi_id:2 LE][body…]`** (`
 
 **Not the game RMIs:** framework proxy core `sub_D5C5E0` (`IRmiProxy::RmiSend`, SEH resume `0xD5C5E7`) carries only builtin heartbeat/session ids **1001/1006/1019** (`0x3E9/0x3EE/0x3FB`). Ignore for gameplay. **[V]**
 
-**Our capture hooks** ([`src/hooks/net/pn_game_rmi_send_hook.cpp`](../src/hooks/net/pn_game_rmi_send_hook.cpp)): `hook_pn_game_rmi_send` @ `sub_65AEA0` logs `c2s_grmi proxy id=… len=…`; `hook_pn_rmi_floor` @ `sub_A0B290` logs `c2s_grmi floor id=… len=…`. They currently log **id + len only** - to dump bodies for wire correlation, read `len` bytes at `msg` (`[esp+0x28]` in the floor stub after pushad/pushfd) and hexdump.
+**Our capture hooks** ([`src/RMI/GameSendHook.cpp`](../src/RMI/GameSendHook.cpp)): `hook_pn_game_rmi_send` @ `sub_65AEA0` logs `c2s_grmi proxy id=… len=…`; `hook_pn_rmi_floor` @ `sub_A0B290` logs `c2s_grmi floor id=… len=…`. They currently log **id + len only** - to dump bodies for wire correlation, read `len` bytes at `msg` (`[esp+0x28]` in the floor stub after pushad/pushfd) and hexdump.
 
 ---
 
@@ -355,7 +355,7 @@ Called from `ClickGameStart` UI `sub_43C0D0` (cases 2–11). Case 0 = solo/no-ne
 
 ## 11. In-process injection technique (our harness) **[V]**
 
-Because C2S is opaque on the wire (§1), the server can't trigger on a click. We instead detect the REQ at the send hook and run the matching **S2C RES leaf directly**, in-process, on the receive thread. Files: [`pn_rmi_inject.cpp`](../src/game/net/pn_rmi_inject.cpp) (+ `.hpp`), wired into [`pn_game_rmi_send_hook.cpp`](../src/hooks/net/pn_game_rmi_send_hook.cpp) (latch) and [`pn_drain_recv.cpp`](../src/game/net/pn_drain_recv.cpp) (pump).
+Because C2S is opaque on the wire (§1), the server can't trigger on a click. We instead detect the REQ at the send hook and run the matching **S2C RES leaf directly**, in-process, on the receive thread. Files: [`src/RMI/Inject.cpp`](../src/RMI/Inject.cpp) (+ [`include/RMI/Inject.hpp`](../include/RMI/Inject.hpp)), wired into [`GameSendHook.cpp`](../src/RMI/GameSendHook.cpp) (latch) and [`game_state.cpp`](../src/hooks/game_state.cpp) (main-thread pump).
 
 Recipe (direct leaf call):
 

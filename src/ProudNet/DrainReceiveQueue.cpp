@@ -28,7 +28,7 @@ void Proud::DrainReceiveQueue(void *net_client) {
   // ProudNet worker thread. The RES leaves drive RequestState/UI/scripting-VM
   // work that must run on the main (frame) thread; pumping here raced the frame
   // loop and intermittently faulted the UI VM. Injection now pumps from the
-  // IState::onPreProcess hooks (main thread). See ProudNet/RmiInject.{hpp,cpp}.
+  // IState::onPreProcess hooks (main thread). See RMI/Inject.{hpp,cpp}.
 }
 
 void Proud::DrainReceiveQueueCallOriginal(void *net_client) {

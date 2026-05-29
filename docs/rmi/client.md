@@ -19,7 +19,7 @@ Application frame: **`[rmi_id:2 LE][body…]`**; `len` includes the 2-byte id.
 
 ### Capture hooks
 
-[`src/hooks/net/pn_game_rmi_send_hook.cpp`](../../src/hooks/net/pn_game_rmi_send_hook.cpp):
+[`src/RMI/GameSendHook.cpp`](../../src/RMI/GameSendHook.cpp):
 
 | Hook | Target | Log prefix |
 | --- | --- | --- |
@@ -144,7 +144,7 @@ Create RES only needs `result@+2 == 0`.
 
 ## In-process injection (harness)
 
-Files: [`pn_rmi_inject.cpp`](../../src/game/net/pn_rmi_inject.cpp), wired from send hook + [`game_state.cpp`](../../src/hooks/game_state.cpp) (main-thread pump).
+Files: [`src/RMI/Inject.cpp`](../../src/RMI/Inject.cpp), wired from send hook + [`game_state.cpp`](../../src/hooks/game_state.cpp) (main-thread pump).
 
 ```c
 void *arg[8] = {0};

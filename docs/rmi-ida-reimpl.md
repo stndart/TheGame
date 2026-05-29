@@ -8,9 +8,9 @@ GAME.exe RVAs for the **application RMI layer**. Image base `0x400000`, IDA port
 
 | RVA | Symbol | Hook | Mode |
 | --- | --- | --- | --- |
-| `0x65AEA0` | C2S proxy wrapper (16xxx, explicit id) | `pn_game_rmi_send_hook.cpp` | **trace** |
-| `0xA0B290` | C2S floor transmit (15xxx, id in msg) | `pn_game_rmi_send_hook.cpp` | **trace** |
-| `0xD5C5E0` | Framework `RmiSend` (heartbeat only) | `pn_rmi_send_hook.cpp` | **trace** |
+| `0x65AEA0` | C2S proxy wrapper (16xxx, explicit id) | `src/RMI/GameSendHook.cpp` | **trace** |
+| `0xA0B290` | C2S floor transmit (15xxx, id in msg) | `src/RMI/GameSendHook.cpp` | **trace** |
+| `0xD5C5E0` | Framework `RmiSend` (heartbeat only) | `src/RMI/FrameworkSendHook.cpp` | **trace** |
 
 Globals: `0x1C1ABA0` (account/lobby proxy), `0x1C1ABB0` (match floor).
 
@@ -47,7 +47,7 @@ Globals: `0x1C1ABA0` (account/lobby proxy), `0x1C1ABB0` (match floor).
 | `0x3F3E` | `0x4BA070` | NetUserConnectRES | - |
 | `0x3E8E` | `0x4BA520` | NetConnectRES | - |
 | `0x3F2F` | `0x437390` | Room-list RES | - |
-| **`0x3F30`** | **`0x437160`** | **Create-room RES** | inject @ `pn_rmi_inject.cpp` |
+| **`0x3F30`** | **`0x437160`** | **Create-room RES** | inject @ `src/RMI/Inject.cpp` |
 | `0x3F31` | `0x437240` | Room close | - |
 | `0x3ED4` | `0x4BB560` | Room-enter ack | inject WIP |
 | `0x3ED8` | `0x4BB2E0` / `0x4BB370` | Member UI map | inject WIP |
@@ -97,9 +97,9 @@ Full table: [plans/proudnet-rmi-server-plan.md](plans/proudnet-rmi-server-plan.m
 
 | File | Role |
 | --- | --- |
-| [`src/game/net/pn_rmi_inject.cpp`](../../src/game/net/pn_rmi_inject.cpp) | Build body + call leaf |
+| [`src/RMI/Inject.cpp`](../../src/RMI/Inject.cpp) | Build body + call leaf |
 | [`src/hooks/game_state.cpp`](../../src/hooks/game_state.cpp) | Main-thread pump |
-| [`src/hooks/net/pn_game_rmi_send_hook.cpp`](../../src/hooks/net/pn_game_rmi_send_hook.cpp) | C2S latch |
+| [`src/RMI/GameSendHook.cpp`](../../src/RMI/GameSendHook.cpp) | C2S latch |
 
 Env: **`THEGAME_DISABLE_RMI_INJECT=1`** for wire-only tests.
 

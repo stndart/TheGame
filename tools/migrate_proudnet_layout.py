@@ -12,7 +12,6 @@ MOVES: list[tuple[str, str]] = [
     ("include/game/net/pn_layout.hpp", "include/ProudNet/Layout.hpp"),
     ("include/game/net/pn_message_type.hpp", "include/ProudNet/MessageType.hpp"),
     ("include/game/net/pn_tcp_frame.hpp", "include/ProudNet/TcpLayerMessageExtractor.hpp"),
-    ("include/game/net/pn_rmi_inject.hpp", "include/ProudNet/RmiInject.hpp"),
     ("include/game/net/pn_drain_recv.hpp", "include/ProudNet/DrainReceiveQueue.hpp"),
     ("include/game/net/pn_process_message.hpp", "include/ProudNet/ProcessProudNetLayer.hpp"),
     ("include/game/net/pn_tcp_trace.hpp", "include/ProudNet/TcpTrace.hpp"),
@@ -26,7 +25,6 @@ MOVES: list[tuple[str, str]] = [
     ("include/game/net/pn_upnp.hpp", "include/ProudNet/UpnpClient.hpp"),
     ("include/game/net/pn_select.hpp", "include/ProudNet/SelectContext.hpp"),
     ("src/game/net/pn_tcp_frame.cpp", "src/ProudNet/TcpLayerMessageExtractor.cpp"),
-    ("src/game/net/pn_rmi_inject.cpp", "src/ProudNet/RmiInject.cpp"),
     ("src/game/net/pn_drain_recv.cpp", "src/ProudNet/DrainReceiveQueue.cpp"),
     ("src/game/net/pn_process_message.cpp", "src/ProudNet/ProcessProudNetLayer.cpp"),
     ("src/game/net/pn_fast_socket.cpp", "src/ProudNet/FastSocket.cpp"),
@@ -45,7 +43,6 @@ INCLUDE_MAP = {
     "game/net/pn_layout.hpp": "ProudNet/Layout.hpp",
     "game/net/pn_message_type.hpp": "ProudNet/MessageType.hpp",
     "game/net/pn_tcp_frame.hpp": "ProudNet/TcpLayerMessageExtractor.hpp",
-    "game/net/pn_rmi_inject.hpp": "ProudNet/RmiInject.hpp",
     "game/net/pn_drain_recv.hpp": "ProudNet/DrainReceiveQueue.hpp",
     "game/net/pn_process_message.hpp": "ProudNet/ProcessProudNetLayer.hpp",
     "game/net/pn_tcp_trace.hpp": "ProudNet/TcpTrace.hpp",
@@ -118,9 +115,9 @@ def rewrite(text: str) -> str:
     for old, new in INCLUDE_MAP.items():
         text = text.replace(f'#include "{old}"', f'#include "{new}"')
 
-    text = text.replace("pn_inject_note_c2s_send", "Proud::RmiInject::NoteC2sSend")
-    text = text.replace("pn_inject_pump_lobby", "Proud::RmiInject::PumpLobby")
-    text = text.replace("pn_inject_pump_room", "Proud::RmiInject::PumpRoom")
+    text = text.replace("pn_inject_note_c2s_send", "Rmi::NoteC2sSend")
+    text = text.replace("pn_inject_pump_lobby", "Rmi::PumpLobby")
+    text = text.replace("pn_inject_pump_room", "Rmi::PumpRoom")
 
     text = text.replace(
         "bool process_message_proudnet_layer(",
@@ -174,45 +171,6 @@ def rewrite(text: str) -> str:
     return wrap_proud_types(text)
 
 
-def patch_rmi_inject_header() -> None:
-    path = ROOT / "include/ProudNet/RmiInject.hpp"
-    text = path.read_text(encoding="utf-8")
-    if "namespace Proud" in text:
-        return
-    text = text.replace(
-        "#pragma once\n\n",
-        "#pragma once\n\nnamespace Proud {\nnamespace RmiInject {\n",
-        1,
-    )
-    text = text.replace("void pn_inject_note_c2s_send", "void NoteC2sSend")
-    text = text.replace("void pn_inject_pump_lobby", "void PumpLobby")
-    text = text.replace("void pn_inject_pump_room", "void PumpRoom")
-    if not text.rstrip().endswith("} // namespace Proud"):
-        text = text.rstrip() + "\n} // namespace RmiInject\n} // namespace Proud\n"
-    path.write_text(text, encoding="utf-8", newline="\n")
-
-
-def patch_rmi_inject_cpp() -> None:
-    path = ROOT / "src/ProudNet/RmiInject.cpp"
-    text = path.read_text(encoding="utf-8")
-    text = text.replace(
-        '#include "game/net/pn_rmi_inject.hpp"',
-        '#include "ProudNet/RmiInject.hpp"',
-    )
-    text = text.replace("void pn_inject_note_c2s_send", "void NoteC2sSend")
-    text = text.replace("void pn_inject_pump_lobby", "void PumpLobby")
-    text = text.replace("void pn_inject_pump_room", "void PumpRoom")
-    if "namespace RmiInject" not in text:
-        text = text.replace(
-            "#include <windows.h>\n\nnamespace {",
-            "#include <windows.h>\n\nnamespace Proud {\nnamespace RmiInject {\n\nnamespace {",
-            1,
-        )
-        if not text.rstrip().endswith("} // namespace Proud"):
-            text = text.rstrip() + "\n} // namespace RmiInject\n} // namespace Proud\n"
-    path.write_text(text, encoding="utf-8", newline="\n")
-
-
 def rewrite_tree() -> None:
     for path in ROOT.rglob("*"):
         if not path.is_file() or not should_touch(path):
@@ -225,8 +183,6 @@ def rewrite_tree() -> None:
         new = new.replace("Proud::socket_report_error", "Proud::SocketReportError")
         if new != raw:
             path.write_text(new, encoding="utf-8", newline="\n")
-    patch_rmi_inject_header()
-    patch_rmi_inject_cpp()
 
 
 def main() -> None:

@@ -97,7 +97,7 @@ Inventory: `uv run python -m server.tools.scan_lobby_replay` from `server/`.
 
 Triggers: `CREATE_ROOM_RES_ON_25_BODY_LEN=115`, burst mode - see `server/.env` and [proudnet-game-rmi.md](proudnet-game-rmi.md) ยง10.
 
-### Inject-only (`pn_rmi_inject.cpp`, default unless `THEGAME_DISABLE_RMI_INJECT=1`)
+### Inject-only (`src/RMI/Inject.cpp`, default unless `THEGAME_DISABLE_RMI_INJECT=1`)
 
 | ID | Name | Mechanism | Test | C2S latch |
 |----|------|-----------|------|-----------|
@@ -142,7 +142,7 @@ REQ/RES pairing and body layouts: [proudnet-game-rmi.md](proudnet-game-rmi.md) ย
 
 | Area | Path |
 |------|------|
-| Stages / inject pump | [`src/hooks/game_state.cpp`](../src/hooks/game_state.cpp), [`pn_rmi_inject.cpp`](../src/game/net/pn_rmi_inject.cpp) |
-| C2S hooks | [`pn_game_rmi_send_hook.cpp`](../src/hooks/net/pn_game_rmi_send_hook.cpp) |
+| Stages / inject pump | [`src/hooks/game_state.cpp`](../src/hooks/game_state.cpp), [`src/RMI/Inject.cpp`](../src/RMI/Inject.cpp) |
+| C2S hooks | [`src/RMI/GameSendHook.cpp`](../src/RMI/GameSendHook.cpp) |
 | Wire builders | [`server/server/proud_rmi.py`](../server/server/proud_rmi.py), [`game_transport.py`](../server/server/game_transport.py) |
 | Offline tests | `server/server/test_wire_create_room.py`, `test_wire_start_match.py`, `test_wire_leave_room.py` |

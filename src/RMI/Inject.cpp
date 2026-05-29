@@ -1,4 +1,4 @@
-#include "ProudNet/RmiInject.hpp"
+#include "RMI/Inject.hpp"
 
 #include "diagnostics/handlers.hpp"
 
@@ -139,7 +139,7 @@ void inject_start_res() {
 
 } // namespace
 
-void Proud::RmiInject::NoteC2sSend(unsigned rmi_id) {
+void Rmi::NoteC2sSend(unsigned rmi_id) {
   if (rmi_inject_disabled())
     return;
   const unsigned id = rmi_id & 0xFFFFu;
@@ -153,7 +153,7 @@ void Proud::RmiInject::NoteC2sSend(unsigned rmi_id) {
   }
 }
 
-void Proud::RmiInject::PumpLobby() {
+void Rmi::PumpLobby() {
   if (rmi_inject_disabled())
     return;
   // Create-Room transition: success RES -> RequestState(9) (CGameRoom). Arm the
@@ -164,7 +164,7 @@ void Proud::RmiInject::PumpLobby() {
   }
 }
 
-void Proud::RmiInject::PumpRoom() {
+void Rmi::PumpRoom() {
   if (rmi_inject_disabled())
     return;
   // Runs in CGameRoom::onPreProcess prologue, BEFORE the original binds room
