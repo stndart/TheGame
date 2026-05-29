@@ -7,6 +7,28 @@
 
 #include <cstring>
 
+namespace {
+
+CRITICAL_SECTION g_hook_patch_cs;
+bool g_hook_patch_cs_ready = false;
+
+void ensure_hook_patch_cs() {
+  if (!g_hook_patch_cs_ready) {
+    InitializeCriticalSection(&g_hook_patch_cs);
+    g_hook_patch_cs_ready = true;
+  }
+}
+
+struct HookPatchLock {
+  HookPatchLock() {
+    ensure_hook_patch_cs();
+    EnterCriticalSection(&g_hook_patch_cs);
+  }
+  ~HookPatchLock() { LeaveCriticalSection(&g_hook_patch_cs); }
+};
+
+} // namespace
+
 bool HookManager::write_memory(void *address, const void *data, size_t size) {
   return WriteProcessMemory(GetCurrentProcess(), address,
                             const_cast<void *>(data), size, nullptr);
@@ -18,6 +40,7 @@ bool HookManager::make_memory_writable(void *address, size_t size) {
 }
 
 bool HookManager::make_hook(HookStub &stub) {
+  HookPatchLock lock;
   if (stub.is_hooked)
     return true;
 
@@ -59,6 +82,7 @@ bool HookManager::make_hook(HookStub &stub) {
 }
 
 bool HookManager::restore_hook(HookStub &stub) {
+  HookPatchLock lock;
   if (!stub.is_hooked)
     return true;
 
@@ -77,6 +101,47 @@ bool HookManager::restore_hook(HookStub &stub) {
 
   stub.is_hooked = false;
   return true;
+}
+
+void HookManager::invoke_hooked(HookStub &stub, void (*fn)(void *ctx),
+                                void *ctx) {
+  HookPatchLock lock;
+  HMODULE main_module = GetModuleHandle(nullptr);
+  if (!main_module || !fn)
+    return;
+
+  BYTE *target_address = reinterpret_cast<BYTE *>(
+      stub.addr + (int32_t)main_module - (int32_t)0x400000);
+
+  if (stub.is_hooked) {
+    if (!make_memory_writable(target_address, sizeof(stub.original_bytes)))
+      return;
+    if (!write_memory(target_address, stub.original_bytes,
+                      sizeof(stub.original_bytes))) {
+      return;
+    }
+    stub.is_hooked = false;
+  }
+
+  fn(ctx);
+
+  if (!stub.is_hooked) {
+    if (!make_memory_writable(target_address, 12))
+      return;
+
+    BYTE *hook_address = reinterpret_cast<BYTE *>(stub.hook_function);
+    const int32_t relative_offset =
+        static_cast<int32_t>(hook_address - (target_address + 5));
+
+    BYTE jump_patch[5];
+    jump_patch[0] = 0xE9;
+    *reinterpret_cast<int32_t *>(&jump_patch[1]) = relative_offset;
+
+    if (!write_memory(target_address, jump_patch, sizeof(jump_patch)))
+      return;
+
+    stub.is_hooked = true;
+  }
 }
 
 bool HookManager::make_syshook(SysHookStub &stub, int32_t iat_addr) {

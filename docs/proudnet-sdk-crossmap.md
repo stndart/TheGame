@@ -163,7 +163,132 @@ From `CNetClientWorker::ProcessMessage_ProudNetLayer` @ **`0x1005a370`** (57-cas
 
 Encrypted variants: `MessageType_Encrypted_Reliable_EM_Secure`, `MessageType_Encrypted_UnReliable_EM_Secure` in `ProcessMessage_Encrypted` @ `0x101758e0`.
 
-**GAME:** find analogous switch by xref to **`Message_Read`** / RMI dispatch (`sub_4B8630`), not by transport opcode.
+**GAME dispatch (internal envelope):** [proudnet-message-dispatch-map.md](proudnet-message-dispatch-map.md) · [symbol map — Message dispatch](proudnet-ida-symbol-map.md).
+
+| Role | GAME RVA | PN18 analogue |
+|------|----------|---------------|
+| `ProcessMessage_ProudNetLayer` | `0xD653B0` | `CNetClientWorker::ProcessMessage_ProudNetLayer` @ `0x1005A370` |
+| Receive-queue drain | `0xD65940` | — |
+| `Message_Read(MessageType)` | `0xD59300` | (in layer) |
+| `CMessage::Read` | `0xD58B30` | `CMessage::Read` |
+| Compressed unwrap | `0xD5DC10` | `ProcessMessage_Compressed` (PDB case **47**; GAME client **37–38**) |
+| Encrypted unwrap | `0xD5CA30` | `ProcessMessage_Encrypted` (PDB **43–46**; GAME client **39**) |
+| Alternate dispatch (server/RMI batch) | `0xD366A0` | — (caller `0xD37BC0`; not client worker layer) |
+
+Named-case handler RVAs (`MessageType_Rmi` → `0xD64F10`, etc.): symbol map §2b and dispatch map — not by transport opcode.
+
+### 6b. GAME.exe dispatch RVAs (complete)
+
+Full **v1.8 PDB → GAME.exe** table for message dispatch, TCP framing, and `CFastSocket` I/O. Per-case rows match [proudnet-message-dispatch-map.md](proudnet-message-dispatch-map.md). PN18 rebased @ `0x10000000`; GAME @ image base `0x400000`.
+
+#### MessageType read / dispatch core
+
+| v1.8 symbol | v1.8 RVA | GAME RVA | Notes |
+|-------------|----------|----------|-------|
+| `Proud::Message_Read` (`MessageType`) | `0x10086B60` | `0xD59300` | Bit-align + 1-byte type via `CMessage::Read` |
+| `j_?Message_Read@…MessageType…` (thunk) | `0x100079B4` | `0xD59300` | Thunk target = `Message_Read` |
+| `CMessage::Read` (`unsigned char&`) | `0x1008A5E0` | `0xD58B30` | Bit-offset buffer read; all `Message_Read` helpers |
+| `CMessage::SkipRead` | `0x10051830` | `0xD589C0` | GAME **restore read offset** on dispatch failure (same role) |
+| `CNetClientWorker::ProcessMessage_ProudNetLayer` | `0x1005A370` | `0xD653B0` | **`Message_Read` → switch** — PN18 **57** cases, GAME **50** |
+| `GetWorkTypeFromMessageHeader` | `0x101355A0` | `0xD8B4A0` | After `Message_Read`: type **1→1, 2→2, else 3** |
+| `ProcessMessage_Encrypted` (`CNetCoreImpl`) | `0x101758E0` | `0xD5CA30` | PN18 cases **43–46**; GAME client **case 39** only → recurse layer |
+| `ProcessMessage_Compressed` (`CNetCoreImpl`) | `0x10175FE0` | `0xD5DC10` | PN18 **case 47**; GAME client **cases 37–38** → recurse layer |
+| `CNetClientWorker::IsFromRemoteClientPeer` | `0x1005B4B0` | `0xD5FD30` | Peer guard on server-originated notifies (+ peer guard rows below) |
+| `CNetClientImpl::OnMessageReceived` | `0x100BB1E0` | `0xD65940` | Recv-list → per-message dispatch; PN17 loop `sub_180052F80` same role |
+| `CNetClientImpl::ProcessMessageOrMoveToFinalRecvQueue` | `0x100BB510` | `0xD65940` | Also calls `ProcessMessage_ProudNetLayer`; GAME drain is `sub_D65940` |
+| *(alternate batch dispatch)* | — | `0xD366A0` | **`int* this`**, 48-case switch; **not** client worker layer |
+| *(batch caller — RMI unsafe)* | — | `0xD37BC0` | Iterates messages → `sub_D366A0`; case **47** handled here only |
+| *(connect-notify `Message_Read`)* | — | `0xD28660` | Types **12 / 16** only; xref from server connect path |
+
+#### `sub_D653B0` per-case handlers
+
+| v1.8 symbol | v1.8 RVA | GAME RVA | Notes |
+|-------------|----------|----------|-------|
+| `ProcessMessage_Rmi` | `0x1005AC20` | `0xD64F10` | **case 1** — `MessageType_Rmi` |
+| `ProcessMessage_UserOrHlaMessage` | `0x1005B0F0` | `0xD65170` | **case 2** — `MessageType_UserMessage` |
+| `ProcessMessage_UserOrHlaMessage` | `0x1005B0F0` | `0xD5FFD0` | **case 3** — `MessageType_Hla` (short notify stub on GAME) |
+| `ProcessMessage_ConnectServerTimedout` | `0x1005CE90` | `0xD62930` | **case 4** — `OutputDebugStringW` + peer guard |
+| `ProcessMessage_NotifyStartupEnvironment` | `0x1005CF60` | — | **case 5** — **default** on GAME client (unhandled) |
+| *(no §6 label)* | — | `0xD62FD0` | **case 6** — startup-env payload write + peer guard |
+| *(no §6 label)* | — | `0xD60020` | **case 8** — `sub_D0AF20(8,…)` + peer guard |
+| *(no §6 label)* | — | `0xD60070` | **case 9** — `sub_D0AF20(9,…)` + peer guard |
+| *(no §6 label)* | — | `0xD64760` | **case 10** — assert / debug path + peer guard |
+| `ProcessMessage_NotifyProtocolVersionMismatch` | `0x1005EBD0` | `0xD5FF60` | **case 11** + peer guard |
+| `ProcessMessage_NotifyServerDeniedConnection` | `0x1005EC80` | — | **case 12** — **default** on GAME |
+| `ProcessMessage_NotifyServerConnectSuccess` | `0x1005DF50` | `0xD61490` | **case 13** + peer guard |
+| `ProcessMessage_NotifyAutoConnectionRecoverySuccess` | `0x10026320` | `0xD645C0` | **case 15** — handler on `CNetClientImpl` in PN18 + peer guard |
+| `ProcessMessage_NotifyAutoConnectionRecoveryFailed` | `0x100268D0` | — | **case 16** — **default** on GAME |
+| `ProcessMessage_RequestStartServerHolepunch` | `0x1005CCE0` | `0xD608D0` | **case 17** + peer guard |
+| `ProcessMessage_ServerHolepunchAck` | `0x1005C5A0` | `0xD63510` | **case 19** + peer guard; also relay xrefs |
+| `ProcessMessage_NotifyClientServerUdpMatched` | `0x1005BF90` | `0xD63750` | **case 24** + peer guard |
+| `ProcessMessage_P2PUnreliablePing` | `0x1005B590` | `0xD60A50` | **case 25** + peer guard |
+| `ProcessMessage_P2PUnreliablePong` | `0x1005B8C0` | `0xD63A70` | **case 26** + peer guard |
+| *(no §6 label)* | — | `0xD64D60` | **case 29** + peer guard |
+| *(noop)* | — | — | **cases 30, 48** — `messageProcessed=1`, no handler |
+| *(no §6 label)* | — | `0xD5FCD0` | **case 31** |
+| *(no §6 label)* | — | `0xD5FD00` | **case 32** |
+| *(no §6 label)* | — | `0xD61F20` | **case 33** |
+| *(no §6 label)* | — | `0xD60E10` | **case 34** |
+| `ProcessMessage_ReliableRelay2` | `0x1005ED90` | `0xD625E0` | **case 35** |
+| *(no §6 label)* | — | `0xD61760` | **case 36** |
+| `ProcessMessage_Compressed` | `0x10175FE0` | `0xD5DC10` | **cases 37–38** — unwrap + **recurse** `sub_D653B0` |
+| `ProcessMessage_Encrypted` | `0x101758E0` | `0xD5CA30` | **case 39** — unwrap + **recurse** `sub_D653B0` |
+| *(no §6 label)* | — | `0xD62110` | **case 40** |
+| *(no §6 label)* | — | `0xD60FB0` | **case 41** |
+| *(encrypted/compressed)* | — | — | **cases 42–47** — **default** on client (`sub_D653B0`) |
+| *(no §6 label)* | — | `0xD62330` | **case 49** |
+| *(no §6 label)* | — | `0xD61120` | **case 50** |
+| `ProcessMessage_PeerUdp_ServerHolepunchAck` | `0x1005CAE0` | — | §6 **case 23** — GAME **default** (block 20–23) |
+| `ProcessMessage_ReliableUdp_Frame` | `0x1005BCC0` | — | §6 UDP frame family — partial ordinal overlap |
+| `ProcessMessage_UnreliableRelay2` | `0x1005F2A0` | — | §6 relay family |
+| `ProcessMessage_LingerDataFrame2` | `0x1005F5C0` | — | §6 **54–56** multicast/linger — **default** on GAME |
+| `ProcessMessage_S2CRoutedMulticast1` | `0x10059BE0` | — | §6 S2C multicast — **default** on GAME client |
+| `ProcessMessage_S2CRoutedMulticast2` | `0x1005A1C0` | — | §6 S2C multicast — **default** on GAME client |
+
+#### `sub_D366A0` alternate-path handlers (non–ProudNet-layer)
+
+| v1.8 symbol | v1.8 RVA | GAME RVA | Notes |
+|-------------|----------|----------|-------|
+| `ProcessMessage_Rmi` | `0x1005AC20` | `0xD351F0` | **case 1** — **`return 0`** after handler |
+| `ProcessMessage_UserOrHlaMessage` | `0x1005B0F0` | `0xD353A0` | **case 2** — **`return 0`** after handler |
+| *(batch path)* | — | `0xD2B230` | **case 5** |
+| *(batch path)* | — | `0xD33DE0` | **case 7** |
+| *(batch path)* | — | `0xD27780` | **case 12** (assert alt `0xD32A80`) |
+| *(batch path)* | — | `0xD27F10` | **case 14** |
+| *(batch path)* | — | `0xD27A40` | **case 16** |
+| `ProcessMessage_Compressed` | `0x10175FE0` | `0xD5DC10` | **cases 37–38** — shared compress helper |
+| `ProcessMessage_Encrypted` | `0x101758E0` | `0xD5CA30` | **case 39** — shared encrypt helper |
+| *(batch path)* | — | `0xD297C0` | **case 47** — **handled here only** (client: default) |
+| *(batch cases 18–23, 27–28, 40–41)* | — | `0xD29BA0`…`0xD34E80` | See [dispatch map § `sub_D366A0`](proudnet-message-dispatch-map.md) |
+
+#### TCP framing (`CTcpLayer`)
+
+| v1.8 symbol | v1.8 RVA | GAME RVA | Notes |
+|-------------|----------|----------|-------|
+| `CTcpLayerMessageExtractor::Extract` | `0x100E7710` | `0xD84BB0` | Recv parser — plain **`0x5713`** magic on GAME offline path |
+| `CTcpLayer_Common::AddSplitterButShareBuffer` | `0x100D4280` | `0xD84970` | Send framer |
+| `CTcpLayer_Common::RandomToSplitter` | `0x1008A510` | — | PN18 wire obfuscation; not used on GAME offline hello path |
+| `CTcpLayer_Common::SplitterToRandom` | `0x10091F10` | `0xD85740` | GAME send pushes plain **`0x5713`** (`sub_D85740`) |
+| `CMessage::ReadScalar` (in `Extract`) | *(in Extract)* | `0xD59250` | Varint length read |
+| *(send varint)* | *(send path)* | `0xD59DB0` | Varint length write |
+
+#### `CFastSocket` I/O
+
+| v1.8 symbol | v1.8 RVA | GAME RVA | Notes |
+|-------------|----------|----------|-------|
+| `CFastSocket::IssueSend` | `0x101343D0` | `0xD567F0` | `w_wsasend_1`; GAME size **`0x1CE`** vs PN18 **`0x1C0`** |
+| `CFastSocket::IssueRecv` | `0x10134260` | `0xD56470` | `w_wsarecv_1` |
+| *(overlapped recv complete)* | — | `0xD55510` | `WSAGetOverlappedResult` path; no exported `OnRecvCompleted` in PN18 listing |
+
+#### Connection worker (context)
+
+| v1.8 symbol | v1.8 RVA | GAME RVA | Notes |
+|-------------|----------|----------|-------|
+| `CNetClientWorker` thread proc | *(in manager ctor)* | `0xD668B0` | `"PNCliWorker"` @ GAME; PN18 `CreateThread` in manager |
+| `CNetClientManager` ctor | *(PN18 `CNetClientManager`)* | `0xD66A30` | Spawns worker thread |
+| Per-connection FSM driver | — | `0xD6F7B0` | States 0–5 @ `conn+0x40` |
+
+*Sources: IDA MCP PN18 @ 13338 + GAME @ 13337, agent transcript 4f08effa, [proudnet-message-dispatch-map.md](proudnet-message-dispatch-map.md). Last updated: 2026-05-28.*
 
 ---
 

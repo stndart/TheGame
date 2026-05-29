@@ -14,20 +14,15 @@ uintptr_t game_va(const uint32_t va) {
   return static_cast<uintptr_t>(va) + delta;
 }
 
+constexpr std::uint32_t kNetClientFactoryResume = 0xD0C0A7;
+
 } // namespace
 
-using NetClientFactoryFn = void *(__cdecl *)();
 using NetClientCtorFn = void *(__thiscall *)(void *self);
 
-extern "C" void *__cdecl hook_pn_net_client_factory() {
-  HookManager::restore_hook(g_target_pn_net_client_factory);
-  const auto orig = reinterpret_cast<NetClientFactoryFn>(
-      game_va(static_cast<uint32_t>(pn::rva::kNetClientFactory)));
-  void *const ret = orig();
-  HookManager::make_hook(g_target_pn_net_client_factory);
-  logf("CNetClient factory tid=%lu ret=%p",
-       static_cast<unsigned long>(GetCurrentThreadId()), ret);
-  return ret;
+extern "C" void log_pn_net_client_factory() {
+  logf("CNetClient factory tid=%lu",
+       static_cast<unsigned long>(GetCurrentThreadId()));
 }
 
 extern "C" void *__fastcall hook_pn_net_client_ctor_impl(void *self) {
@@ -41,6 +36,22 @@ extern "C" void *__fastcall hook_pn_net_client_ctor_impl(void *self) {
   return ret;
 }
 
+// sub_D0C0A0 — CNetClient factory (__cdecl); SEH prologue, resume @ 0xD0C0A7.
+extern "C" void __declspec(naked) hook_pn_net_client_factory() {
+  __asm {
+    pushad
+    pushfd
+    call log_pn_net_client_factory
+    popfd
+    popad
+
+    push 0FFFFFFFFh
+    push 1508A6Bh
+    jmp [g_target_pn_net_client_factory.return_addr]
+  }
+}
+
+// sub_D0A340 — CNetClient ctor (__thiscall); restore_hook for SEH entry.
 extern "C" void __declspec(naked) hook_pn_net_client_ctor() {
   __asm {
     jmp hook_pn_net_client_ctor_impl
@@ -54,7 +65,7 @@ HookStub g_target_pn_net_client_factory = {
     "hook_pn_net_client_factory",
     {0},
     false,
-    static_cast<uint32_t>(pn::rva::kNetClientFactory) + 5,
+    kNetClientFactoryResume,
 };
 
 HookStub g_target_pn_net_client_ctor = {

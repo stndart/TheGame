@@ -56,12 +56,29 @@ RVAs are for **this debug build** of `GAME.exe`. Rebase in IDA if your image bas
 
 ---
 
+## Message dispatch (`ProcessMessage_ProudNetLayer`)
+
+| RVA | IDA | Role | Hook |
+|-----|-----|------|------|
+| `0xD653B0` | `sub_D653B0` | **`CNetClientWorker::ProcessMessage_ProudNetLayer`** — `Message_Read` → 50-case switch | `hook_pn_process_proudnet_layer` (**full jmp** reimpl) |
+| `0xD59300` | `sub_D59300` | **`Message_Read`** (bit-align + 1-byte type) | tail-call from reimpl |
+| `0xD58B30` | `sub_D58B30` | **`CMessage::Read`** | — |
+| `0xD589C0` | `sub_D589C0` | Restore message read offset on failure | tail-call from reimpl |
+| `0xD65940` | `sub_D65940` | Drain receive queue → `sub_D653B0` per message | `hook_pn_drain_receive_queue` (**trace**; SEH resume `0xD65947`) |
+| `0xD366A0` | `sub_D366A0` | Alternate dispatch (`sub_D37BC0` batch) | — |
+| `0xD5FD30` | `IsFromRemoteClientPeer` | Peer guard on server-originated notifies | tail-call from reimpl |
+| `0xD5DC10` / `0xD5CA30` | compress / encrypt unwrap | Cases **37–38** / **39** → recurse | `pn_compress_hook.cpp` (**trace** `restore_hook`); reimpl unwrap + recurse layer |
+
+Full per-case handler RVAs: [proudnet-message-dispatch-map.md](proudnet-message-dispatch-map.md). Enum: `include/game/net/pn_message_type.hpp`.
+
+---
+
 ## 1. Proud TCP framing (all `:7000` / `:27380` traffic)
 
 | RVA | IDA / inferred name | Role | Hook | ProudNet SDK |
 |-----|---------------------|------|------|----------------|
-| `0xD84BB0` | `sub_D84BB0` | **Recv-side frame parser** - validates magic `0x5713`, reads varint length (`sub_D59250`), reads payload (`sub_D58D80`). | - | No symbol match; conceptually “message stream read” |
-| `0xD84970` | `sub_D84970` | **Send-side framer** - writes magic (`sub_D85740`), payload size (`sub_D59DB0`), payload bytes. | - | Same |
+| `0xD84BB0` | `sub_D84BB0` | **Recv-side frame parser** - validates magic `0x5713`, reads varint length (`sub_D59250`), reads payload (`sub_D58D80`). | **off** — WIP `pn_tcp_frame_hook.cpp` (SEH resume `0xD84BB7`) | No symbol match; conceptually “message stream read” |
+| `0xD84970` | `sub_D84970` | **Send-side framer** - writes magic (`sub_D85740`), payload size (`sub_D59DB0`), payload bytes. | **off** — resume `0xD84977`; never hook `0xD84910` (in-function E8) | Same |
 | `0xD85740` | `sub_D85740` | Write 16-bit magic to stream. | - | - |
 | `0xD59250` | `sub_D59250` | Read varint length (1/2/4-byte tag). | - | - |
 | `0xD59DB0` | `sub_D59DB0` | Write varint length. | - | - |
@@ -122,6 +139,48 @@ sub_CF6F10 / sub_D6AF00   CVizAgent alternate
 | `0xD6AF00` | `sub_D6AF00` | Alternate **CVizAgent** path — same `new(0x17A8)` + `0xD0A340`. | - | - |
 
 **Layout:** `pn_layout.hpp` — `pn::rva::kNetClientFactory`, `kNetClientCtor`.
+
+---
+
+## 2b. MessageType dispatch (internal envelope)
+
+**Full switch tables, gaps vs v1.8, and per-case notes:** [proudnet-message-dispatch-map.md](proudnet-message-dispatch-map.md). Enum ordinals ≠ transport opcodes ([crossmap §6](proudnet-sdk-crossmap.md)).
+
+| RVA | IDA / inferred name | Role | v1.8 analogue (PN18) |
+|-----|---------------------|------|----------------------|
+| `0xD653B0` | `sub_D653B0` | **`ProcessMessage_ProudNetLayer`** — `CNetClientWorker`; `Message_Read` → 50-case switch | `CNetClientWorker::ProcessMessage_ProudNetLayer` @ `0x1005A370` |
+| `0xD65940` | `sub_D65940` | Receive-queue drain → `sub_D653B0` per message | — |
+| `0xD59300` | `sub_D59300` | **`Message_Read(MessageType)`** | — |
+| `0xD58B30` | `sub_D58B30` | **`CMessage::Read`** (bit offset / bounds) | `CMessage::Read` |
+| `0xD589C0` | `sub_D589C0` | Restore read offset on dispatch failure | — |
+| `0xD5DC10` | `sub_D5DC10` | Compressed unwrap (client cases **37–38**; v1.8 **47**) → recurse `sub_D653B0` | `ProcessMessage_Compressed` |
+| `0xD5CA30` | `sub_D5CA30` | Encrypted unwrap (client case **39**; v1.8 **43–46**) → recurse | `ProcessMessage_Encrypted` |
+| `0xD366A0` | `sub_D366A0` | **Alternate path** — `int* this`, 48-case switch, same `Message_Read`; **not** client worker layer. Caller **`sub_D37BC0`** (server/RMI unsafe batch). Case **47** handled here only (client `sub_D653B0`: default). | — |
+
+**`sub_D653B0` handlers with v1.8 `MessageType` labels:**
+
+| Case | v1.8 name | Handler RVA |
+|------|-----------|-------------|
+| 1 | `MessageType_Rmi` | `0xD64F10` |
+| 2 | `MessageType_UserMessage` | `0xD65170` |
+| 3 | `MessageType_Hla` | `0xD5FFD0` |
+| 4 | `MessageType_ConnectServerTimedout` | `0xD62930` |
+| 5 | `MessageType_NotifyStartupEnvironment` | — (default) |
+| 11 | `MessageType_NotifyProtocolVersionMismatch` | `0xD5FF60` |
+| 12 | `MessageType_NotifyServerDeniedConnection` | — (default) |
+| 13 | `MessageType_NotifyServerConnectSuccess` | `0xD61490` |
+| 15 | `MessageType_NotifyAutoConnectionRecoverySuccess` | `0xD645C0` |
+| 16 | `MessageType_NotifyAutoConnectionRecoveryFailed` | — (default) |
+| 17 | `MessageType_RequestStartServerHolepunch` | `0xD608D0` |
+| 19 | `MessageType_ServerHolepunchAck` | `0xD63510` |
+| 37–38 | Compressed (v1.8 **47**) | `0xD5DC10` |
+| 39 | Encrypted (v1.8 **43–46**) | `0xD5CA30` |
+
+**Other `sub_D653B0` handler RVAs (no §6 label in GAME):** `0xD62FD0` `0xD60020` `0xD60070` `0xD64760` `0xD608D0` `0xD63750` `0xD60A50` `0xD63A70` `0xD64D60` `0xD5FCD0` `0xD5FD00` `0xD61F20` `0xD60E10` `0xD625E0` `0xD61760` `0xD62110` `0xD60FB0` `0xD62330` `0xD61120` — see [dispatch map](proudnet-message-dispatch-map.md) for case ordinals.
+
+**Other `Message_Read` xrefs:** `0xD8B4A0` (`GetWorkTypeFromMessageHeader`), `0xD28660`.
+
+Hooked: `hook_pn_process_proudnet_layer` @ `0xD653B0` (`src/hooks/net/pn_process_message_hook.cpp`).
 
 ---
 
@@ -285,28 +344,30 @@ Cross-reference only - see protocol doc.
 
 ## RVA elimination status
 
-**DONE** (reimplemented; no tail-jmp to GAME for these paths):
+See **[proudnet-hook-status.md](proudnet-hook-status.md)** for the install matrix and verify recipe.
 
-- FSM states 1-3 (`pn_connection_fsm` -- state 3 **full jmp**; trace wrapper **deleted**)
-- Fast send/recv (`pn_fast_socket`, `hook_send_2` / `w_wsasend_1`)
-- `pn_recv_complete`, `pn_recv_append`, `pn_select`, `pn_upnp`
-- `TCPSocket::Connect`, **`w_connect_2`**, `w_connect_3` (full jmp; `proud_connect.cpp` + `game_exe::fn` helpers)
-- Growable heap (`pn_growable`)
-- `socket_report_error` (no vtable)
-- **`game_exe.hpp` / `rva::` call sites** in connect reimpl (typed tail-calls only)
+**DONE** (transport + dispatch shell; offline `shard_choice` verified run **175**):
 
-**DELETED** (removed from tree / `main.cpp`):
+- FSM states 1–3, fast send/recv, recv_complete/append, select, UPnP skip
+- `TCPSocket::Connect`, `w_connect_2`, `w_connect_3`, growable heap
+- **`ProcessMessage_ProudNetLayer`** full reimpl (`pn_process_message.cpp`)
+- **Drain queue** trace @ `0xD65940` (SEH tail-jump `0xD65947`)
+- Compress/encrypt **trace** passthrough (`restore_hook`, full entry RVA)
+- CNetClient factory/ctor trace hooks
 
-- FSM state 3 **trace** hook (`pn_fsm_state3` log-only trampoline)
-- Disabled **trace** hooks in `send.cpp` / `sendto.cpp` (were off in `main.cpp`; stubs removed)
+**WIP / OFF in `main.cpp`:**
 
-**REMAINING** (acceptable):
+- TCP recv/send framers (`0xD84BB0`, `0xD84970`) — SEH prologue; use IDA for resume RVAs, not `RVA+5`
+- Per-case ProcessMessage handlers (still `game_va` from reimpl)
+- `PNCliWorker` / `0xD6F7B0` FSM driver (states hooked, driver not)
 
-- `OnWarning` vtable (keep original callback)
-- Hook-install RVAs in `pn_layout.hpp` / `HookStub` targets only (metadata, not tail-jmp in reimpl bodies)
+**REMAINING** (acceptable for now):
 
-**Category B** (`src/game/net/`, `src/hooks/socket/`, `TCPSocket.cpp`): expect **0** hits for `return_addr`, raw GAME-RVA `reinterpret_cast`, `push 0x015`, `OnWarning`, `g_*_orig`; `game_exe::fn` is intentional (DONE above).
+- `OnWarning` vtable (keep original)
+- `Message_Read` / `CMessage::Read` tail-calls from reimpl
+
+**Hooking discipline:** prologue/resume bytes from **IDA Pro MCP** (or IDA UI) — not Python dumps of `GAME.exe`. See hook-status doc § “Hooking rules”.
 
 ---
 
-*Last updated: 2026-05-28 -- CNetClient factory/ctor trace hooks (`pn_net_client_factory.cpp`, run 098). Matches `src/main.cpp`.*
+*Last updated: 2026-05-28 — matches `src/main.cpp`; ctl run `175_4057145c` (`shard_choice`).*

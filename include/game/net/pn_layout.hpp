@@ -34,6 +34,59 @@ constexpr std::uintptr_t kUpnpDeletePort = 0xD6E5B0;
 constexpr std::uintptr_t kNetClientCtor = 0xD0A340;
 constexpr std::uintptr_t kNetClientFactory = 0xD0C0A0;
 
+// TCP framing (CTcpLayerMessageExtractor::Extract / send framer — proudnet-sdk-crossmap §2)
+constexpr std::uintptr_t kTcpFrameRecv = 0xD84BB0;
+constexpr std::uintptr_t kTcpFrameRecvHook = kTcpFrameRecv;
+constexpr std::uintptr_t kTcpFrameSend = 0xD84970;
+// Hook at function entry only (not in-function E8 @ 0xD84910).
+constexpr std::uintptr_t kTcpFrameSendHook = kTcpFrameSend;
+
+// Message dispatch (sub_D653B0 cluster — see proudnet-message-dispatch-map.md)
+constexpr std::uintptr_t kMessageRead = 0xD59300;
+constexpr std::uintptr_t kMessageReadBit = 0xD58B30;
+constexpr std::uintptr_t kMessageRestoreReadOffset = 0xD589C0;
+constexpr std::uintptr_t kProcessProudNetLayer = 0xD653B0;
+constexpr std::uintptr_t kProcessAltDispatch = 0xD366A0;
+// sub_D65940 — CNetClientImpl::OnMessageReceived (SEH prologue 7 bytes; resume @ +7)
+constexpr std::uintptr_t kDrainReceiveQueue = 0xD65940;
+constexpr std::uintptr_t kDrainReceiveQueueResume = 0xD65947;
+constexpr std::uintptr_t kIsFromRemoteClientPeer = 0xD5FD30;
+constexpr std::uintptr_t kProcessCompressed = 0xD5DC10;
+constexpr std::uintptr_t kProcessCompressedResume = 0xD5DC17;
+constexpr std::uintptr_t kProcessEncrypted = 0xD5CA30;
+constexpr std::uintptr_t kProcessEncryptedResume = 0xD5CA37;
+constexpr std::uintptr_t kStackMessageCtor = 0xD12450;
+constexpr std::uintptr_t kStackMessageDtor = 0xD124D0;
+constexpr std::uintptr_t kEnqueueFormatError = 0xD83110;
+
+constexpr std::uintptr_t kHandlerRmi = 0xD64F10;
+constexpr std::uintptr_t kHandlerUserMessage = 0xD65170;
+constexpr std::uintptr_t kHandlerHla = 0xD5FFD0;
+constexpr std::uintptr_t kHandlerConnectServerTimedout = 0xD62930;
+constexpr std::uintptr_t kHandlerGameNotify6 = 0xD62FD0;
+constexpr std::uintptr_t kHandlerGameNotify8 = 0xD60020;
+constexpr std::uintptr_t kHandlerGameNotify9 = 0xD60070;
+constexpr std::uintptr_t kHandlerGameNotify10 = 0xD64760;
+constexpr std::uintptr_t kHandlerNotifyProtocolVersionMismatch = 0xD5FF60;
+constexpr std::uintptr_t kHandlerNotifyServerConnectSuccess = 0xD61490;
+constexpr std::uintptr_t kHandlerNotifyAutoConnectionRecoverySuccess = 0xD645C0;
+constexpr std::uintptr_t kHandlerRequestStartServerHolepunch = 0xD608D0;
+constexpr std::uintptr_t kHandlerServerHolepunchAck = 0xD63510;
+constexpr std::uintptr_t kHandlerGameNotify24 = 0xD63750;
+constexpr std::uintptr_t kHandlerGameNotify25 = 0xD60A50;
+constexpr std::uintptr_t kHandlerGameNotify26 = 0xD63A70;
+constexpr std::uintptr_t kHandlerGameNotify29 = 0xD64D60;
+constexpr std::uintptr_t kHandlerGameNotify31 = 0xD5FCD0;
+constexpr std::uintptr_t kHandlerGameNotify32 = 0xD5FD00;
+constexpr std::uintptr_t kHandlerGameNotify33 = 0xD61F20;
+constexpr std::uintptr_t kHandlerGameNotify34 = 0xD60E10;
+constexpr std::uintptr_t kHandlerGameNotify35 = 0xD625E0;
+constexpr std::uintptr_t kHandlerGameNotify36 = 0xD61760;
+constexpr std::uintptr_t kHandlerGameNotify40 = 0xD62110;
+constexpr std::uintptr_t kHandlerGameNotify41 = 0xD60FB0;
+constexpr std::uintptr_t kHandlerGameNotify49 = 0xD62330;
+constexpr std::uintptr_t kHandlerGameNotify50 = 0xD61120;
+
 } // namespace rva
 
 namespace growable {

@@ -27,6 +27,8 @@ public:
   static bool initialize();
   static bool make_hook(HookStub &stub);
   static bool restore_hook(HookStub &stub);
+  // restore → fn(ctx) → re-patch, under one patch lock (safe for hot paths)
+  static void invoke_hooked(HookStub &stub, void (*fn)(void *ctx), void *ctx);
   static bool make_syshook(SysHookStub &stub, int32_t iat_addr);
   static bool make_syshook(SysHookStub &stub, void *iat_addr);
   static bool restore_syshook(SysHookStub &stub);
