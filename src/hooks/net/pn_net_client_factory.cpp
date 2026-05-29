@@ -36,7 +36,7 @@ extern "C" void *__fastcall hook_pn_net_client_ctor_impl(void *self) {
   return ret;
 }
 
-// sub_D0C0A0 — CNetClient factory (__cdecl); SEH prologue, resume @ 0xD0C0A7.
+// sub_D0C0A0 - CNetClient factory (__cdecl); SEH prologue, resume @ 0xD0C0A7.
 extern "C" void __declspec(naked) hook_pn_net_client_factory() {
   __asm {
     pushad
@@ -51,7 +51,7 @@ extern "C" void __declspec(naked) hook_pn_net_client_factory() {
   }
 }
 
-// sub_D0A340 — CNetClient ctor (__thiscall); restore_hook for SEH entry.
+// sub_D0A340 - CNetClient ctor (__thiscall); restore_hook for SEH entry.
 extern "C" void __declspec(naked) hook_pn_net_client_ctor() {
   __asm {
     jmp hook_pn_net_client_ctor_impl

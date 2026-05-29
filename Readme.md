@@ -57,7 +57,7 @@ just ctl::run-session-offline  # copy-dll → launch-offline → wait-menu → k
 
 Controller recipes live under the **`ctl`** module - always use the `ctl::` prefix from repo root (e.g. `just ctl::copy-dll`, `just ctl::launch-offline`, `just ctl::wait-stage shard_choice`). There is no bare `just launch` at the root.
 
-Or compose steps yourself: `just ctl::copy-dll`, `just ctl::launch-offline`, `just ctl::wait-stage main_menu`, `just ctl::kill-all`, `just ctl::copy-logs`.
+Or compose steps yourself: `just ctl::copy-dll`, `just ctl::launch-offline`, `just ctl::wait-stage server_ready`, `just ctl::kill-all`, `just ctl::copy-logs`.
 
 See [controller/README.md](controller/README.md) for stages, `wait-for-stage`, and config.
 

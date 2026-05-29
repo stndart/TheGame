@@ -12,8 +12,8 @@
 #endif
 
 // sub_D653B0: char __thiscall(worker, wstr_body, received_msg)
-// SEH prologue (7 bytes): 6A FF | 68 11 2E 51 01 | then @ 0xD653B7: mov eax, fs:[0]
-// 5-byte JMP steals 6A FF 68 11 2E — resume at 0xD653B7 (not RVA+5).
+// SEH prologue (7 bytes): 6A FF | 68 11 2E 51 01 | then @ 0xD653B7: mov eax,
+// fs:[0] 5-byte JMP steals 6A FF 68 11 2E - resume at 0xD653B7 (not RVA+5).
 
 namespace {
 
@@ -21,7 +21,8 @@ constexpr std::uint32_t kProcessProudNetLayerResume = 0xD653B7;
 
 } // namespace
 
-extern "C" void __cdecl pn_process_message_trace_log(void *worker, void *wstr_body,
+extern "C" void __cdecl pn_process_message_trace_log(void *worker,
+                                                     void *wstr_body,
                                                      void *received_msg) {
   static unsigned int trace_count = 0;
   const unsigned int n = ++trace_count;
@@ -33,8 +34,8 @@ extern "C" void __cdecl pn_process_message_trace_log(void *worker, void *wstr_bo
 
 #if THEGAME_PN_PROCESS_FULL_REIMPL
 
-extern "C" char __cdecl pn_process_message_reimpl_c(void *worker, void *wstr_body,
-                                                    void *received_msg) {
+extern "C" char __cdecl
+pn_process_message_reimpl_c(void *worker, void *wstr_body, void *received_msg) {
   return process_message_proudnet_layer(worker, wstr_body, received_msg) ? 1
                                                                          : 0;
 }

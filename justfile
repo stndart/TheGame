@@ -20,28 +20,20 @@ mod ctl
 
 # --- server (singleton; prefer ensure-serve for agents) ---
 
-serve:
-    cd server | uv run serve
-
-# Idempotent: start detached dummy server on :7000 if not already listening.
-ensure-serve:
-    cd server | uv run ensure-serve
-
-serve-status:
-    cd server | uv run serve-status
-
-# Stop server process recorded in ctl/logs/ctl/server.lock (if still alive).
-serve-stop:
-    cd server | uv run serve-stop
-
-hot-serve:
-    @echo "hot-serve reloads on file changes; use ensure-serve for a stable background listener"
-    cd server | uv run hot-serve
+mod server
 
 # --- build (optional helper) ---
 
 build-debug:
     .\cmake-vs.bat --build --preset debug
+
+# Debug DLL with in-process RMI injection compiled out (wire-only server tests).
+build-debug-wire:
+    .\cmake-vs.bat --preset msvc-x86-debug-wire
+    .\cmake-vs.bat --build --preset debug-wire
+
+copy-dll-wire: build-debug-wire
+    just ctl::copy-dll debug-wire
 
 build-release:
     .\cmake-vs.bat --build --preset release

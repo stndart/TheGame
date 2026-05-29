@@ -1,8 +1,9 @@
 ﻿#include "console.h"
-#include "game/net/pn_tcp_trace.hpp"
 #include "crt/memory.h"
 #include "diagnostics/handlers.hpp"
+#include "game/net/pn_tcp_trace.hpp"
 #include "hook_manager.h"
+
 
 #include "system_hooks.h"
 #include "target_hooks.h"
@@ -86,16 +87,18 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call,
     HookManager::make_hook(g_target_pn_process_compressed);
     HookManager::make_hook(g_target_pn_process_encrypted);
     HookManager::make_hook(g_target_pn_process_proudnet_layer);
-    // sub_D65940 — OnMessageReceived trace; SEH tail-jump resume 0xD65947.
+    // sub_D65940 - OnMessageReceived trace; SEH tail-jump resume 0xD65947.
     HookManager::make_hook(g_target_pn_drain_receive_queue);
-    // IRmiProxy::RmiSend trace — framework heartbeat ids only (SEH resume 0xD5C5E7).
+    // IRmiProxy::RmiSend trace - framework heartbeat ids only (SEH resume
+    // 0xD5C5E7).
     HookManager::make_hook(g_target_pn_rmi_send);
-    // GAME application RMI send capture: sub_65AEA0 (explicit id) + sub_A0B290 floor.
+    // GAME application RMI send capture: sub_65AEA0 (explicit id) + sub_A0B290
+    // floor.
     HookManager::make_hook(g_target_pn_game_rmi_send);
     HookManager::make_hook(g_target_pn_rmi_floor);
-    // Recv framer sub_D84BB0: restore_hook + __thiscall shim (SEH prologue; not RVA+5).
-    // HookManager::make_hook(g_target_pn_tcp_frame_recv);
-    // Send framer sub_D84970 @ entry only — resume 0xD84977, not RVA+5.
+    // Recv framer sub_D84BB0: restore_hook + __thiscall shim (SEH prologue; not
+    // RVA+5). HookManager::make_hook(g_target_pn_tcp_frame_recv); Send framer
+    // sub_D84970 @ entry only - resume 0xD84977, not RVA+5.
     // HookManager::make_hook(g_target_pn_tcp_frame_send);
 
     log_message("DLL loaded - hooks installed");

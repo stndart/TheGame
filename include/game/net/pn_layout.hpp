@@ -34,20 +34,22 @@ constexpr std::uintptr_t kUpnpDeletePort = 0xD6E5B0;
 constexpr std::uintptr_t kNetClientCtor = 0xD0A340;
 constexpr std::uintptr_t kNetClientFactory = 0xD0C0A0;
 
-// TCP framing (CTcpLayerMessageExtractor::Extract / send framer — proudnet-sdk-crossmap §2)
+// TCP framing (CTcpLayerMessageExtractor::Extract / send framer -
+// docs/proudnet-sdk-crossmap.md §2)
 constexpr std::uintptr_t kTcpFrameRecv = 0xD84BB0;
 constexpr std::uintptr_t kTcpFrameRecvHook = kTcpFrameRecv;
 constexpr std::uintptr_t kTcpFrameSend = 0xD84970;
 // Hook at function entry only (not in-function E8 @ 0xD84910).
 constexpr std::uintptr_t kTcpFrameSendHook = kTcpFrameSend;
 
-// Message dispatch (sub_D653B0 cluster — see proudnet-message-dispatch-map.md)
+// Message dispatch (sub_D653B0 cluster - see docs/proudnet/message-dispatch.md)
 constexpr std::uintptr_t kMessageRead = 0xD59300;
 constexpr std::uintptr_t kMessageReadBit = 0xD58B30;
 constexpr std::uintptr_t kMessageRestoreReadOffset = 0xD589C0;
 constexpr std::uintptr_t kProcessProudNetLayer = 0xD653B0;
 constexpr std::uintptr_t kProcessAltDispatch = 0xD366A0;
-// sub_D65940 — CNetClientImpl::OnMessageReceived (SEH prologue 7 bytes; resume @ +7)
+// sub_D65940 - CNetClientImpl::OnMessageReceived (SEH prologue 7 bytes; resume
+// @ +7)
 constexpr std::uintptr_t kDrainReceiveQueue = 0xD65940;
 constexpr std::uintptr_t kDrainReceiveQueueResume = 0xD65947;
 constexpr std::uintptr_t kIsFromRemoteClientPeer = 0xD5FD30;
@@ -122,9 +124,11 @@ namespace fast_socket {
 constexpr std::uintptr_t kCallback = 16;
 constexpr std::uintptr_t kReportEnabled = 21;
 constexpr std::uintptr_t kOverlapped = 116;
-constexpr std::uintptr_t kOverlapInFlight = 116; // dword == 259 while I/O pending
-constexpr std::uintptr_t kRecvGrowable = 0x8C;   // embedded PNGrowableBuffer @ +140
-constexpr std::uintptr_t kRecvFlags = 0xF8;      // WSARecv flags dword @ +248
+constexpr std::uintptr_t kOverlapInFlight =
+    116; // dword == 259 while I/O pending
+constexpr std::uintptr_t kRecvGrowable =
+    0x8C;                                   // embedded PNGrowableBuffer @ +140
+constexpr std::uintptr_t kRecvFlags = 0xF8; // WSARecv flags dword @ +248
 constexpr std::uintptr_t kRecvPending = 136;
 constexpr std::uintptr_t kRecvIssueWarning = 136; // duplicate recv arm warning
 constexpr std::uintptr_t kRecvStagingPtr = 0x94;
@@ -135,7 +139,8 @@ constexpr std::uintptr_t kStaging = 0xC0;
 constexpr std::uintptr_t kSendPending = 0x12A;
 constexpr std::uintptr_t kSendOpCount = 0x104;
 constexpr std::uintptr_t kSocket = 0x12C;
-constexpr std::uintptr_t kAddrPort = 0xE4; // Proud::AddrPort; sub_CF0460 updates from out[]
+constexpr std::uintptr_t kAddrPort =
+    0xE4; // Proud::AddrPort; sub_CF0460 updates from out[]
 
 } // namespace fast_socket
 

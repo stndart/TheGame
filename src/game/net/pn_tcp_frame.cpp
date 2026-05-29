@@ -28,7 +28,7 @@ char PNTcpFrame::extract(void *stream_ctx) {
     ++logs;
   }
 
-  // sub_D84BB0 entry — do not tail-call RVA+5 (5-byte jmp splits SEH prologue).
+  // sub_D84BB0 entry - do not tail-call RVA+5 (5-byte jmp splits SEH prologue).
   HookManager::restore_hook(g_target_pn_tcp_frame_recv);
   const auto orig = reinterpret_cast<TcpFrameExtractFn>(
       game_va(static_cast<std::uint32_t>(pn::rva::kTcpFrameRecv)));

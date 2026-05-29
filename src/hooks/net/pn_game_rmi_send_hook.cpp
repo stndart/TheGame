@@ -7,7 +7,7 @@
 
 // GAME application RMI proxy send chokepoints (NOT the framework proxy 0xD5C5E0,
 // which only carries builtin heartbeat/ping ids 1001/1006/1019). Confirmed by IDA
-// 2026-05-29 - see docs/proudnet-rmi-server-plan.md "Game RMI proxy map".
+// 2026-05-29 - see docs/plans/proudnet-rmi-server-plan.md "Game RMI proxy map".
 //
 //   sub_65AEA0  __thiscall(this=ecx)  (msg, len, rmiId:int16)  -- explicit id
 //       16xxx band (account/lobby/room, proxy dword_1C1ABA0). 187 call sites.

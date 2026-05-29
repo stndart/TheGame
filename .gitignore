@@ -14,6 +14,7 @@ gamebryo-v3.2.0.661/
 GitS_FA_Network_Captures/
 
 logs/
+transcripts/
 ctl/logs/
 diagnostics_events.jsonl
 

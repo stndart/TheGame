@@ -6,6 +6,8 @@ option(THEGAME_NO_OUTPUT_DEBUG_STRING "Omit OutputDebugStringA from log_message"
 # AllocConsole/printf; controller pipe + log files cover the same use case.
 option(THEGAME_NO_CONSOLE "Do not allocate a debug console window" OFF)
 option(THEGAME_PN_TCP_PIPE "Emit proudnet-tcp header events on diagnostics pipe" OFF)
+# Wire-only offline tests: no in-process S2C RES injection (server must answer on TCP).
+option(THEGAME_DISABLE_RMI_INJECT "Compile out pn_rmi_inject pumps/leaves" OFF)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -40,6 +42,9 @@ if(WIN32)
     endif()
     if(THEGAME_PN_TCP_PIPE)
         target_compile_definitions(TheGame PRIVATE THEGAME_PN_TCP_PIPE)
+    endif()
+    if(THEGAME_DISABLE_RMI_INJECT)
+        target_compile_definitions(TheGame PRIVATE THEGAME_DISABLE_RMI_INJECT)
     endif()
 
     if (MSVC)

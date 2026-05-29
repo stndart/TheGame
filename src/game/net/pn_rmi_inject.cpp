@@ -43,6 +43,22 @@ constexpr std::size_t kUiMemberStride = 0xA8; // 168B record (sub_8DCBB0 +=42)
 // Local player account id our connect inject hands the client (server uses 1).
 constexpr std::uint32_t kLocalAccountId = 1;
 
+bool rmi_inject_disabled() {
+#if defined(THEGAME_DISABLE_RMI_INJECT)
+  return true;
+#else
+  static int cached = -1;
+  if (cached < 0) {
+    char buf[4];
+    cached = (GetEnvironmentVariableA("THEGAME_DISABLE_RMI_INJECT", buf,
+                                       sizeof(buf)) > 0)
+                 ? 1
+                 : 0;
+  }
+  return cached == 1;
+#endif
+}
+
 volatile LONG g_pending_create_room = 0;
 volatile LONG g_pending_populate = 0;
 volatile LONG g_pending_start = 0;
@@ -124,6 +140,8 @@ void inject_start_res() {
 } // namespace
 
 void pn_inject_note_c2s_send(unsigned rmi_id) {
+  if (rmi_inject_disabled())
+    return;
   const unsigned id = rmi_id & 0xFFFFu;
   if (id == kReqCreateRoom) {
     InterlockedExchange(&g_pending_create_room, 1);
@@ -136,6 +154,8 @@ void pn_inject_note_c2s_send(unsigned rmi_id) {
 }
 
 void pn_inject_pump_lobby() {
+  if (rmi_inject_disabled())
+    return;
   // Create-Room transition: success RES -> RequestState(9) (CGameRoom). Arm the
   // room-populate so the data is in place before CGameRoom's first frame binds.
   if (InterlockedCompareExchange(&g_pending_create_room, 0, 1) == 1) {
@@ -145,6 +165,8 @@ void pn_inject_pump_lobby() {
 }
 
 void pn_inject_pump_room() {
+  if (rmi_inject_disabled())
+    return;
   // Runs in CGameRoom::onPreProcess prologue, BEFORE the original binds room
   // data. Populate first (compact map then the UI map the script reads), then
   // honour a pending Ready -> start-match.

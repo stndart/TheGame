@@ -34,7 +34,8 @@ extern "C" void drain_receive_queue_log(void *net_client) {
   drain_receive_queue(net_client);
 }
 
-// sub_D65940 — trace + SEH tail @ 0xD65947 (original body continues; ECX preserved).
+// sub_D65940 - trace + SEH tail @ 0xD65947 (original body continues; ECX
+// preserved).
 extern "C" void __declspec(naked) hook_pn_drain_receive_queue() {
   __asm {
     push ecx

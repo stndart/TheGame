@@ -25,8 +25,7 @@ void *g_tcp_frame_send_body = nullptr;
 void ensure_tcp_frame_send_body() {
   if (!g_tcp_frame_send_body) {
     // Send entry uses the same SEH prologue; +5 is unsafe (resume @ 0xD84977).
-    g_tcp_frame_send_body =
-        reinterpret_cast<void *>(game_va(0xD84977u));
+    g_tcp_frame_send_body = reinterpret_cast<void *>(game_va(0xD84977u));
   }
 }
 
@@ -37,7 +36,8 @@ extern "C" char tcp_frame_extract_c(void *self, void *stream_ctx) {
 }
 
 // Full replacement: __thiscall (ecx=this, [esp+4]=stream_ctx, ret 4).
-// Trampoline alternative after hook: push 0FFFFFFFFh; push 01516B0Fh; jmp return_addr.
+// Trampoline alternative after hook: push 0FFFFFFFFh; push 01516B0Fh; jmp
+// return_addr.
 extern "C" void __declspec(naked) hook_pn_tcp_frame_recv() {
   __asm {
     push dword ptr [esp + 4]
@@ -57,7 +57,7 @@ extern "C" void log_tcp_frame_send_once(void *framer) {
   }
 }
 
-// sub_D84970 — tail only after SEH push pair (not RVA+5).
+// sub_D84970 - tail only after SEH push pair (not RVA+5).
 extern "C" void __declspec(naked) hook_pn_tcp_frame_send() {
   __asm {
     push ecx
