@@ -40,15 +40,15 @@ None of those actions introduced a new rmi id at 0xD5C5E0.
 
 ## Hook details (current, kept as heartbeat trace)
 
-`src/hooks/net/pn_rmi_send_hook.cpp` — target RVA 0xD5C5E0, resume 0xD5C5E7.
+`src/hooks/net/pn_rmi_send_hook.cpp` - target RVA 0xD5C5E0, resume 0xD5C5E7.
 SEH/GS prologue relocated: `push -1; push 0x1511D84`. Reads at stub entry (+0x24 for
 pushad+pushfd): RMIId [esp+0x3C] (entry [esp+0x18]), remoteCount [esp+0x2C] (entry [esp+0x08]).
 Stable across full session.
 
 ## Open IDA questions (dispatched to subagent 2026-05-29)
 
-1. Identity of 1001/1006/1019 — proxy class + framework vs game.
-2. get_xrefs_to 0xD5C5E0 — universal core or proxy-specific? Is there a lower core send the
+1. Identity of 1001/1006/1019 - proxy class + framework vs game.
+2. get_xrefs_to 0xD5C5E0 - universal core or proxy-specific? Is there a lower core send the
    0x3Fxx RMIs use?
 3. Locate CAccountProxy/CCommonProxy send chokepoint (emits 0x3Fxx).
 4. Trace UI handlers: chat send (CGameLobby 0x42BD50), Quick Match (CGameLobby), Create-Room

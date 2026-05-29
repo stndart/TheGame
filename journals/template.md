@@ -1,3 +1,6 @@
+Name the file as `<YYYY-MM-DD>-<order>-<short title>`
+`order` is a two-digit number to semantically order the logs.
+
 # Investigation: <short title>
 
 **Date:** YYYY-MM-DD  
@@ -45,8 +48,8 @@ Outcome: fixed, partial, WIP, dead end. What to do next. Lessons or caveats.
 
 Every brief entry above must have a **mirrored long-form** counterpart:
 
-- Brief: `journals/<YYYY-MM-DD>-<slug>.md` (this file, from this template)
-- Long: `journals/long/<YYYY-MM-DD>-<slug>.md` (same basename)
+- Brief: `journals/<YYYY-MM-DD>-<order>-<slug>.md` (this file, from this template)
+- Long: `journals/long/<YYYY-MM-DD>-<order>-<slug>.md` (same basename; `order` is two digits, see filename line above)
 
 The long journal holds full decompilation notes, command transcripts, screenshots paths, dead ends, and raw observations. Structure is optional; completeness matters.
 

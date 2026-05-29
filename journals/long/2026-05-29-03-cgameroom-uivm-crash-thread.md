@@ -43,11 +43,11 @@ So after a bare `0x3F30` transition these are non-null but empty/zeroed. The cra
 - `0x3ED4` -> `sub_4BB560` -> `sub_962020(body)` (fill map `dword_1C2EA08`) + `sub_8DA900`
   (copy each 32B record into member objects via `sub_8FAB80(&off_1C28684)`).
   `+0` u16 (unused), `+2` int count, `+6` count×32B records. All-zero (count=0) -> loops skipped ->
-  safe but empty. **Coherent count=1 local-player record is the real fix — layout being decoded.**
+  safe but empty. **Coherent count=1 local-player record is the real fix - layout being decoded.**
 - `0x3F11` -> `sub_4BB7E0`: member-name record (`+2` id, `+6` id2); enqueues type-17 via
   `sub_507E70(dword_1C10D44)`. Zero body enqueues phantom id 0 (guarded, no crash).
 - `0x3F47` -> `sub_4BAEB0`: player record (`+2` id); unknown id -> guarded no-op.
-- `0x3F03` -> `sub_4BB8F0`: lobby/room counter (`+2`). **RISKY** — `sub_5EBD20`/`sub_5EBC00` key
+- `0x3F03` -> `sub_4BB8F0`: lobby/room counter (`+2`). **RISKY** - `sub_5EBD20`/`sub_5EBC00` key
   validation can hit `invalid_parameter_noinfo()` on a zero/mismatched key. Do not inject blind.
 - `0x3F81` -> `sub_4BB450`: room-state refresh (`+2` state). Guarded; in state 9 it calls
   `sub_442F90()` and returns. Does NOT create or transition. Re-runs the same UI path that crashes
@@ -56,7 +56,7 @@ So after a bare `0x3F30` transition these are non-null but empty/zeroed. The cra
 ## Thread evidence
 
 - `CNetClientImpl::OnMessageReceived` (`sub_D65940`, our `drain_receive_queue` hook) drains the recv
-  queue and dispatches per message — observed on tids 32880/13432, distinct from the main thread
+  queue and dispatches per message - observed on tids 32880/13432, distinct from the main thread
   28308 (CGameXxx ctor / app-init). So dispatch + RES leaves run on the ProudNet worker thread.
 - `Diagnostics::emit_game_state` dedups via `g_last_game_phase`, which is why each stage prints once
   even though `IState::onPreProcess` (the hooked `0x439B00` etc.) fires every frame on the main

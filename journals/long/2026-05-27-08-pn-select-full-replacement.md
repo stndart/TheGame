@@ -1,4 +1,4 @@
-# pn_select full replacement (long)
+﻿# pn_select full replacement (long)
 
 ## IDA `sub_D55300` @ `0xD55300`
 
@@ -26,7 +26,7 @@ Trampoline called `sync_fast_socket_handle(optval)` **before** original prologue
 
 ## Guard semantics (`socket_trace.cpp`)
 
-`sync_fast_socket_handle` returns early when slot peer is `:27380`, `:20009`, or already `:7000` - prevents ENTRY fd stomping GAME fd (documented in `2026-05-27-offline-proud-handshake` journal).
+`sync_fast_socket_handle` returns early when slot peer is `:27380`, `:20009`, or already `:7000` - prevents ENTRY fd stomping GAME fd (documented in `2026-05-27-07-offline-proud-handshake` journal).
 
 ## Verification run `022_624ce004`
 

@@ -1,4 +1,4 @@
-# Long: offline ProudNet handshake to main menu (2026-05-27)
+﻿# Long: offline ProudNet handshake to main menu (2026-05-27)
 
 ## Goal
 
@@ -73,7 +73,7 @@ Stale partial server (ENTRY up, GAME down) looked “healthy” when only `confi
 | `src/hooks/socket/send.cpp` | `w_wsasend_1` logging |
 | `include/game/net/proud_frame.hpp` | Client-side frame parse helpers |
 
-Prior journals: `2026-05-27-offline-ip-and-stage-hooks.md` (IP remap), `2026-05-27-proud-framing-and-recv-trace.md` (RMI layout), `2026-05-27-connect-stage-protocol.md` (PN FSM IDA map).
+Prior journals: `2026-05-27-01-connect-stage-protocol.md` (PN FSM IDA map), `2026-05-27-02-offline-ip-and-stage-hooks.md` (IP remap), `2026-05-27-03-proud-framing-and-recv-trace.md` (RMI layout).
 
 ## Verified session `018_5cb743bb`
 

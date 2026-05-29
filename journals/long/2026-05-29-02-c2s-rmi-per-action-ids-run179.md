@@ -23,7 +23,7 @@ early-flushed snapshot, not the full log. The canonical full stream is **`events
 
 `emit_game_log` (grmi lines) and `emit_proudnet_tcp` (wire frames) both write the same named
 pipe via `Diagnostics::*` (`src/diagnostics/handlers.cpp`). `game_proudnet_tcp.txt` has 115
-frames spanning the whole session, proving the pipe was healthy throughout — so the missing
+frames spanning the whole session, proving the pipe was healthy throughout - so the missing
 grmi lines in `game_logs.txt` are a snapshot artifact, not a capture failure.
 
 The grmi hooks are registered in `src/main.cpp:94-95`
@@ -33,7 +33,7 @@ Proxy id = stack arg `rmiId:int16`; floor id = `*(u16*)msg` (first LE u16 of the
 
 ## Full grmi timeline (events.jsonl line → reading)
 
-LOGIN / handshake burst (before shard_choice, lines 22, 35–47) — not user actions:
+LOGIN / handshake burst (before shard_choice, lines 22, 35–47) - not user actions:
 ```
 22 floor 0x4654 (18004) len=1565    initial auth/session payload (18xxx band)
 35 floor 0x3ACA (15050) len=10
@@ -63,7 +63,7 @@ LOBBY (game_state lobby@55):
 ```
 56 proxy 0x3F40 (16192) len=2 \  lobby-enter REQ (gated onPreProcess)
 57 floor 0x3ACE (15054) len=2 /  (same RMI, two layers)
-58 EXCEPTION 0x000006BA            RPC_S_SERVER_UNAVAILABLE — benign, not a crash
+58 EXCEPTION 0x000006BA            RPC_S_SERVER_UNAVAILABLE - benign, not a crash
 59 floor 0x3AD2 (15058) len=36     CHAT "good morning" (standalone floor, text body)
 60 proxy 0x3EE4 (16100) len=3 \  Quick Dive press #1
 61 floor 0x3AAF (15023) len=3 /
@@ -112,21 +112,21 @@ longer string and watch the floor len scale by 2 B/char.
 
 ## Corrections vs predictions (proudnet-rmi-server-plan.md "Action → REQ id")
 
-- chat: predicted `0x3F40` — WRONG (that is lobby-enter). Actual = floor `0x3AD2` (15058).
-- Quick match: predicted `0x3ABF` (15039) — not seen. Lobby Quick Dive = proxy `0x3EE4` (16100).
+- chat: predicted `0x3F40` - WRONG (that is lobby-enter). Actual = floor `0x3AD2` (15058).
+- Quick match: predicted `0x3ABF` (15039) - not seen. Lobby Quick Dive = proxy `0x3EE4` (16100).
   `0x3ABF` is the in-room automatch start (`sub_43C7E0`), a screen we did not reach.
-- Create: predicted `0x3B24` (15140) — not seen. Custom create = proxy `0x3F30` (16176) / floor
+- Create: predicted `0x3B24` (15140) - not seen. Custom create = proxy `0x3F30` (16176) / floor
   `0x3AA0` (15008). `0x3B24` is the party-room create (`sub_42F690`), a different screen.
 - room-list `0x3F2F` (16175) and lobby `0x3F40` (16192): CONFIRMED as predicted.
 
 ## Behaviour / next step
 
 `lobby→room_list` transition happened (list nav is client-local or the replay answered).
-Quick Dive (`0x3EE4`) and Create (`0x3F30`) produced no forward transition — replay has no RES,
+Quick Dive (`0x3EE4`) and Create (`0x3F30`) produced no forward transition - replay has no RES,
 so the player backed out (room_list→lobby) and exited (→shard_choice→server_ready→disconnect).
 
 Wall = Create Room. Next: RE the 98 B `0x3F30`/`0x3AA0` REQ body (room name + settings: map,
 mode, max players, password?), locate its S2C RES in the registrar tables (`sub_4B8630`
 CAccountPacket / `sub_421070` CCommonPacket). REQ=RES−1 is NOT reliable here because `0x3F2F`
-and `0x3F30` are both outbound REQs — look the RES id up explicitly. Then emit that RES as a
+and `0x3F30` are both outbound REQs - look the RES id up explicitly. Then emit that RES as a
 plaintext `0x02`+id+body frame in `server/server/` (proud_rmi.py / game_transport.py).
