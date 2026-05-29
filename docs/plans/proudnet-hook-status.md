@@ -1,8 +1,8 @@
-# ProudNet client hooks — current status
+# ProudNet client hooks - current status
 
-**Last verified:** 2026-05-28 — ctl run **`175_4057145c`**, offline `shard_choice` in ~55s.
+**Last verified:** 2026-05-28 - ctl run **`175_4057145c`**, offline `shard_choice` in ~55s.
 
-Authoritative install list: [`src/main.cpp`](../src/main.cpp) (`HookManager::make_hook`). RVAs and resume addresses: [`include/game/net/pn_layout.hpp`](../include/game/net/pn_layout.hpp).
+Authoritative install list: [`src/main.cpp`](../../src/main.cpp) (`HookManager::make_hook`). RVAs and resume addresses: [`include/game/net/pn_layout.hpp`](../../include/game/net/pn_layout.hpp).
 
 ---
 
@@ -32,14 +32,14 @@ IAT traces (`connect`, `send`, `WSASend`, …): `src/hooks/system/ws32.cpp`.
 
 ---
 
-## Disabled (WIP — do not enable without re-verify)
+## Disabled (WIP - do not enable without re-verify)
 
 | Hook | RVA | Blocker |
 |------|-----|---------|
 | `pn_tcp_frame_recv` | `0xD84BB0` | SEH prologue; enabling caused early disconnect (run `152`). Code ready: `restore_hook` + resume **`0xD84BB7`** in `pn_tcp_frame_hook.cpp`. |
 | `pn_tcp_frame_send` | `0xD84970` | Same SEH pattern; resume **`0xD84977`**. Never hook in-function **`0xD84910`** (E8 call site). |
 | `TCPSocket_send` | `0xD569C0` | Not required for offline path. |
-| `pn_drain_*` (old ABI) | — | Superseded by fixed `0xD65940` hook above. |
+| `pn_drain_*` (old ABI) | - | Superseded by fixed `0xD65940` hook above. |
 
 ---
 
@@ -56,9 +56,9 @@ IAT traces (`connect`, `send`, `WSASend`, …): `src/hooks/system/ws32.cpp`.
 
 ## ProcessMessage layer
 
-- **Reimpl:** `process_message_proudnet_layer` @ `0xD653B0` — reads type via `Message_Read`, dispatches ~50 cases; handlers still tail-call GAME RVAs from [`pn_layout.hpp`](../include/game/net/pn_layout.hpp).
+- **Reimpl:** `process_message_proudnet_layer` @ `0xD653B0` - reads type via `Message_Read`, dispatches ~50 cases; handlers still tail-call GAME RVAs from [`pn_layout.hpp`](../../include/game/net/pn_layout.hpp).
 - **Cases 37–39:** unwrap via `restore_hook` + `kProcessCompressed` / `kProcessEncrypted` (full entry, not `+5`), then recurse layer.
-- **Enum / table:** [`pn_message_type.hpp`](../include/game/net/pn_message_type.hpp), [proudnet-message-dispatch-map.md](proudnet-message-dispatch-map.md).
+- **Enum / table:** [`pn_message_type.hpp`](../../include/game/net/pn_message_type.hpp), [../proudnet/message-dispatch.md](../proudnet/message-dispatch.md).
 
 Toggle trace vs full reimpl for the layer (debug): env `THEGAME_PN_PROCESS_FULL_REIMPL` in `pn_process_message_hook.cpp` (default full reimpl).
 
@@ -77,7 +77,7 @@ Construction → sockets goal from project plan; not complete:
 | `Message_Read` / stream | `0xD59300`, `0xD58B30` | Tail-call GAME |
 | Game RMI after ProudNet | `0x4BA070` (`0x3F3E`) | Not hooked |
 
-Cross-reference: [proudnet-ida-symbol-map.md](proudnet-ida-symbol-map.md), [proudnet-sdk-crossmap.md](proudnet-sdk-crossmap.md) (PN v1.8 @ IDA **13338**).
+Cross-reference: [../proudnet-ida-reimpl.md](../proudnet-ida-reimpl.md), [../proudnet-sdk-crossmap.md](../proudnet-sdk-crossmap.md) (PN v1.8 @ IDA **13338**).
 
 ---
 
