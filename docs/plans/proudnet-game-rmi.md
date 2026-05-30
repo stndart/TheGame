@@ -345,7 +345,7 @@ Called from `ClickGameStart` UI `sub_43C0D0` (cases 2–11). Case 0 = solo/no-ne
 
 **Leave-room trigger:** `GENERATE_LEAVE_ROOM_RES_ON_REQ=true`. `LEAVE_ROOM_RES_ON_25_BODY_LEN=19` (measured run 187; **[WIP]** same as enter/ready). Alternatives: `LEAVE_ROOM_RES_ON_SESSION_N`, `LEAVE_ROOM_RES_AFTER_CREATE_NTH_25` (Nth `0x25` after wire create-room RES). Checked after create-room and start-match handlers in `game_transport.py`.
 
-**Verify:** `cd server && uv run python -m server.test_wire_create_room` and `uv run python -m server.test_wire_start_match`; live: Create Room → Ready, check TX for `023d3f` and `game_state` → map load. Set `THEGAME_DISABLE_RMI_INJECT=1` on GAME.exe to prove wire-only.
+**Verify:** `cd server && uv run python -m server.test_wire_create_room` and `uv run python -m server.test_wire_start_match`; live: Create Room → Ready, check TX for `023d3f` and `game_state` → map load. Use default **debug** DLL (inject compiled out) to prove wire-only.
 
 **2017 FA captures (`GitS_FA_Network_Captures/`):** plaintext S2C samples for `0x3F3E` (640 B), `0x3F3D`, `0x3F41`; create/list room ids were **not** on wire as bare `0x02` (likely only inside `0x25`).
 
@@ -366,7 +366,7 @@ arg[2] = body;                  // a1+8 → flat body buffer (result u16 @ body+
 ```
 
 - **Latch** on the C2S send hook (`sub_65AEA0`): when REQ id == target, set a pending flag (any thread; `InterlockedExchange`).
-- **Pump** on **main thread** from `game_state` hooks (`room_list` / `room` `onPreProcess` prologues in [`game_state.cpp`](../src/hooks/game_state.cpp)) - not from `pn_drain_recv` (worker-thread pump raced the UI VM). Set env **`THEGAME_DISABLE_RMI_INJECT=1`** to test wire-only server replies.
+- **Pump** on **main thread** from `game_state` hooks (`room_list` / `room` `onPreProcess` prologues in [`game_state.cpp`](../src/hooks/game_state.cpp)) - not from `pn_drain_recv` (worker-thread pump raced the UI VM). Default **debug** build has inject off; reconfigure `-DTHEGAME_DISABLE_RMI_INJECT=OFF` to test in-process RES.
 
 **Verified result (run 180):** create-room REQ `0x3F30` → `inject: create-room RES 0x3F30 result=0 -> GameRoom` → `game_state: room`. Client entered `CGameRoom`. **[V]**
 

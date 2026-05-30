@@ -2,7 +2,7 @@
 
 IDA **GAME** @ port **13337** (`GAME.exe`, base `0x400000`). Enum labels from [../proudnet-sdk-crossmap.md §6](../proudnet-sdk-crossmap.md). **Do not** confuse `MessageType` ordinals with transport opcodes (e.g. wire `0x2F`).
 
-Hook status: [../plans/proudnet-hook-status.md](../plans/proudnet-hook-status.md). Enum in code: [`include/game/net/pn_message_type.hpp`](../../include/game/net/pn_message_type.hpp).
+Hook status: [../plans/proudnet-hook-status.md](../plans/proudnet-hook-status.md). Enum in code: [`include/ProudNet/MessageType.hpp`](../../include/ProudNet/MessageType.hpp). GAME ↔ PN18 send-path mapping: [message-type-crossmap.md](message-type-crossmap.md).
 
 ---
 

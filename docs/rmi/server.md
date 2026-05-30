@@ -72,7 +72,7 @@ Server cannot parse C2S RMI from the socket - use **body length heuristics** on 
 | `GENERATE_LEAVE_ROOM_RES_ON_REQ` | Leave-room RES |
 | `LEAVE_ROOM_RES_ON_25_BODY_LEN=19` | Collides with enter/ready - prefer inject or nth-25 |
 
-**Verify wire-only:** `THEGAME_DISABLE_RMI_INJECT=1` on GAME.exe.
+**Verify wire-only:** default **debug** DLL (inject compiled out).
 
 ```powershell
 cd server && uv run python -m server.test_wire_create_room

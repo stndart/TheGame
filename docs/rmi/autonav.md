@@ -159,7 +159,7 @@ Verified offline with ctl matrix **`just ctl::run-nav-matrix`** (runs **228–23
 | **`THEGAME_NAV_ACTION=chat_ping`** | `lobby` | **Fails** | **229**; `0x3AD2` sent then **AV `0xC0000005`** — `send_floor_rmi` / `sub_A0B290` from DLL unsafe |
 | **`THEGAME_NAV_ACTION=exit_lobby`** (with `create_room`) | `server_ready` | **Works** | Combines enter + back-out |
 | **Forward to `map_loading` / stable match** | `map_loading` | **Partial / flaky** | **206**, **209**: `room` → `in_game` → `map_loading` → **`room`** ~0.5s; no reliable Ready/start without server session |
-| **Wire-only** (`THEGAME_DISABLE_RMI_INJECT=1`) | varies | **Fragile** | **207**: reached `lobby` then **`lobby` → `shard_choice`** after `0x000006BA` without `0x3F41` inject |
+| **Wire-only** (default **debug** DLL, inject compiled out) | varies | **Fragile** | **207**: reached `lobby` then **`lobby` → `shard_choice`** after `0x000006BA` without `0x3F41` inject |
 | **Armory / operative / shop / GFx chat button** | — | **Not mapped** | No handler RVAs in autonav; see UI journal Tier B/C |
 
 **Not hooked for autonav:** `intro`, `login`, `shard_choice` (human/ctl still need shard pick), `party_room`, `char_select`, `map_loading`, `in_game`.
@@ -230,7 +230,7 @@ ctl also writes `TheGame.nav_auto` from the **client** before RPC (so a stale el
 - `nav: startup enabled mode=create_room`
 - `nav: startup disabled (no env/sidecar)` — autonav off
 
-**Disable:** omit env/sidecar, or set `THEGAME_DISABLE_RMI_INJECT=1` only affects inject (nav C2S/UI calls still run; create-room transition may need server wire).
+**Inject off:** default **debug** build (compiled out). Nav C2S/UI still run; S2C answers need server wire until autonav/inject is reworked.
 
 ---
 
@@ -458,7 +458,7 @@ just ctl::run-nav-matrix
 | Real create-dialog fields | Build full 98 B from RE ([§9a](../plans/proudnet-game-rmi.md)) or locate `CRoomSetting*` for `sub_48A7C0` |
 | Shard picker / exit | `exit_lobby` mode or action — `RequestState(2)` + `0x3F0C` leave |
 | Ready / start without accidental double-fire | Gate `g_start_fired`; optional nav step `ready` only |
-| Wire-only (no inject) | `THEGAME_DISABLE_RMI_INJECT=1` + server burst ([server.md](server.md)) |
+| Wire-only (no inject) | default **debug** DLL + server burst ([server.md](server.md)) |
 
 ### Diagnostics RPC (future)
 

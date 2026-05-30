@@ -123,7 +123,7 @@ From `ProcessMessage_ProudNetLayer` @ `0x1005a370`:
 | 47 | `MessageType_Compressed` |
 | 54–56 | multicast / linger |
 
-GAME per-case RVAs: [proudnet/message-dispatch.md](proudnet/message-dispatch.md).
+GAME per-case RVAs: [proudnet/message-dispatch.md](proudnet/message-dispatch.md). **GAME ↔ PN18 `MessageType` send-path table:** [proudnet/message-type-crossmap.md](proudnet/message-type-crossmap.md).
 
 ### v1.8 ↔ GAME dispatch core
 

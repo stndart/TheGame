@@ -101,7 +101,7 @@ Full table: [plans/proudnet-rmi-server-plan.md](plans/proudnet-rmi-server-plan.m
 | [`src/hooks/game_state.cpp`](../../src/hooks/game_state.cpp) | Main-thread pump |
 | [`src/RMI/GameSendHook.cpp`](../../src/RMI/GameSendHook.cpp) | C2S latch |
 
-Env: **`THEGAME_DISABLE_RMI_INJECT=1`** for wire-only tests.
+Default **debug** DLL: inject compiled out. Reconfigure `-DTHEGAME_DISABLE_RMI_INJECT=OFF` to compile inject in; env **`THEGAME_DISABLE_RMI_INJECT=1`** disables at runtime.
 
 ---
 

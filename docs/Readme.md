@@ -9,6 +9,7 @@
 | [proudnet/overview.md](proudnet/overview.md) | Intent - components, legs, layer stack |
 | [proudnet/protocol.md](proudnet/protocol.md) | Data - framing, transport opcodes, offline sequences |
 | [proudnet/message-dispatch.md](proudnet/message-dispatch.md) | Data - `MessageType` ordinals, per-case handler RVAs |
+| [proudnet/message-type-crossmap.md](proudnet/message-type-crossmap.md) | **GAME ↔ PN18** `MessageType` send-path crossmap (RmiSend-shaped) |
 | [proudnet/implementation.md](proudnet/implementation.md) | Implementation - `TheGame.dll` + Python server file map |
 | [proudnet-ida-reimpl.md](proudnet-ida-reimpl.md) | IDA ↔ reimpl - GAME.exe RVAs, hook modes, connect-path index |
 

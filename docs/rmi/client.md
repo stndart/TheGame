@@ -75,7 +75,7 @@ For dispatch through `sub_D653B0` (ctor `sub_D12450`):
 
 Buffer: `[MessageType=0x01][rmi_id:2 LE][body]`.
 
-> Project default: **direct leaf call** (injection) - see below.
+> Offline harness: **direct leaf call** (injection) - see below. Default **debug** DLL compiles inject **out** (wire/server S2C).
 
 ---
 
@@ -154,7 +154,8 @@ arg[2] = body;   // result u16 @ body+2 = 0
 
 - **Latch** on C2S send hook when REQ id matches.
 - **Pump** on main thread from `room_list` / `room` onPreProcess - not from drain thread.
-- **`THEGAME_DISABLE_RMI_INJECT=1`** - test wire-only server replies.
+- **Debug build:** inject **off** by default (`msvc-x86-debug` / `THEGAME_DISABLE_RMI_INJECT=ON`). **Re-enable:** reconfigure with `-DTHEGAME_DISABLE_RMI_INJECT=OFF`. Runtime `THEGAME_DISABLE_RMI_INJECT=1` when inject is compiled in.
+- Full table (REQ latch → RES leaf, body sizes): [`src/RMI/Inject.cpp`](../../src/RMI/Inject.cpp), [proudnet-rmi-server-plan.md § Inject-only](../plans/proudnet-rmi-server-plan.md).
 
 Verified: create-room REQ → inject → `game_state: room` (run 180).
 

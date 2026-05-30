@@ -62,14 +62,7 @@
                 "strategy": "external"
             },
             "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Debug"
-            }
-        },
-        {
-            "inherits": "msvc-x86-debug",
-            "name": "msvc-x86-debug-wire",
-            "displayName": "Windows MSVC x86 Debug (wire-only, no RMI inject)",
-            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
                 "THEGAME_DISABLE_RMI_INJECT": "ON"
             }
         }
@@ -83,11 +76,6 @@
         {
             "name": "debug",
             "configurePreset": "msvc-x86-debug",
-            "configuration": "Debug"
-        },
-        {
-            "name": "debug-wire",
-            "configurePreset": "msvc-x86-debug-wire",
             "configuration": "Debug"
         }
     ]

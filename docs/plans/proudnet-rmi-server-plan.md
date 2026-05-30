@@ -18,7 +18,7 @@ Client **loads a map** (live match level) from the offline path that already rea
 just ensure-serve → just ctl::copy-dll → just ctl::launch-offline → just ctl::wait-stage <stage>
 → just ctl::copy-logs → ctl/logs/runs/<run>/{events.jsonl,game_netlogs.txt}
 ```
-Wire-only server tests: `THEGAME_DISABLE_RMI_INJECT=1` on GAME.exe. Create-room wire **PASS:** run **`187_eafd5dd0`** (242 B burst `0x3F30`+`0x3ED4`+`0x3ED8`, no `inject:` line; `game_state: room`). See [journals/2026-05-29-05-wire-s2c-rmi-builders.md](../journals/2026-05-29-05-wire-s2c-rmi-builders.md).
+Default **debug** DLL has inject compiled out (wire/server S2C). Create-room wire **PASS:** run **`187_eafd5dd0`** (242 B burst `0x3F30`+`0x3ED4`+`0x3ED8`, no `inject:` line; `game_state: room`). See [journals/2026-05-29-05-wire-s2c-rmi-builders.md](../journals/2026-05-29-05-wire-s2c-rmi-builders.md).
 
 ## Game-state machine → ctl stages
 
@@ -97,7 +97,7 @@ Inventory: `uv run python -m server.tools.scan_lobby_replay` from `server/`.
 
 Triggers: `CREATE_ROOM_RES_ON_25_BODY_LEN=115`, burst mode - see `server/.env` and [proudnet-game-rmi.md](proudnet-game-rmi.md) §10.
 
-### Inject-only (`src/RMI/Inject.cpp`, default unless `THEGAME_DISABLE_RMI_INJECT=1`)
+### Inject-only (`src/RMI/Inject.cpp`, compile-time opt-in)
 
 | ID | Name | Mechanism | Test | C2S latch |
 |----|------|-----------|------|-----------|

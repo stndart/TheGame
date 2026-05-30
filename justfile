@@ -28,14 +28,6 @@ build-debug:
     .\cmake-vs.bat --preset msvc-x86-debug
     .\cmake-vs.bat --build --preset debug
 
-# Debug DLL with in-process RMI injection compiled out (wire-only server tests).
-build-debug-wire:
-    .\cmake-vs.bat --preset msvc-x86-debug-wire
-    .\cmake-vs.bat --build --preset debug-wire
-
-copy-dll-wire: build-debug-wire
-    just ctl::copy-dll debug-wire
-
 # Offline launch with THEGAME_NAV_AUTO=create_room (must use this for autonav).
 launch-offline-nav:
     just ctl::launch-offline-nav
