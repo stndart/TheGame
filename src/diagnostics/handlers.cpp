@@ -2,8 +2,10 @@
 #include <cstring>
 
 #include "diagnostics/handlers.hpp"
+#include "diagnostics/handler_pipe.hpp"
 #include "diagnostics/namedpipe.hpp"
 #include "helpers/strhelp.h"
+#include "RMI/Nav.hpp"
 
 using namespace Diagnostics;
 
@@ -12,7 +14,8 @@ namespace {
 constexpr DWORD kDbgPrintExceptionC = 0x40010006;
 constexpr DWORD kDbgPrintExceptionWideC = 0x4001000A;
 
-// Re-entrancy guard: emit_game_log / pipe I/O must not recurse through this VEH.
+// Re-entrancy guard: emit_game_log / pipe I/O must not recurse through this
+// VEH.
 thread_local bool g_in_vectored_handler = false;
 
 bool is_dbgprint_exception(DWORD code) {
@@ -90,15 +93,21 @@ NamedPipe *connect_pipe() {
 void startup() {
   if (g_diagnostics_started)
     return;
-  g_diagnostics_started = true;
 
   if (!g_veh_handle)
     g_veh_handle = AddVectoredExceptionHandler(1, vectored_exception_handler);
   SetUnhandledExceptionFilter(unhandled_exception_handler);
 
-  g_pipe = connect_pipe();
+  for (int i = 0; i < 300; ++i) {
+    g_pipe = connect_pipe();
+    if (g_pipe)
+      break;
+    Sleep(100);
+  }
   if (!g_pipe)
     return;
+
+  g_diagnostics_started = true;
 
   char line[160];
   _snprintf_s(line, sizeof(line), _TRUNCATE,
@@ -107,10 +116,16 @@ void startup() {
 
   g_pipe->write_line_locked(line);
   emit_game_state("started");
+
+  HandlerPipe::start();
+  Rmi::NavLogStartup();
 }
+
+bool started() { return g_diagnostics_started; }
 
 void teardown() {
   g_diagnostics_started = false;
+  HandlerPipe::stop();
 
   if (g_veh_handle) {
     RemoveVectoredExceptionHandler(g_veh_handle);
@@ -215,11 +230,12 @@ void emit_proudnet_tcp_connect(DWORD thread_id, unsigned long long sock,
   json_escape(escaped, sizeof(escaped), addr ? addr : "");
 
   char line[384];
-  _snprintf_s(line, sizeof(line), _TRUNCATE,
-              "{\"type\":\"proudnet-tcp\",\"event\":\"connect\",\"pid\":%lu,"
-              "\"thread_id\":%lu,\"port\":%u,\"sock\":\"0x%llX\",\"addr\":\"%s\"}",
-              GetCurrentProcessId(), thread_id, static_cast<unsigned>(port),
-              static_cast<unsigned long long>(sock), escaped);
+  _snprintf_s(
+      line, sizeof(line), _TRUNCATE,
+      "{\"type\":\"proudnet-tcp\",\"event\":\"connect\",\"pid\":%lu,"
+      "\"thread_id\":%lu,\"port\":%u,\"sock\":\"0x%llX\",\"addr\":\"%s\"}",
+      GetCurrentProcessId(), thread_id, static_cast<unsigned>(port),
+      static_cast<unsigned long long>(sock), escaped);
   g_pipe->write_line_locked(line);
 }
 
@@ -237,5 +253,3 @@ void emit_exception_event(const char *type, EXCEPTION_POINTERS *info) {
 }
 
 } // namespace Diagnostics
-
-extern "C" void __cdecl diagnostics_startup() { startup(); }

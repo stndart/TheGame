@@ -52,8 +52,9 @@ Hook registration: [`src/main.cpp`](../../src/main.cpp) (`HookManager::make_hook
 | ENTRY FSM | `server/server/entry_transport.py` |
 | GAME FSM + replay | `server/server/game_transport.py` |
 | Framing + RMI builders | `server/server/proud_frame.py`, `proud_rmi.py` |
+| Packet summary + session logs | `server/server/proud_packet_summary.py`, `session_packet_log.py` |
 | Replay data | `server/server/data/lobby_replay.json`, `lobby_postinit.json` |
-| Wire tests | `server/server/test_wire_*.py` |
+| Wire tests | `server/tests/test_wire_*.py`, `test_packet_summary.py` |
 
 ---
 

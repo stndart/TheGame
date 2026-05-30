@@ -80,7 +80,7 @@ bool is_production_ipv4(const unsigned long ipv4) {
   if (ipv4 == INADDR_NONE || ipv4 == INADDR_ANY)
     return false;
   return ipv4 == production_ipv4(kEntryHost) ||
-         ipv4 == production_ipv4(kLobbyHost);
+         ipv4 == production_ipv4(ServerOverride::kLobbyHost);
 }
 
 std::string remap_host(const char *host) {

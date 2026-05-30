@@ -6,6 +6,7 @@ namespace Diagnostics {
 
 void startup();
 void teardown();
+bool started();
 void emit_game_state(const char *phase);
 bool should_suppress_game_log(const char *message);
 void emit_game_log(const char *message);
@@ -27,5 +28,3 @@ void emit_proudnet_tcp_connect(DWORD thread_id, unsigned long long sock,
                                const char *addr, unsigned port);
 
 } // namespace Diagnostics
-
-extern "C" void __cdecl diagnostics_startup();

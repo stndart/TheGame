@@ -1,9 +1,8 @@
-﻿#include "console.h"
+﻿#include "ProudNet/TcpTrace.hpp"
+#include "console.h"
 #include "crt/memory.h"
 #include "diagnostics/handlers.hpp"
-#include "ProudNet/TcpTrace.hpp"
 #include "hook_manager.h"
-
 
 #include "system_hooks.h"
 #include "target_hooks.h"
@@ -22,7 +21,9 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call,
 #endif
 
     HookManager::initialize();
+    // hooks the entrypoint to start our threads first
     HookManager::make_hook(g_target_entrypoint);
+
     HookManager::make_hook(g_target_game_intro);
     HookManager::make_hook(g_target_game_login);
     HookManager::make_hook(g_target_game_server_select);
@@ -102,6 +103,20 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call,
     // HookManager::make_hook(g_target_pn_tcp_frame_send);
 
     log_message("DLL loaded - hooks installed");
+
+    CreateThread(
+        nullptr, 0,
+        [](LPVOID) -> DWORD {
+          for (int i = 0; i < 600; ++i) {
+            if (Diagnostics::started())
+              break;
+            Diagnostics::startup();
+            Sleep(100);
+          }
+          return 0;
+        },
+        nullptr, 0, nullptr);
+
     break;
 
   case DLL_PROCESS_DETACH:

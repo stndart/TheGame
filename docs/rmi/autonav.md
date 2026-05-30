@@ -1,12 +1,54 @@
-# Autonomous lobby navigation (`THEGAME_NAV_AUTO`)
+# Lobby navigation (handler pipe)
 
-How **TheGame.dll** drives the offline client from shard picker through custom-match **create room** without GFx clicks. Intended for ctl verification, RMI inject tests, and fast iteration on S2C handlers.
+**TheGame.dll** drives post-shard UI transitions from ctl via the **handler named pipe** (`thegame-handler`, duplex). The elevated daemon accepts the game client; ctl sends line-oriented commands; the DLL replies with one line per request.
 
-**Related:** [client.md](client.md) (C2S/S2C paths), [overview.md](overview.md) (scene ids), [../plans/proudnet-game-rmi.md](../plans/proudnet-game-rmi.md) (REQ bodies), [../../journals/long/2026-05-29-04-ui-automation-investigation.md](../../journals/long/2026-05-29-04-ui-automation-investigation.md) (original UI-RE notes).
+**Deprecated:** env/sidecar autonav (`THEGAME_NAV_AUTO`, `THEGAME_NAV_ACTION`, `TheGame.nav_auto`) is a **no-op** — use `ctl send` / `just ctl::send` instead.
+
+**Related:** [ctl/README.md](../../ctl/README.md) (handler protocol), [client.md](client.md), [overview.md](overview.md), [../plans/proudnet-game-rmi.md](../plans/proudnet-game-rmi.md).
 
 ---
 
-## How autonav works (principles)
+## Handler pipe (current)
+
+| Direction | Payload |
+| --- | --- |
+| ctl → game | One UTF-8 line per command, `\n`-terminated |
+| game → ctl | One response line |
+
+| Command | Response | Main-thread effect |
+| --- | --- | --- |
+| `commands` | `nav_goto_lobby` (comma-separated list) | — |
+| `nav_goto_lobby` | `ok` | Queue → `NavDrainCommands` arms C2S enter + `g_want_lobby`; `NavPump` runs `try_goto_lobby` |
+
+**Threading:** a **reader thread** ([`handler_pipe.cpp`](../../src/diagnostics/handler_pipe.cpp)) reads the pipe and enqueues work; **never** calls game UI/RMI/inject. **`NavPump`** ([`Nav.cpp`](../../src/RMI/Nav.cpp)) drains the queue on the **main thread** from `game_state` hooks (`server_ready`, `lobby`, …).
+
+**Shard picker:** `shard_choice` is still **manual** on online launch; pipe nav starts after `server_ready`.
+
+### Verification (online)
+
+```powershell
+just build-debug
+just ctl::copy-dll
+just ctl::launch
+just ctl::wait-menu                    # server_ready (pick shard first if needed)
+just ctl::commands                     # expect nav_goto_lobby in handlers
+just ctl::send nav_goto_lobby
+just ctl::wait-stage lobby 120
+just ctl::copy-logs
+just ctl::kill-all
+```
+
+Grep `events.jsonl` / `game_logs.txt` for `nav: command nav_goto_lobby`, `nav: c2s 0x3F0C`, `game_state` → `lobby`.
+
+---
+
+## Legacy autonav (`THEGAME_NAV_AUTO`) — removed
+
+The sections below describe the **previous** env-driven state machine (retained for RMI/hook reference). It is **not** active in current builds.
+
+---
+
+## How autonav worked (principles)
 
 Autonav is **not** a GFx click simulator and **not** a hook on Scaleform button widgets. It is a **small state machine in TheGame.dll** that runs when the game’s own **`IState::onPreProcess`** prologues fire (same thread and call stack as normal frame logic).
 
