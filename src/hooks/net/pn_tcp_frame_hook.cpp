@@ -1,8 +1,8 @@
 #include "target_hooks.h"
 
-#include "console.h"
 #include "ProudNet/Layout.hpp"
 #include "ProudNet/TcpLayerMessageExtractor.hpp"
+#include "console.h" // IWYU pragma: keep
 
 #include <windows.h>
 
@@ -32,7 +32,8 @@ void ensure_tcp_frame_send_body() {
 } // namespace
 
 extern "C" char tcp_frame_extract_c(void *self, void *stream_ctx) {
-  return reinterpret_cast<Proud::CTcpLayerMessageExtractor *>(self)->extract(stream_ctx);
+  return reinterpret_cast<Proud::CTcpLayerMessageExtractor *>(self)->extract(
+      stream_ctx);
 }
 
 // Full replacement: __thiscall (ecx=this, [esp+4]=stream_ctx, ret 4).

@@ -1,6 +1,6 @@
 #include "target_hooks.h"
 
-#include "ProudNet/FastSocket.hpp"
+#include "ProudNet/FastSocket.hpp" // IWYU pragma: keep
 
 extern "C" void __declspec(naked) hook_fast_wsasend() {
   __asm {

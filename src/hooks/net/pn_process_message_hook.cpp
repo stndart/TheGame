@@ -1,7 +1,7 @@
 #include "target_hooks.h"
 
-#include "console.h"
 #include "ProudNet/Layout.hpp"
+#include "console.h" // IWYU pragma: keep
 
 #ifndef THEGAME_PN_PROCESS_FULL_REIMPL
 #define THEGAME_PN_PROCESS_FULL_REIMPL 1
@@ -36,8 +36,9 @@ extern "C" void __cdecl pn_process_message_trace_log(void *worker,
 
 extern "C" char __cdecl
 pn_process_message_reimpl_c(void *worker, void *wstr_body, void *received_msg) {
-  return Proud::ProcessMessageProudNetLayer(worker, wstr_body, received_msg) ? 1
-                                                                         : 0;
+  return Proud::ProcessMessageProudNetLayer(worker, wstr_body, received_msg)
+             ? 1
+             : 0;
 }
 
 extern "C" void __declspec(naked) hook_pn_process_proudnet_layer() {
