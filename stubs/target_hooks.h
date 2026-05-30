@@ -9,6 +9,13 @@ extern HookStub g_target_game_intro;
 extern HookStub g_target_game_login;
 extern HookStub g_target_game_server_select;
 extern HookStub g_target_game_main_menu;
+extern HookStub g_target_game_lobby;
+extern HookStub g_target_game_room_list;
+extern HookStub g_target_game_party_room;
+extern HookStub g_target_game_room;
+extern HookStub g_target_game_char_select;
+extern HookStub g_target_game_map_loading;
+extern HookStub g_target_game_in_game;
 
 extern HookStub g_target_w_connect_2;
 extern HookStub g_target_w_connect_3;
@@ -34,12 +41,34 @@ extern HookStub g_target_rstring_vformat_this;
 extern HookStub g_target_TCPSocket_connect;
 extern HookStub g_target_TCPSocket_send;
 
-extern HookStub g_target_send_1;
+extern HookStub g_target_fast_wsasend;
+extern HookStub g_target_fast_wsarecv;
+extern HookStub g_target_pn_upnp;
+extern HookStub g_target_pn_select;
+extern HookStub g_target_pn_recv_append;
+extern HookStub g_target_pn_recv_complete;
+extern HookStub g_target_pn_fsm_state1;
+extern HookStub g_target_pn_fsm_state2;
+extern HookStub g_target_pn_fsm_state3;
+
+extern HookStub g_target_pn_net_client_factory;
+extern HookStub g_target_pn_net_client_ctor;
+extern HookStub g_target_pn_process_proudnet_layer;
+extern HookStub g_target_pn_drain_receive_queue;
+extern HookStub g_target_pn_process_compressed;
+extern HookStub g_target_pn_process_encrypted;
+extern HookStub g_target_pn_tcp_frame_recv;
+extern HookStub g_target_pn_tcp_frame_send;
+
+// Outbound RMI chokepoint (Proud::IRmiProxy::RmiSend @ 0xD5C5E0) - framework
+// heartbeat trace only (ids 1001/1006/1019).
+extern HookStub g_target_pn_rmi_send;
+// GAME application RMI proxy send (sub_65AEA0, explicit id) + floor transmit
+// (sub_A0B290, id=*(u16*)msg) - the real C2S capture for menu/lobby/room actions.
+extern HookStub g_target_pn_game_rmi_send;
+extern HookStub g_target_pn_rmi_floor;
+
 extern HookStub g_target_send_2;
-extern HookStub g_target_send_3;
-extern HookStub g_target_sendto_1;
-extern HookStub g_target_sendto_2;
-extern HookStub g_target_sendto_3;
 // extern HookStub g_target_recv_1;
 // extern HookStub g_target_recvfrom_1;
 // extern HookStub g_target_bind_1;

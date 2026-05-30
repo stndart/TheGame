@@ -10,6 +10,7 @@ void *_Realloc(void *memblock, size_t stSizeInBytes);
 
 bool _HeapFree(void *lpMem);
 void *_HeapAlloc(size_t dwBytes);
+void *_HeapReAlloc(void *lpMem, size_t dwBytes);
 
 #define EE_FREE(p) _Free(p)
 #define EE_ALLOC(T, count) ((T *)_Malloc(sizeof(T) * (count)))
@@ -17,3 +18,4 @@ void *_HeapAlloc(size_t dwBytes);
 
 #define EE_HEAPFREE(lpMem) (_HeapFree(lpMem))
 #define EE_HEAPALLOC(dwBytes) (_HeapAlloc(dwBytes))
+#define EE_HEAPREALLOC(lpMem, dwBytes) (_HeapReAlloc(lpMem, dwBytes))

@@ -6,6 +6,7 @@
 #include <iomanip>
 
 void create_console() {
+#ifndef THEGAME_NO_CONSOLE
   if (console_created)
     return;
 
@@ -14,17 +15,19 @@ void create_console() {
   freopen("CONOUT$", "w", stderr);
 
   console_created = true;
+#endif
 }
 
 void log_message(const char *message) {
-  // Create console on first log
+  if (Diagnostics::should_suppress_game_log(message))
+    return;
+
+#ifndef THEGAME_NO_CONSOLE
   if (!console_created) {
     create_console();
   }
-
   printf("%s\n", message);
-  OutputDebugStringA(message);
-
+#endif
   // Write to file (auto-flushes with endl)
   if (!log_file.is_open()) {
     log_file.open("logs.txt", std::ios::app);
@@ -51,6 +54,7 @@ void logns(int socket, const char *addr, int port) {
 
   netlog_file << "Connecting socket " << socket << " to " << addr << ":"
               << std::dec << port << "\n";
+  netlog_file.flush();
 }
 
 void logn(int socket, size_t len, char *data, bool in) {
@@ -70,4 +74,5 @@ void logn(int socket, size_t len, char *data, bool in) {
                        static_cast<unsigned char>(data[i]));
   }
   netlog_file << std::endl;
+  netlog_file.flush();
 }

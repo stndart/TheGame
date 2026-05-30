@@ -67,6 +67,14 @@ void init_kernel32(CRT::CRTStubs &stub) {
   } else {
     OutputDebugString("heap_alloc found"); // stub.heap_alloc);
   }
+
+  stub.heap_realloc = reinterpret_cast<CRT::CRTStubs::heap_realloc_t>(
+      GetProcAddress(k32_mod, "HeapReAlloc"));
+  if (!stub.heap_realloc) {
+    OutputDebugString("Failed to get heap_realloc");
+  } else {
+    OutputDebugString("heap_realloc found");
+  }
 }
 
 void CRT::init_CRT() {
@@ -111,6 +119,13 @@ void *__stdcall CRT::heap_alloc(HANDLE hHeap, DWORD dwFlags, SIZE_T dwBytes) {
   if (!stub.initialized)
     init_CRT();
   return stub.heap_alloc(hHeap, dwFlags, dwBytes);
+}
+
+void *__stdcall CRT::heap_realloc(HANDLE hHeap, DWORD dwFlags, LPVOID lpMem,
+                                  SIZE_T dwBytes) {
+  if (!stub.initialized)
+    init_CRT();
+  return stub.heap_realloc(hHeap, dwFlags, lpMem, dwBytes);
 }
 
 // Override global new/delete operators to use your custom allocators

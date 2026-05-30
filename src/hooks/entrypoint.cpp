@@ -1,13 +1,17 @@
 #include "diagnostics/handlers.hpp" // IWYU pragma: keep
+#include "RMI/Nav.hpp"
 #include "target_hooks.h"
 
 extern "C" uint32_t g_entrypoint_first_call = 0x014ABE7E;
+
+extern "C" void __cdecl nav_log_startup() { Rmi::NavLogStartup(); }
 
 extern "C" void __declspec(naked) hook_entrypoint() {
   __asm {
     pushfd
     pushad
     call diagnostics_startup
+    call nav_log_startup
     popad
     popfd;
 

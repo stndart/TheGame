@@ -1,4 +1,5 @@
 #include <cstdio> // IWYU pragma: keep
+#include <cstring>
 
 #include "diagnostics/handlers.hpp"
 #include "diagnostics/namedpipe.hpp"
@@ -11,21 +12,40 @@ namespace {
 constexpr DWORD kDbgPrintExceptionC = 0x40010006;
 constexpr DWORD kDbgPrintExceptionWideC = 0x4001000A;
 
+// Re-entrancy guard: emit_game_log / pipe I/O must not recurse through this VEH.
+thread_local bool g_in_vectored_handler = false;
+
+bool is_dbgprint_exception(DWORD code) {
+  return code == kDbgPrintExceptionC || code == kDbgPrintExceptionWideC;
+}
+
 LONG WINAPI vectored_exception_handler(EXCEPTION_POINTERS *info) {
+  if (g_in_vectored_handler)
+    return EXCEPTION_CONTINUE_SEARCH;
+  g_in_vectored_handler = true;
+
   EXCEPTION_RECORD *rec = info->ExceptionRecord;
-  if (rec->ExceptionCode == kDbgPrintExceptionC && rec->NumberParameters >= 2) {
+  const DWORD code = rec->ExceptionCode;
+
+  if (code == kDbgPrintExceptionC && rec->NumberParameters >= 2) {
     const char *msg =
         reinterpret_cast<const char *>(rec->ExceptionInformation[1]);
     Diagnostics::emit_game_log(string_to_string_safe(msg).c_str());
+    g_in_vectored_handler = false;
+    return EXCEPTION_CONTINUE_SEARCH;
   }
-  if (rec->ExceptionCode == kDbgPrintExceptionWideC &&
-      rec->NumberParameters >= 2) {
+  if (code == kDbgPrintExceptionWideC && rec->NumberParameters >= 2) {
     const wchar_t *wmsg =
         reinterpret_cast<const wchar_t *>(rec->ExceptionInformation[1]);
     Diagnostics::emit_game_log(wstring_to_string_safe(wmsg).c_str());
+    g_in_vectored_handler = false;
+    return EXCEPTION_CONTINUE_SEARCH;
   }
 
-  Diagnostics::emit_exception_event("exception", info);
+  if (!is_dbgprint_exception(code))
+    Diagnostics::emit_exception_event("exception", info);
+
+  g_in_vectored_handler = false;
   return EXCEPTION_CONTINUE_SEARCH;
 }
 
@@ -38,8 +58,22 @@ LONG WINAPI unhandled_exception_handler(EXCEPTION_POINTERS *info) {
 
 namespace Diagnostics {
 
+bool should_suppress_game_log(const char *message) {
+  if (!message)
+    return false;
+  if (std::strstr(message, "Error 7") != nullptr &&
+      std::strstr(message, "StorageSystem::Registry::CNativeValue::Write") !=
+          nullptr)
+    return true;
+  if (std::strstr(message, "Error 20") != nullptr &&
+      std::strstr(message, "AVolute::GetProductInfoT") != nullptr)
+    return true;
+  return false;
+}
+
 PVOID g_veh_handle = nullptr;
 LONG g_handling_exception = 0;
+bool g_diagnostics_started = false;
 char g_last_game_phase[32] = "";
 
 NamedPipe *g_pipe = nullptr;
@@ -47,19 +81,19 @@ NamedPipe *g_pipe = nullptr;
 NamedPipe *connect_pipe() {
   if (!g_pipe) {
     g_pipe = new NamedPipe(kPipeName);
-    if (!g_pipe)
-      return nullptr;
   }
-  if (!g_pipe->connect_pipe()) {
-    delete g_pipe;
-    g_pipe = nullptr;
+  if (!g_pipe || !g_pipe->connect_pipe())
     return nullptr;
-  }
   return g_pipe;
 }
 
 void startup() {
-  g_veh_handle = AddVectoredExceptionHandler(1, vectored_exception_handler);
+  if (g_diagnostics_started)
+    return;
+  g_diagnostics_started = true;
+
+  if (!g_veh_handle)
+    g_veh_handle = AddVectoredExceptionHandler(1, vectored_exception_handler);
   SetUnhandledExceptionFilter(unhandled_exception_handler);
 
   g_pipe = connect_pipe();
@@ -76,6 +110,8 @@ void startup() {
 }
 
 void teardown() {
+  g_diagnostics_started = false;
+
   if (g_veh_handle) {
     RemoveVectoredExceptionHandler(g_veh_handle);
     g_veh_handle = nullptr;
@@ -109,6 +145,9 @@ void emit_game_state(const char *phase) {
 }
 
 void emit_game_log(const char *message) {
+  if (should_suppress_game_log(message))
+    return;
+
   g_pipe = connect_pipe();
   if (!g_pipe)
     return;
@@ -120,6 +159,67 @@ void emit_game_log(const char *message) {
   _snprintf_s(line, sizeof(line), _TRUNCATE,
               "{\"type\":\"log\",\"pid\":%lu,\"message\":\"%s\"}",
               GetCurrentProcessId(), escaped);
+  g_pipe->write_line_locked(line);
+}
+
+void emit_proudnet_tcp(DWORD thread_id, unsigned port, const char *direction,
+                       unsigned long long sock, size_t chunk_len,
+                       const PnTcpFrameHeader *frames, size_t frame_count,
+                       size_t incomplete_tail) {
+  g_pipe = connect_pipe();
+  if (!g_pipe)
+    return;
+
+  char line[2048];
+  int pos = _snprintf_s(
+      line, sizeof(line), _TRUNCATE,
+      "{\"type\":\"proudnet-tcp\",\"pid\":%lu,\"thread_id\":%lu,\"port\":%u,"
+      "\"dir\":\"%s\",\"sock\":\"0x%llX\",\"chunk_len\":%zu,\"incomplete\":%zu,"
+      "\"frames\":[",
+      GetCurrentProcessId(), thread_id, static_cast<unsigned>(port),
+      direction ? direction : "", static_cast<unsigned long long>(sock),
+      chunk_len, incomplete_tail);
+
+  if (pos < 0)
+    return;
+
+  for (size_t i = 0; i < frame_count && pos > 0; ++i) {
+    const PnTcpFrameHeader &f = frames[i];
+    const int n = _snprintf_s(
+        line + pos, sizeof(line) - static_cast<size_t>(pos), _TRUNCATE,
+        "%s{\"payload_len\":%u,\"opcode\":%u,\"rmi_id\":%u,\"body_len\":%u,"
+        "\"has_rmi\":%s}",
+        (i ? "," : ""), f.payload_len, f.opcode, f.rmi_id, f.body_len,
+        f.has_rmi ? "true" : "false");
+    if (n < 0)
+      break;
+    pos += n;
+    if (static_cast<size_t>(pos) >= sizeof(line) - 4)
+      break;
+  }
+
+  if (pos > 0 && static_cast<size_t>(pos) < sizeof(line) - 2)
+    _snprintf_s(line + pos, sizeof(line) - static_cast<size_t>(pos), _TRUNCATE,
+                "]}");
+
+  g_pipe->write_line_locked(line);
+}
+
+void emit_proudnet_tcp_connect(DWORD thread_id, unsigned long long sock,
+                               const char *addr, unsigned port) {
+  g_pipe = connect_pipe();
+  if (!g_pipe)
+    return;
+
+  char escaped[128];
+  json_escape(escaped, sizeof(escaped), addr ? addr : "");
+
+  char line[384];
+  _snprintf_s(line, sizeof(line), _TRUNCATE,
+              "{\"type\":\"proudnet-tcp\",\"event\":\"connect\",\"pid\":%lu,"
+              "\"thread_id\":%lu,\"port\":%u,\"sock\":\"0x%llX\",\"addr\":\"%s\"}",
+              GetCurrentProcessId(), thread_id, static_cast<unsigned>(port),
+              static_cast<unsigned long long>(sock), escaped);
   g_pipe->write_line_locked(line);
 }
 

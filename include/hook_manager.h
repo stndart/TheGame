@@ -27,10 +27,16 @@ public:
   static bool initialize();
   static bool make_hook(HookStub &stub);
   static bool restore_hook(HookStub &stub);
+  // restore → fn(ctx) → re-patch, under one patch lock (safe for hot paths)
+  static void invoke_hooked(HookStub &stub, void (*fn)(void *ctx), void *ctx);
   static bool make_syshook(SysHookStub &stub, int32_t iat_addr);
   static bool make_syshook(SysHookStub &stub, void *iat_addr);
   static bool restore_syshook(SysHookStub &stub);
   static bool restore_all_hooks();
+
+  // Patch every IAT slot for import_dll!symbol in image (GAME.exe or this DLL).
+  static bool hook_import(HMODULE image, const char *import_dll,
+                          const char *symbol, void *detour);
 
 private:
   static bool write_memory(void *address, const void *data, size_t size);

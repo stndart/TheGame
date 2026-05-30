@@ -9,9 +9,13 @@ __pycache__
 
 GameBryoWebArch/
 GITS-FA-emulation/
+ProudNet/
+gamebryo-v3.2.0.661/
+GitS_FA_Network_Captures/
 
 logs/
-launch/ctl/.thegame-ctl.pid
+transcripts/
+ctl/logs/
 diagnostics_events.jsonl
 
 # Agent investigation journals (local); template and long/ readme are tracked
@@ -19,3 +23,6 @@ journals/*
 !journals/template.md
 !journals/long/
 !journals/long/README.md
+
+# docs
+!docs/proudnet

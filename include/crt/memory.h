@@ -12,6 +12,8 @@ struct CRTStubs {
                                         LPVOID lpMem);
   using heap_alloc_t = void *(__stdcall *)(HANDLE hHeap, DWORD dwFlags,
                                            SIZE_T dwBytes);
+  using heap_realloc_t = void *(__stdcall *)(HANDLE hHeap, DWORD dwFlags,
+                                             LPVOID lpMem, SIZE_T dwBytes);
   bool initialized = false;
 
   recalloc_t recalloc = nullptr;
@@ -20,6 +22,7 @@ struct CRTStubs {
   get_proc_heap_t get_proc_heap = nullptr;
   heap_free_t heap_free = nullptr;
   heap_alloc_t heap_alloc = nullptr;
+  heap_realloc_t heap_realloc = nullptr;
 };
 
 extern CRTStubs stub;
@@ -33,6 +36,8 @@ void __cdecl free(void *_Block);
 HANDLE __stdcall get_proc_heap();
 bool __stdcall heap_free(HANDLE hHeap, DWORD dwFlags, LPVOID lpMem);
 void *__stdcall heap_alloc(HANDLE hHeap, DWORD dwFlags, SIZE_T dwBytes);
+void *__stdcall heap_realloc(HANDLE hHeap, DWORD dwFlags, LPVOID lpMem,
+                             SIZE_T dwBytes);
 
 } // namespace CRT
 
