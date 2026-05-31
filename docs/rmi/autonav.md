@@ -27,7 +27,7 @@
 ### Verification (online)
 
 ```powershell
-just build-debug
+just build
 just ctl::copy-dll
 just ctl::launch
 just ctl::wait-menu                    # server_ready (pick shard first if needed)
@@ -460,7 +460,7 @@ See [How autonav works](#how-autonav-works-principles). **`NavPump`** runs every
 
 ```powershell
 just ctl::ping                    # elevated: true
-just build-debug
+just build
 just ctl::copy-dll
 just ctl::launch-offline-nav
 just ctl::wait-stage room_list 120

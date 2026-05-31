@@ -20,6 +20,8 @@ cmake -S . -B build -G "Visual Studio 17 2022" -A Win32
 cmake --build build --config Release
 ```
 
+**No hooks** (DLL export only, zero patches): `just build debug-nohooks`, or configure with `-DTHEGAME_NO_HOOKS=ON` / preset `msvc-x86-debug-nohooks`.
+
 ### VS Code with CMake Tools extension
 
 - CMake: Configure (Windows MSVC x64_x86 (Ninja) Release)

@@ -79,7 +79,7 @@ See [../rmi/client.md](../rmi/client.md), [../rmi-ida-reimpl.md](../rmi-ida-reim
 ```powershell
 just ensure-serve
 just ctl::ping
-just build-debug
+just build
 just ctl::copy-dll
 just ctl::launch-offline
 just ctl::wait-stage shard_choice 240

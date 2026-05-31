@@ -86,7 +86,7 @@ Cross-reference: [../proudnet-ida-reimpl.md](../proudnet-ida-reimpl.md), [../pro
 ```powershell
 just ensure-serve          # once
 just ctl::ping
-just build-debug
+just build
 just ctl::copy-dll
 just ctl::launch-offline
 just ctl::wait-stage shard_choice 240

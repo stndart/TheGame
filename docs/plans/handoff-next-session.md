@@ -56,7 +56,7 @@ harness.
 
 ## Iterate loop (don't spawn duplicate daemons - `just ctl::ping` first)
 ```
-edit C++/server → just build-debug → just ctl::copy-dll
+edit C++/server → just build → just ctl::copy-dll
 just ctl::launch-offline → (human navigates past lobby) → just ctl::wait-stage <stage> <timeout>
 read ctl/logs/runs/<run>/events.jsonl  (+ FA-EMU proudnet_tcp.txt for wire frames)
 just ctl::kill-all   # if daemon reports stale "Game is already running"

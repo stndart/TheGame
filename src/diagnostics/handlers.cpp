@@ -1,26 +1,154 @@
 #include <cstdio> // IWYU pragma: keep
 #include <cstring>
 
-#include "diagnostics/handlers.hpp"
+#ifdef THEGAME_BREAK_ON_AV
+#include <windows.h> // must precede dbghelp.h (IMAGE_* types)
+
+#include <intrin.h>  // __debugbreak
+#include <dbghelp.h> // MINIDUMP_* types (MiniDumpWriteDump resolved at runtime)
+
+using MiniDumpWriteDump_t = BOOL(WINAPI *)(
+    HANDLE, DWORD, HANDLE, MINIDUMP_TYPE, PMINIDUMP_EXCEPTION_INFORMATION,
+    PMINIDUMP_USER_STREAM_INFORMATION, PMINIDUMP_CALLBACK_INFORMATION);
+#endif
+
+#include "RMI/Nav.hpp"
 #include "diagnostics/handler_pipe.hpp"
+#include "diagnostics/handlers.hpp"
 #include "diagnostics/namedpipe.hpp"
 #include "helpers/strhelp.h"
-#include "RMI/Nav.hpp"
 
 using namespace Diagnostics;
+
+namespace Diagnostics {
+// Defined further down; forward-declared for the VEH below.
+extern EXCEPTION_RECORD g_av_record;
+extern CONTEXT g_av_context;
+extern unsigned long g_av_count;
+#ifdef THEGAME_BREAK_ON_AV
+// Debugger knobs (named in the PDB so they are flippable from x64dbg):
+//  g_av_park    - 1 = spin the faulting thread on the first AV so break-all
+//                 can inspect it; set 0 to disable parking.
+//  g_av_release - set to 1 from the debugger to let the parked thread continue.
+extern volatile LONG g_av_park;
+extern volatile LONG g_av_release;
+#endif
+} // namespace Diagnostics
 
 namespace {
 
 constexpr DWORD kDbgPrintExceptionC = 0x40010006;
 constexpr DWORD kDbgPrintExceptionWideC = 0x4001000A;
+constexpr DWORD kAccessViolationC = 0xC0000005;
 
 // Re-entrancy guard: emit_game_log / pipe I/O must not recurse through this
 // VEH.
 thread_local bool g_in_vectored_handler = false;
 
+// Direct stdout write for crash telemetry. Must not use printf/log_message/
+// emit_game_log (VEH DbgPrint path and pipe locks).
+void write_exception_console(const char *line) {
+#ifndef THEGAME_NO_CONSOLE
+  if (!line || !line[0])
+    return;
+  HANDLE out = GetStdHandle(STD_OUTPUT_HANDLE);
+  if (!out || out == INVALID_HANDLE_VALUE)
+    return;
+  DWORD written = 0;
+  const DWORD len = static_cast<DWORD>(strlen(line));
+  WriteFile(out, line, len, &written, nullptr);
+  WriteFile(out, "\r\n", 2, &written, nullptr);
+#endif
+}
+
 bool is_dbgprint_exception(DWORD code) {
   return code == kDbgPrintExceptionC || code == kDbgPrintExceptionWideC;
 }
+
+#ifdef THEGAME_BREAK_ON_AV
+// Resolved once at startup so the fault path never touches the loader lock.
+MiniDumpWriteDump_t g_minidump_fn = nullptr;
+
+// BlackCipher/nProtect blinds x64dbg (clears DRx, hides threads, eats int3),
+// so an in-process minidump is the only reliable way to inspect the fault.
+// Load the resulting .dmp offline in WinDbg/x64dbg/IDA. One dump per process.
+void write_av_minidump(EXCEPTION_POINTERS *info) {
+  static LONG once = 0;
+  if (!g_minidump_fn || InterlockedExchange(&once, 1) != 0)
+    return;
+
+  char exe[MAX_PATH];
+  const DWORD n = GetModuleFileNameA(nullptr, exe, MAX_PATH);
+  char *slash = (n > 0 && n < MAX_PATH) ? std::strrchr(exe, '\\') : nullptr;
+  char dump[MAX_PATH];
+  if (slash) {
+    *slash = '\0';
+    _snprintf_s(dump, sizeof(dump), _TRUNCATE, "%s\\TheGame_crash_%lu_%lu.dmp",
+                exe, GetCurrentProcessId(), GetCurrentThreadId());
+  } else {
+    _snprintf_s(dump, sizeof(dump), _TRUNCATE, "TheGame_crash_%lu_%lu.dmp",
+                GetCurrentProcessId(), GetCurrentThreadId());
+  }
+
+  HANDLE file = CreateFileA(dump, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS,
+                            FILE_ATTRIBUTE_NORMAL, nullptr);
+  if (file == INVALID_HANDLE_VALUE)
+    return;
+
+  MINIDUMP_EXCEPTION_INFORMATION mei;
+  mei.ThreadId = GetCurrentThreadId();
+  mei.ExceptionPointers = info;
+  mei.ClientPointers = FALSE;
+
+  const MINIDUMP_TYPE type = static_cast<MINIDUMP_TYPE>(
+      MiniDumpWithFullMemory | MiniDumpWithHandleData | MiniDumpWithThreadInfo |
+      MiniDumpWithUnloadedModules | MiniDumpWithFullMemoryInfo);
+
+  g_minidump_fn(GetCurrentProcess(), GetCurrentProcessId(), file, type, &mei,
+                nullptr, nullptr);
+  CloseHandle(file);
+
+  char msg[MAX_PATH + 32];
+  _snprintf_s(msg, sizeof(msg), _TRUNCATE, "minidump written: %s", dump);
+  Diagnostics::emit_game_log(msg);
+}
+
+// Log the top stack dwords at the faulting esp. After a faulting `call` (incl.
+// `call dword ptr [iat]`), [esp] is the return address right after the broken
+// call -- resolve it against the module list to pin the exact call site.
+void log_fault_stack(EXCEPTION_POINTERS *info) {
+  CONTEXT *c = info->ContextRecord;
+  if (!c)
+    return;
+  const DWORD *sp = reinterpret_cast<const DWORD *>(c->Esp);
+  char line[256];
+  int pos = _snprintf_s(line, sizeof(line), _TRUNCATE,
+                        "fault stack @esp=0x%08lX:", c->Esp);
+  __try {
+    for (int i = 0; i < 8 && pos > 0; ++i) {
+      const int n = _snprintf_s(line + pos, sizeof(line) - pos, _TRUNCATE,
+                                " 0x%08lX", sp[i]);
+      if (n < 0)
+        break;
+      pos += n;
+    }
+  } __except (EXCEPTION_EXECUTE_HANDLER) {
+  }
+  Diagnostics::emit_game_log(line);
+}
+
+// Spin the faulting thread in place so a debugger can break-all and inspect the
+// live fault frame -- works even when the thread is hidden from the debugger
+// (BlackCipher), because that only suppresses debug events, not thread
+// suspend/context reads. Safety cap ~10 min so an unattended run won't wedge.
+void park_faulting_thread() {
+  if (!Diagnostics::g_av_park)
+    return;
+  Diagnostics::g_av_release = 0;
+  for (int i = 0; i < 6000 && !Diagnostics::g_av_release; ++i)
+    Sleep(100);
+}
+#endif
 
 LONG WINAPI vectored_exception_handler(EXCEPTION_POINTERS *info) {
   if (g_in_vectored_handler)
@@ -41,6 +169,36 @@ LONG WINAPI vectored_exception_handler(EXCEPTION_POINTERS *info) {
     const wchar_t *wmsg =
         reinterpret_cast<const wchar_t *>(rec->ExceptionInformation[1]);
     Diagnostics::emit_game_log(wstring_to_string_safe(wmsg).c_str());
+    g_in_vectored_handler = false;
+    return EXCEPTION_CONTINUE_SEARCH;
+  }
+
+  if (code == kAccessViolationC) {
+    // Snapshot the faulting state so it is inspectable from an attached
+    // debugger after the int3 below (named globals show up in the PDB).
+    Diagnostics::g_av_record = *rec;
+    if (info->ContextRecord)
+      Diagnostics::g_av_context = *info->ContextRecord;
+    ++Diagnostics::g_av_count;
+
+    Diagnostics::emit_exception_event("access_violation", info);
+
+#ifdef THEGAME_BREAK_ON_AV
+    // Handle the first AV fully. BlackCipher/nProtect neutralizes debugger-
+    // planted breakpoints (clears DRx, hides threads, eats int3), so we:
+    //  1) write a full minidump (offline analysis),
+    //  2) log the top-of-stack return addresses (pins the broken call site),
+    //  3) int3 (best effort; usually swallowed by the anti-cheat),
+    //  4) park this thread so x64dbg break-all can inspect the LIVE fault frame
+    //     -- parking works even though the thread is hidden from the debugger.
+    static LONG handled_av = 0;
+    if (InterlockedExchange(&handled_av, 1) == 0) {
+      write_av_minidump(info);
+      log_fault_stack(info);
+      __debugbreak();
+      park_faulting_thread();
+    }
+#endif
     g_in_vectored_handler = false;
     return EXCEPTION_CONTINUE_SEARCH;
   }
@@ -79,6 +237,16 @@ LONG g_handling_exception = 0;
 bool g_diagnostics_started = false;
 char g_last_game_phase[32] = "";
 
+// Most recent access violation seen by the VEH. Kept as named globals so they
+// survive the int3 frame and are easy to read from an attached debugger.
+EXCEPTION_RECORD g_av_record = {};
+CONTEXT g_av_context = {};
+unsigned long g_av_count = 0;
+#ifdef THEGAME_BREAK_ON_AV
+volatile LONG g_av_park = 1;
+volatile LONG g_av_release = 0;
+#endif
+
 NamedPipe *g_pipe = nullptr;
 
 NamedPipe *connect_pipe() {
@@ -94,9 +262,21 @@ void startup() {
   if (g_diagnostics_started)
     return;
 
+#ifndef THEGAME_NO_VEH
   if (!g_veh_handle)
     g_veh_handle = AddVectoredExceptionHandler(1, vectored_exception_handler);
   SetUnhandledExceptionFilter(unhandled_exception_handler);
+#endif
+
+#ifdef THEGAME_BREAK_ON_AV
+  // Preload dbghelp now so the AV path (which may hold the loader lock) only
+  // needs to call the cached function pointer.
+  if (!g_minidump_fn) {
+    if (HMODULE dbghelp = LoadLibraryA("dbghelp.dll"))
+      g_minidump_fn = reinterpret_cast<MiniDumpWriteDump_t>(
+          GetProcAddress(dbghelp, "MiniDumpWriteDump"));
+  }
+#endif
 
   for (int i = 0; i < 300; ++i) {
     g_pipe = connect_pipe();
@@ -240,14 +420,16 @@ void emit_proudnet_tcp_connect(DWORD thread_id, unsigned long long sock,
 }
 
 void emit_exception_event(const char *type, EXCEPTION_POINTERS *info) {
-  g_pipe = connect_pipe();
-  if (!g_pipe)
-    return;
-
   if (InterlockedExchange(&g_handling_exception, 1) != 0)
     return;
 
-  g_pipe->emit_exception_event(type, info);
+  char line[768];
+  if (format_exception_event(line, sizeof(line), type, info)) {
+    g_pipe = connect_pipe();
+    if (g_pipe)
+      g_pipe->write_line_unlocked(line);
+    write_exception_console(line);
+  }
 
   InterlockedExchange(&g_handling_exception, 0);
 }

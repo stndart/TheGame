@@ -19,15 +19,10 @@ mod ctl
 
 mod server
 
-# --- build (optional helper) ---
+# --- build ---
+# `just build` → debug; `just build <preset>` → msvc-x86-<preset> (see CMakePresets.json buildPresets).
+# break-on-av: full hooks + VEH int3 on 0xC0000005 - debugger MUST be attached.
 
-build:
-    just build-debug
-
-build-debug:
-    .\cmake-vs.bat --preset msvc-x86-debug
-    .\cmake-vs.bat --build --preset debug
-
-build-release:
-    .\cmake-vs.bat --preset msvc-x86-release
-    .\cmake-vs.bat --build --preset release
+build target="debug":
+    .\cmake-vs.bat --preset msvc-x86-{{target}}
+    .\cmake-vs.bat --build --preset {{target}}
