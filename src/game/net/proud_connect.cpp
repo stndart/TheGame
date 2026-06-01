@@ -71,7 +71,7 @@ static void tcp_nodelay(SOCKET s, int *ctx, unsigned *mgr) {
     return;
   }
   const int err = WSAGetLastError();
-  logf("Could not set TCP_NODELAY: %s\n",
+  logf("Could not set TCP_NODELAY: %s",
        format_wsa_error(ctx, static_cast<unsigned long>(err)));
 }
 
@@ -94,7 +94,7 @@ static void set_keepalive(unsigned *mgr, SOCKET s) {
   int on = mgr[258] != 0;
   if (setsockopt(s, SOL_SOCKET, SO_KEEPALIVE,
                  reinterpret_cast<const char *>(&on), sizeof(on)) < 0)
-    logf("Failed to set SO_KEEPALIVE on fd %d\n", static_cast<int>(s));
+    logf("Failed to set SO_KEEPALIVE on fd %d", static_cast<int>(s));
 }
 
 // sub_144D2A0 - non-blocking mode.
@@ -294,8 +294,8 @@ static int w_bind_3(int *ctx, SOCKET s, int af) {
       host = strip_prefix(host, kIfPrefix);
       if (!resolve_local_interface(af, host, ip_text, sizeof(ip_text)))
         return 45;
-      logf("Local Interface %s is ip %s using address family %i\n", host,
-           ip_text, af);
+      logf("Local Interface %s is ip %s using address family %i", host, ip_text,
+           af);
     } else {
       if (starts_with_prefix(host, kHostPrefix))
         host = strip_prefix(host, kHostPrefix);
@@ -312,8 +312,8 @@ static int w_bind_3(int *ctx, SOCKET s, int af) {
       }
 
       *reinterpret_cast<int *>(ctx_bytes + 540) = saved;
-      logf("Name '%s' family %i resolved to '%s' family %i\n", host, af,
-           ip_text, af);
+      logf("Name '%s' family %i resolved to '%s' family %i", host, af, ip_text,
+           af);
     }
 
     if (af == AF_INET && parse_ipv4_dotted(ip_text, &name.sin_addr) > 0) {
@@ -334,7 +334,7 @@ static int w_bind_3(int *ctx, SOCKET s, int af) {
     goto bound_ok;
 
   while (--retries > 0) {
-    logf("Bind to local port %hu failed, trying next\n", port);
+    logf("Bind to local port %hu failed, trying next", port);
     ++port;
     if (name.sin_family == AF_INET)
       name.sin_port = htons(port);
@@ -360,7 +360,7 @@ bound_ok: {
     logf("getsockname() failed with errno %d: %s", err, msg);
     return 45;
   }
-  logf("Local port: %hu\n", port);
+  logf("Local port: %hu", port);
   ctx[127] = 1;
   return 0;
 }
@@ -413,7 +413,7 @@ extern "C" int __fastcall ProudConnect::w_connect_2(int *out_zero,
   }
 
   memcpy(ctx_bytes + 0x40, ctx_bytes + 0x9E, 0x2Eu);
-  logf("  Trying %s...\n", ctx_bytes + 0x40);
+  logf("  Trying %s...", ctx_bytes + 0x40);
 
   copy_ctx_fields(ctx);
 

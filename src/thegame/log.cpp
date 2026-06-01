@@ -59,7 +59,8 @@ void exceptionf(const char *type, EXCEPTION_POINTERS *info, const char *format,
   va_start(args, format);
   vsprintf_s(buffer, format, args);
   va_end(args);
-  log_message(buffer);
+  if (buffer[0] != '\0')
+    log_message(buffer);
   if (info)
     Diagnostics::emit_exception_event(type, info, buffer);
   else

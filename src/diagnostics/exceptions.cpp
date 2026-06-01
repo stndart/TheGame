@@ -23,10 +23,15 @@ volatile LONG g_av_release; // set to 0 to release the thread
 
 constexpr DWORD kDbgPrintExceptionC = 0x40010006;
 constexpr DWORD kDbgPrintExceptionWideC = 0x4001000A;
+constexpr DWORD kThreadNameExceptionC = 0x406D1388; // MSVC debugger thread naming
 constexpr DWORD kAccessViolationC = 0xC0000005;
 
 bool is_dbgprint_exception(DWORD code) {
   return code == kDbgPrintExceptionC || code == kDbgPrintExceptionWideC;
+}
+
+bool is_benign_debugger_exception(DWORD code) {
+  return is_dbgprint_exception(code) || code == kThreadNameExceptionC;
 }
 
 bool should_suppress_message(const char *message) {
@@ -175,7 +180,7 @@ LONG WINAPI vectored_exception_handler(EXCEPTION_POINTERS *info) {
   }
 
   // the rest of exceptions go the usual path
-  if (!is_dbgprint_exception(code)) {
+  if (!is_benign_debugger_exception(code)) {
     if (rec->NumberParameters >= 2 &&
         !should_suppress_message(
             reinterpret_cast<const char *>(rec->ExceptionInformation[1]))) {
