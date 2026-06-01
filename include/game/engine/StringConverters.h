@@ -2,8 +2,6 @@
 
 #include <windows.h>
 
-#include "thegame/config.hpp"
-
 #define WSTRING_INLINE_BUF_SIZE 128
 #define MSTRING_INLINE_BUF_SIZE 128
 

@@ -54,7 +54,7 @@
 #endif
 
 #ifndef SILENT_KEEPALIVE
-#define SILENT_KEEPALIVE 0
+#define SILENT_KEEPALIVE 1
 #endif
 
 #ifndef SILENT_NETWORK

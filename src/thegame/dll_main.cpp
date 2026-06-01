@@ -35,10 +35,10 @@ void install_syshooks() {
   HookManager::make_syshook(g_ws2_wsasend, 0x01588BF8);
   HookManager::make_syshook(g_ws2_wsasendto, 0x01588C04);
   HookManager::make_syshook(g_ws2_connect, 0x01588BEC);
-  HookManager::hook_import(GetModuleHandle(nullptr), "WS2_32.dll", "connect",
-                           reinterpret_cast<void *>(connect_syshandle));
-  HookManager::hook_import(g_dll_module, "WS2_32.dll", "connect",
-                           reinterpret_cast<void *>(connect_syshandle));
+  // HookManager::hook_import(GetModuleHandle(nullptr), "WS2_32.dll", "connect",
+  //                          reinterpret_cast<void *>(connect_syshandle));
+  // HookManager::hook_import(g_dll_module, "WS2_32.dll", "connect",
+  //                          reinterpret_cast<void *>(connect_syshandle));
 #endif
 }
 

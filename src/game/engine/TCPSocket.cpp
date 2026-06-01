@@ -14,6 +14,8 @@
 #include "game/engine/MemoryDefines.h"
 #include "game/engine/StringConverters.h"
 #include "game/engine/WString.h"
+
+#include "thegame/config.hpp"
 #include "thegame/log.hpp"
 
 using thegame::logf;
