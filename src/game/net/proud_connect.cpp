@@ -1,13 +1,14 @@
 #include "game/net/proud_connect.hpp"
 
-#include "console.h"
-#include "game/server_override.hpp"
-#include "system_hooks.h"
-
-#include <cerrno>
 #include <cstdio>
 #include <cstring>
 #include <ws2tcpip.h>
+
+#include "game/server_override.hpp"
+#include "system_hooks.h"
+#include "thegame/log.hpp"
+
+using thegame::logf;
 
 namespace {
 

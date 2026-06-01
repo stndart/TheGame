@@ -1,4 +1,3 @@
-#include "console.h"
 #include "target_hooks.h"
 
 #include <game/engine/StringConverters.h>

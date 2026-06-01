@@ -1,15 +1,15 @@
 #include "ProudNet/ConnectionNode.hpp"
 
-#include "console.h"
+#include <winsock2.h>
+
+#include "ProudNet/FastSocket.hpp"
+#include "ProudNet/SelectFd.hpp"
 #include "game/engine/String.h"
 #include "game/engine/TCPSocket.h"
 #include "game/engine/WString.h"
-#include "ProudNet/FastSocket.hpp"
-#include "ProudNet/SelectContext.hpp"
-#include "ProudNet/SelectFd.hpp"
-#include "ProudNet/UpnpClient.hpp"
+#include "thegame/log.hpp"
 
-#include <winsock2.h>
+using thegame::logf;
 
 namespace {
 
@@ -20,7 +20,8 @@ void set_fast_socket_nonblock(Proud::CFastSocket *fast) {
   if (!fast)
     return;
   auto *base = reinterpret_cast<char *>(fast);
-  SOCKET s = *reinterpret_cast<SOCKET *>(base + Proud::FastSocketLayout::kSocket);
+  SOCKET s =
+      *reinterpret_cast<SOCKET *>(base + Proud::FastSocketLayout::kSocket);
   u_long mode = 1;
   ioctlsocket(s, FIONBIO, &mode);
 }
@@ -59,7 +60,7 @@ char retry_connect_on_poll_except(Proud::ConnectionNode *conn) {
 
 Proud::SendArm &Proud::ConnectionNode::send_arm() {
   return *reinterpret_cast<Proud::SendArm *>(reinterpret_cast<char *>(this) +
-                                        Proud::conn::kSendArm);
+                                             Proud::conn::kSendArm);
 }
 
 Proud::CFastSocket *Proud::ConnectionNode::fast() const {
@@ -123,7 +124,8 @@ char Proud::ConnectionNode::run_state_1() {
   set_fast_socket_nonblock(sock);
 
   auto *base = reinterpret_cast<char *>(this);
-  const int upnp_mode = *reinterpret_cast<int *>(base + Proud::conn::kUpnpSubmode);
+  const int upnp_mode =
+      *reinterpret_cast<int *>(base + Proud::conn::kUpnpSubmode);
   auto *upnp = reinterpret_cast<Proud::UpnpClient *>(this);
   if (upnp_mode == 1) {
     upnp->DeletePortMapping();

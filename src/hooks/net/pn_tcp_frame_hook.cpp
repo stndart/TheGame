@@ -1,10 +1,12 @@
 #include "target_hooks.h"
 
+#include <windows.h>
+
 #include "ProudNet/Layout.hpp"
 #include "ProudNet/TcpLayerMessageExtractor.hpp"
-#include "console.h" // IWYU pragma: keep
+#include "thegame/log.hpp"
 
-#include <windows.h>
+using thegame::logf;
 
 namespace {
 

@@ -1,6 +1,8 @@
 #include "ProudNet/DrainReceiveQueue.hpp"
 
-#include "console.h"
+#include "thegame/log.hpp"
+
+using thegame::logf;
 
 namespace {
 
@@ -11,8 +13,8 @@ void *worker_from_client(void *net_client) {
   if (!net_client) {
     return nullptr;
   }
-  return *reinterpret_cast<void **>(
-      reinterpret_cast<char *>(net_client) + kNetClientWorkerField);
+  return *reinterpret_cast<void **>(reinterpret_cast<char *>(net_client) +
+                                    kNetClientWorkerField);
 }
 
 } // namespace

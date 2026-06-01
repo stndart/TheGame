@@ -1,10 +1,12 @@
 #include "ProudNet/SocketError.hpp"
 
-#include "console.h"
+#include <winsock2.h>
+
 #include "ProudNet/Layout.hpp"
 #include "game/net/socket_trace.hpp"
+#include "thegame/log.hpp"
 
-#include <winsock2.h>
+using thegame::logf;
 
 namespace {
 
@@ -21,7 +23,7 @@ void log_socket_error(void *socket_obj, int err) {
 
 namespace Proud {
 
-void Proud::SocketReportError(void *socket_obj, int err, void * /*msg_ctx*/) {
+void SocketReportError(void *socket_obj, int err, void * /*msg_ctx*/) {
   if (!socket_obj || err == WSAEWOULDBLOCK || err == WSA_IO_PENDING)
     return;
 

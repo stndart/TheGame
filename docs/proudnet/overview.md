@@ -52,7 +52,7 @@ How ProudNet is structured in **The Game** offline client path and what each lay
 | **GAME** | 27380 | Second handshake → session `0x25` bursts (lobby replay). |
 | **PROBE** | 20009 | Optional non-Proud echo check. |
 
-Production hosts remap to `127.0.0.1` via `include/game/server_override.hpp` (`TheGame.server_ip` / `THEGAME_SERVER_IP`).
+Production hosts remap to `127.0.0.1` via `include/game/server_override.hpp` (`THEGAME_SERVER_OVERRIDE` / `THEGAME_SERVER_IP`).
 
 **Important:** Redirect (`0x0A`) carries **IP only** - the client learns port **27380** from ENTRY server-info frames (`0x02`), not from the redirect blob.
 

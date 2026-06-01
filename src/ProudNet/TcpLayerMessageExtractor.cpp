@@ -1,11 +1,13 @@
 #include "ProudNet/TcpLayerMessageExtractor.hpp"
 
-#include "console.h"
+#include <windows.h>
+
 #include "ProudNet/Layout.hpp"
 #include "hook_manager.h"
 #include "target_hooks.h"
+#include "thegame/log.hpp"
 
-#include <windows.h>
+using thegame::logf;
 
 namespace {
 

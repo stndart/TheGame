@@ -1,8 +1,10 @@
-#include "hook_manager.h"
 #include "target_hooks.h"
-#include "thegame/log.hpp"
 
 #include <windows.h>
+
+#include "thegame/log.hpp"
+
+using thegame::logf;
 
 // Proud::IRmiProxy::RmiSend @ GAME RVA 0xD5C5E0 - the single chokepoint every
 // outbound RMI passes through before MessageType_Rmi / 0x25 transport wrapping.

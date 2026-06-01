@@ -2,7 +2,9 @@
 
 #include <windows.h>
 
-#include <console.h>
+#include "thegame/log.hpp"
+
+using thegame::logf;
 
 /*
 TODO:

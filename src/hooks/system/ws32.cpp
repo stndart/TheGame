@@ -1,12 +1,14 @@
-#include "hook_manager.h"
 #include "system_hooks.h"
+
+#include <windows.h>
+#include <winsock2.h>
+
 #include "ProudNet/TcpTrace.hpp"
 #include "game/net/socket_trace.hpp"
 #include "game/server_override.hpp"
+#include "thegame/log.hpp"
 
-#include <console.h>
-#include <winsock2.h>
-#include <windows.h>
+using thegame::logf;
 
 void __cdecl log_parg_n(int i, void *retaddr, void *p) {
 #if WS2_HOOKS
@@ -69,20 +71,19 @@ static void log_pn_wsasend_buffers(SOCKET s, LPWSABUF bufs, DWORD count) {
   }
 }
 
-static int WSAAPI wsasend_forward(SOCKET s, LPWSABUF bufs, DWORD buffer_count,
-                                  LPDWORD bytes_sent, DWORD flags,
-                                  LPWSAOVERLAPPED overlapped,
-                                  LPWSAOVERLAPPED_COMPLETION_ROUTINE completion) {
+static int WSAAPI
+wsasend_forward(SOCKET s, LPWSABUF bufs, DWORD buffer_count, LPDWORD bytes_sent,
+                DWORD flags, LPWSAOVERLAPPED overlapped,
+                LPWSAOVERLAPPED_COMPLETION_ROUTINE completion) {
   log_pn_wsasend_buffers(s, bufs, buffer_count);
   return reinterpret_cast<WSASendFn>(g_ws2_wsasend.sym_addr)(
       s, bufs, buffer_count, bytes_sent, flags, overlapped, completion);
 }
 
-extern "C" int WSAAPI wsasend_syshandle(SOCKET s, LPWSABUF bufs,
-                                        DWORD buffer_count, LPDWORD bytes_sent,
-                                        DWORD flags, LPWSAOVERLAPPED overlapped,
-                                        LPWSAOVERLAPPED_COMPLETION_ROUTINE
-                                            completion) {
+extern "C" int WSAAPI
+wsasend_syshandle(SOCKET s, LPWSABUF bufs, DWORD buffer_count,
+                  LPDWORD bytes_sent, DWORD flags, LPWSAOVERLAPPED overlapped,
+                  LPWSAOVERLAPPED_COMPLETION_ROUTINE completion) {
   return wsasend_forward(s, bufs, buffer_count, bytes_sent, flags, overlapped,
                          completion);
 }
@@ -110,7 +111,8 @@ static int WSAAPI connect_forward(SOCKET s, const sockaddr *name, int namelen) {
   return reinterpret_cast<ConnectFn>(g_ws2_connect.sym_addr)(s, name, namelen);
 }
 
-static int WSAAPI connect_with_remap(SOCKET s, const sockaddr *name, int namelen) {
+static int WSAAPI connect_with_remap(SOCKET s, const sockaddr *name,
+                                     int namelen) {
   sockaddr_in patched{};
   const sockaddr *peer = name;
   if (name && namelen >= static_cast<int>(sizeof(sockaddr_in)) &&
@@ -123,7 +125,8 @@ static int WSAAPI connect_with_remap(SOCKET s, const sockaddr *name, int namelen
       if (port == ServerOverride::kGameLegPort) {
         in_addr was{};
         was.S_un.S_addr = in->sin_addr.s_addr;
-        logf("connect:27380 %s -> %s", inet_ntoa(was), inet_ntoa(patched.sin_addr));
+        logf("connect:27380 %s -> %s", inet_ntoa(was),
+             inet_ntoa(patched.sin_addr));
       }
     }
   }
@@ -146,10 +149,8 @@ extern "C" int WSAAPI connect_syshandle(SOCKET s, const sockaddr *name,
 
 SysHookStub g_ws2_send = {"ws2_32.dll", "send", send_syshandle};
 SysHookStub g_ws2_sendto = {"ws2_32.dll", "sendto", sendto_syshandle};
-SysHookStub g_ws2_wsasend = {
-    "ws2_32.dll", "WSASend",
-    reinterpret_cast<void (*)()>(wsasend_syshandle)};
+SysHookStub g_ws2_wsasend = {"ws2_32.dll", "WSASend",
+                             reinterpret_cast<void (*)()>(wsasend_syshandle)};
 SysHookStub g_ws2_wsasendto = {"ws2_32.dll", "WSASendTo", wsasendto_syshandle};
-SysHookStub g_ws2_connect = {
-    "ws2_32.dll", "connect",
-    reinterpret_cast<void (*)()>(connect_syshandle)};
+SysHookStub g_ws2_connect = {"ws2_32.dll", "connect",
+                             reinterpret_cast<void (*)()>(connect_syshandle)};

@@ -1,9 +1,11 @@
-#include "RMI/Inject.hpp"
-#include "hook_manager.h"
 #include "target_hooks.h"
-#include "thegame/log.hpp"
 
 #include <windows.h>
+
+#include "RMI/Inject.hpp"
+#include "thegame/log.hpp"
+
+using thegame::logf;
 
 // GAME application RMI proxy send chokepoints (NOT the framework proxy
 // 0xD5C5E0, which only carries builtin heartbeat/ping ids 1001/1006/1019).

@@ -1,4 +1,3 @@
-// #include "console.h"
 #include <cstring>
 #include <windows.h>
 
@@ -9,6 +8,9 @@
 #include "game/engine/AtomicOperations.h"
 #include "game/engine/MemoryDefines.h"
 #include "game/engine/String.h"
+#include "thegame/log.hpp"
+
+using thegame::logf;
 
 String::StringBody *String::nullstr =
     *reinterpret_cast<StringBody **>(0x017B75E4);

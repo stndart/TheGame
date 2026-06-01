@@ -16,8 +16,8 @@ Everything is built into DLL that hooks the original methods on launch.
 ### Command line
 
 ```bash
-cmake -S . -B build -G "Visual Studio 17 2022" -A Win32
-cmake --build build --config Debug
+cmake -S . -B build/msvc-x86-debug -G "Visual Studio 17 2022" -A Win32
+cmake --build build/msvc-x86-debug --config Debug
 ```
 
 ### Justfile
@@ -41,7 +41,7 @@ Add this to `.vscode/settings.json`:
 {
     "cmake.useCMakePresets": "always",
     "clangd.arguments": [
-        "--compile-commands-dir=${workspaceFolder}/build/msvc-x64_x86-debug"
+        "--compile-commands-dir=${workspaceFolder}/build/msvc-x86-debug"
     ]
 }
 ```

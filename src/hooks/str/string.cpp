@@ -1,4 +1,3 @@
-// #include "console.h"
 #include "hook_manager.h"
 #include "target_hooks.h"
 

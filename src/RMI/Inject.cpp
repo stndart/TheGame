@@ -1,11 +1,12 @@
-#include "RMI/Inject.hpp"
-
-#include "thegame/config.hpp"
-#include "thegame/log.hpp"
-
 #include <cstddef>
 #include <cstdint>
 #include <windows.h>
+
+#include "RMI/Inject.hpp"
+#include "thegame/config.hpp"
+#include "thegame/log.hpp"
+
+using thegame::logf;
 
 namespace {
 
@@ -75,7 +76,7 @@ void call_res_leaf(std::uint32_t leaf_rva, const void *body) {
 
 void inject_lobby_enter_res() {
   unsigned char body[8] = {0};
-  thegame::logf("inject: lobby-enter RES 0x3F41 result=0 -> GameLobby");
+  logf("inject: lobby-enter RES 0x3F41 result=0 -> GameLobby");
   call_res_leaf(kLeafLobbyEnterRes, body);
 }
 
@@ -87,7 +88,7 @@ void inject_create_room_res() {
   wsprintfA(msg,
             "inject: create-room RES 0x3F30 result=0 -> GameRoom (tid=%lu)",
             GetCurrentThreadId());
-  thegame::logf(msg);
+  logf(msg);
   call_res_leaf(kLeafCreateRoomRes, body);
 }
 
@@ -97,7 +98,7 @@ void inject_leave_room_res() {
   wsprintfA(msg, "inject: leave-room RES 0x3F45 mode=%u scene=%d (tid=%lu)",
             *reinterpret_cast<unsigned *>(game_va(0x1C1A87C)),
             *reinterpret_cast<int *>(game_va(0x1C15644)), GetCurrentThreadId());
-  thegame::logf(msg);
+  logf(msg);
   call_res_leaf(kLeafLeaveRoomRes, body);
 }
 
@@ -150,7 +151,7 @@ void inject_room_enter_res() {
   char msg[96];
   wsprintfA(msg, "inject: room-enter RES 0x3ED4 count=1 acct=%u slot=0 team=0",
             kLocalAccountId);
-  thegame::logf(msg);
+  logf(msg);
   call_res_leaf(kLeafRoomEnterRes, body);
 }
 
@@ -159,8 +160,7 @@ void inject_room_members_res() {
   unsigned char body[6 + kUiMemberStride] = {0};
   put_u32(body, 2, 1);
   fill_room_members_ui(body + 6, 0, 0);
-  thegame::logf(
-      "inject: room-members RES 0x3ED8 count=1 slot=0 team=0 (UI map)");
+  logf("inject: room-members RES 0x3ED8 count=1 slot=0 team=0 (UI map)");
   call_res_leaf(kLeafRoomMembersRes, body);
 }
 
@@ -169,7 +169,7 @@ void inject_start_res() {
   const std::uintptr_t play_ctx =
       *reinterpret_cast<std::uintptr_t *>(game_va(0x1C25E2C));
   if (!play_ctx) {
-    thegame::logf("inject: start RES 0x3F3D skipped (flt_1C25E2C null)");
+    logf("inject: start RES 0x3F3D skipped (flt_1C25E2C null)");
     return;
   }
 
@@ -183,7 +183,7 @@ void inject_start_res() {
             "inject: start RES 0x3F3D result=0 mode=1 handle=1 ctx=%08X "
             "(tid=%lu)",
             static_cast<unsigned>(play_ctx), GetCurrentThreadId());
-  thegame::logf(msg);
+  logf(msg);
   call_res_leaf(kLeafStartRes, body);
 }
 

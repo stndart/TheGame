@@ -1,9 +1,11 @@
-#include "crt/memory.h"
-#include <console.h>
+#include "game/engine/StringConverters.h"
 
 #include <atlexcept.h>
 
-#include "game/engine/StringConverters.h"
+#include "crt/memory.h"
+#include "thegame/log.hpp"
+
+using thegame::logf;
 
 void ThrowStringConversionError(DWORD errcode) {
   throw ATL::CAtlException(HRESULT_FROM_WIN32(errcode));

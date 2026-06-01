@@ -1,18 +1,22 @@
 #include "game/engine/TCPSocket.h"
-#include "ProudNet/GrowableBuffer.hpp"
-#include "ProudNet/SocketError.hpp"
-#include "ProudNet/TcpTrace.hpp"
-#include "diagnostics/handlers.hpp"
-#include "game/net/socket_trace.hpp"
-#include "game/server_override.hpp"
 
 #include <string>
 #include <winerror.h>
 #include <winsock2.h>
 
+#include "ProudNet/GrowableBuffer.hpp"
+#include "ProudNet/SocketError.hpp"
+#include "ProudNet/TcpTrace.hpp"
+
+#include "game/net/socket_trace.hpp"
+#include "game/server_override.hpp"
+
 #include "game/engine/MemoryDefines.h"
 #include "game/engine/StringConverters.h"
-// #include "game/engine/WString.h"
+#include "game/engine/WString.h"
+#include "thegame/log.hpp"
+
+using thegame::logf;
 
 inline std::string to_ip_string(int addr) {
   unsigned char *caddr = reinterpret_cast<unsigned char *>(&addr);
@@ -40,13 +44,13 @@ int TCPSocket::Connect(WString wideHostname, int port) {
   // Convert wide char hostname to multibyte
   MultiByteHolder multibyteHolder;
   multibyteHolder.ConvertWideToMultiByte(wideHostname.c_str(), CP_THREAD_ACP);
-  std::string host =
-      multibyteHolder.current_ptr ? multibyteHolder.current_ptr : "";
-  const std::string override_ip = ServerOverride::remap_host(host.c_str());
-  if (!override_ip.empty()) {
+  std::string host = multibyteHolder.current_ptr;
+
+  std::string remapped_host = ServerOverride::remap_host(host.c_str());
+  if (strcmp(remapped_host.c_str(), host.c_str()) != 0) {
     logf("TCPSocket::Connect remap %s -> %s", host.c_str(),
-         override_ip.c_str());
-    host = override_ip;
+         remapped_host.c_str());
+    host = remapped_host;
   }
 
   // Clean up the temporary multibyte buffer
@@ -60,10 +64,6 @@ int TCPSocket::Connect(WString wideHostname, int port) {
 
   // Try to interpret as IP address first
   serverAddr.sin_addr.s_addr = inet_addr(host.c_str());
-  const unsigned long remapped =
-      ServerOverride::remap_ipv4(serverAddr.sin_addr.s_addr);
-  if (remapped)
-    serverAddr.sin_addr.s_addr = remapped;
 
   // If not an IP address, try DNS resolution
   if (serverAddr.sin_addr.s_addr == INADDR_NONE) {
@@ -75,15 +75,17 @@ int TCPSocket::Connect(WString wideHostname, int port) {
       return error;
     }
     serverAddr.sin_addr.s_addr = *(ULONG *)hostEntry->h_addr_list[0];
-    const unsigned long remapped_dns =
-        ServerOverride::remap_ipv4(serverAddr.sin_addr.s_addr);
-    if (remapped_dns)
-      serverAddr.sin_addr.s_addr = remapped_dns;
   }
 
   // Set port and attempt connection
   serverAddr.sin_port = htons(static_cast<u_short>(port));
-  ServerOverride::remap_sockaddr_in(&serverAddr);
+
+  // Remap sockaddr *after* setting the port
+  if (ServerOverride::remap_sockaddr_in(&serverAddr)) {
+    logf("TCPSocket::Connect remap %s -> %s", host.c_str(),
+         thegame::cfg.server_ip.c_str());
+  }
+
   std::string ipstr =
       to_ip_string(*reinterpret_cast<int *>(&serverAddr.sin_addr));
 

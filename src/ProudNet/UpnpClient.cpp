@@ -1,7 +1,9 @@
 #include "ProudNet/UpnpClient.hpp"
 
-#include "console.h"
 #include "game/server_override.hpp"
+#include "thegame/log.hpp"
+
+using thegame::logf;
 
 void Proud::UpnpClient::AddPortMapping() {
   if (ServerOverride::override_active()) {

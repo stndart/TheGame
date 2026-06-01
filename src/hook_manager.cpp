@@ -1,11 +1,12 @@
 #include "hook_manager.h"
+
 #include <libloaderapi.h>
 #include <minwindef.h>
 #include <winnt.h>
 
-#include <console.h>
+#include "thegame/log.hpp"
 
-#include <cstring>
+using thegame::logf;
 
 namespace {
 
@@ -267,7 +268,8 @@ bool HookManager::hook_import(const HMODULE image, const char *import_dll,
       if (strcmp(import_by_name->Name, symbol) != 0)
         continue;
 
-      if (!make_memory_writable(&thunk->u1.Function, sizeof(thunk->u1.Function)))
+      if (!make_memory_writable(&thunk->u1.Function,
+                                sizeof(thunk->u1.Function)))
         return false;
 
       thunk->u1.Function = reinterpret_cast<ULONG_PTR>(detour);

@@ -184,7 +184,7 @@ body = ping_data || uint32_le(floor(time_ms))
 
 ## 6. Client requirements (offline)
 
-1. **`TheGame.server_ip`** or **`THEGAME_SERVER_IP`** - remap production IPs on ports 7000, 27380, 20009.
+1. **`THEGAME_SERVER_OVERRIDE=ON`** and **`THEGAME_SERVER_IP`** - remap production IPs on ports 7000, 27380, 20009.
 2. All **`connect` IAT** hooks + ProudNet **`w_connect_2` / `w_connect_3`** - see [implementation.md](implementation.md).
 3. **`pn_select_sync`** must not overwrite GAME socket with ENTRY socket after `:27380` connect.
 4. Dummy server on all three ports (`just ensure-serve`).

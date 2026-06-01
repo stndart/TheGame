@@ -1,10 +1,11 @@
-#include "hook_manager.h"
 #include "target_hooks.h"
 
-#include "ProudNet/Layout.hpp"
-#include "console.h" // IWYU pragma: keep
-
 #include <windows.h>
+
+#include "ProudNet/Layout.hpp"
+#include "thegame/log.hpp"
+
+using thegame::logf;
 
 namespace {
 

@@ -2,10 +2,11 @@
 
 #include "ProudNet/Layout.hpp"
 
-class Proud::CFastSocket;
-
 // fd_set bundle helpers (sub_D551E0 / D55200 / D55250 / D552A0).
 namespace Proud {
+
+class CFastSocket;
+
 namespace select_fd {
 
 void init(Proud::CSelectContext *ctx);

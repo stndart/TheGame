@@ -5,6 +5,9 @@
 #include "game/engine/AtomicOperations.h"
 #include "game/engine/MemoryDefines.h"
 #include "game/engine/WString.h"
+#include "thegame/log.hpp"
+
+using thegame::logf;
 
 WString::WStringBody *WString::nullwstr =
     *reinterpret_cast<WStringBody **>(0x017B75E8);

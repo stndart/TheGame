@@ -1,11 +1,13 @@
 #include "RMI/Nav.hpp"
 
+#include <cstdint>
+#include <windows.h>
+
 #include "RMI/Inject.hpp"
 #include "RMI/NavCommands.hpp"
 #include "thegame/log.hpp"
 
-#include <cstdint>
-#include <windows.h>
+using thegame::logf;
 
 namespace {
 
@@ -33,7 +35,7 @@ int current_scene() { return game_global<int>(0x1C15644); }
 void log_nav(const char *msg) {
   char line[128];
   wsprintfA(line, "nav: %s (tid=%lu)", msg, GetCurrentThreadId());
-  thegame::logf(line);
+  logf(line);
 }
 
 using RequestStateFn = char(__thiscall *)(void *, int);
@@ -109,11 +111,9 @@ void Rmi::NavDrainCommands() {
   }
 }
 
-void Rmi::NavStartup() {
-  thegame::logf("nav: command-driven (autonav disabled)");
-}
+void Rmi::NavStartup() { logf("nav: command-driven (autonav disabled)"); }
 
-void Rmi::NavTeardown() { thegame::logf("nav: teardown"); }
+void Rmi::NavTeardown() { logf("nav: teardown"); }
 
 void Rmi::NavOnStage(const char *phase) { (void)phase; }
 

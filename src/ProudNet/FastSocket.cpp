@@ -1,18 +1,22 @@
 #include "ProudNet/FastSocket.hpp"
 
-#include "console.h"
-#include "ProudNet/GrowableBuffer.hpp"
-#include "ProudNet/SocketError.hpp"
-#include "game/net/socket_trace.hpp"
 #include <cstring>
 #include <winerror.h>
 #include <winsock2.h>
+
+#include "ProudNet/GrowableBuffer.hpp"
+#include "ProudNet/SocketError.hpp"
+#include "game/net/socket_trace.hpp"
+#include "thegame/log.hpp"
+
+using thegame::logf;
 
 namespace {
 
 constexpr int kOverlapInFlightTag = 259;
 
-// Proud::AddrPort @ Proud::CFastSocket+0xE4 - IPv4-mapped IPv6 + native-endian port.
+// Proud::AddrPort @ Proud::CFastSocket+0xE4 - IPv4-mapped IPv6 + native-endian
+// port.
 struct PNAddrPort {
   std::uint8_t addr[16];
   std::uint16_t port;
@@ -39,13 +43,13 @@ std::uint16_t addr_port_update(PNAddrPort *addr_port, SOCKET sock) {
 } // namespace
 
 Proud::GrowableBuffer &Proud::CFastSocket::send_staging() {
-  return *reinterpret_cast<Proud::GrowableBuffer *>(reinterpret_cast<char *>(this) +
-                                               Proud::FastSocketLayout::kStaging);
+  return *reinterpret_cast<Proud::GrowableBuffer *>(
+      reinterpret_cast<char *>(this) + Proud::FastSocketLayout::kStaging);
 }
 
 Proud::GrowableBuffer &Proud::CFastSocket::recv_growable() {
-  return *reinterpret_cast<Proud::GrowableBuffer *>(reinterpret_cast<char *>(this) +
-                                               Proud::FastSocketLayout::kRecvGrowable);
+  return *reinterpret_cast<Proud::GrowableBuffer *>(
+      reinterpret_cast<char *>(this) + Proud::FastSocketLayout::kRecvGrowable);
 }
 
 char *Proud::CFastSocket::send_staging_data() {
@@ -57,8 +61,8 @@ char *Proud::CFastSocket::send_staging_data() {
 
 const char *Proud::CFastSocket::recv_staging_ptr() const {
   auto *base = reinterpret_cast<const char *>(this);
-  if (!*reinterpret_cast<const int *>(base +
-                                      Proud::FastSocketLayout::kRecvStagingActive))
+  if (!*reinterpret_cast<const int *>(
+          base + Proud::FastSocketLayout::kRecvStagingActive))
     return nullptr;
   return *reinterpret_cast<const char *const *>(
       base + Proud::FastSocketLayout::kRecvStagingPtr);
@@ -72,16 +76,16 @@ char Proud::CFastSocket::recv_complete(unsigned char wait, std::uint32_t *out) {
   auto *base = reinterpret_cast<char *>(this);
   SocketTrace::note_fast_socket_ctx(this);
 
-  auto *overlap_tag =
-      reinterpret_cast<DWORD *>(base + Proud::FastSocketLayout::kOverlapInFlight);
+  auto *overlap_tag = reinterpret_cast<DWORD *>(
+      base + Proud::FastSocketLayout::kOverlapInFlight);
   if (*overlap_tag == kOverlapInFlightTag ||
       !base[Proud::FastSocketLayout::kRecvPending])
     return 0;
 
   const SOCKET sock =
       *reinterpret_cast<SOCKET *>(base + Proud::FastSocketLayout::kSocket);
-  auto *overlapped =
-      reinterpret_cast<LPWSAOVERLAPPED>(base + Proud::FastSocketLayout::kOverlapped);
+  auto *overlapped = reinterpret_cast<LPWSAOVERLAPPED>(
+      base + Proud::FastSocketLayout::kOverlapped);
 
   DWORD transferred = 0;
   DWORD flags = 0;
@@ -104,7 +108,8 @@ char Proud::CFastSocket::recv_complete(unsigned char wait, std::uint32_t *out) {
 
   base[Proud::FastSocketLayout::kRecvPending] = 0;
   addr_port_update(
-      reinterpret_cast<PNAddrPort *>(base + Proud::FastSocketLayout::kAddrPort), sock);
+      reinterpret_cast<PNAddrPort *>(base + Proud::FastSocketLayout::kAddrPort),
+      sock);
 
   logf("pn_recv_complete: fast=%p bytes=%lu", this,
        static_cast<unsigned long>(transferred));
@@ -133,15 +138,16 @@ int Proud::CFastSocket::recv(int len) {
   wsa_buf.len = static_cast<ULONG>(len);
 
   DWORD bytes_recvd = 0;
-  auto *flags = reinterpret_cast<DWORD *>(base + Proud::FastSocketLayout::kRecvFlags);
+  auto *flags =
+      reinterpret_cast<DWORD *>(base + Proud::FastSocketLayout::kRecvFlags);
   *flags = 0;
   base[Proud::FastSocketLayout::kRecvPending] = 0;
   base[Proud::FastSocketLayout::kRecvPending] = 1;
 
   const SOCKET sock =
       *reinterpret_cast<SOCKET *>(base + Proud::FastSocketLayout::kSocket);
-  auto *overlapped =
-      reinterpret_cast<LPWSAOVERLAPPED>(base + Proud::FastSocketLayout::kOverlapped);
+  auto *overlapped = reinterpret_cast<LPWSAOVERLAPPED>(
+      base + Proud::FastSocketLayout::kOverlapped);
 
   int last_error = 0;
   while (true) {
@@ -171,8 +177,8 @@ char Proud::CFastSocket::send_complete(unsigned char wait, std::uint32_t *out) {
 
   const SOCKET sock =
       *reinterpret_cast<SOCKET *>(base + Proud::FastSocketLayout::kSocket);
-  auto *overlapped =
-      reinterpret_cast<LPWSAOVERLAPPED>(base + Proud::FastSocketLayout::kSendOverlap);
+  auto *overlapped = reinterpret_cast<LPWSAOVERLAPPED>(
+      base + Proud::FastSocketLayout::kSendOverlap);
 
   DWORD transferred = 0;
   DWORD flags = 0;
@@ -232,8 +238,8 @@ int Proud::CFastSocket::send(void *data, int len) {
   buf.len = static_cast<ULONG>(len);
 
   DWORD bytesSent = 0;
-  auto *overlapped =
-      reinterpret_cast<LPWSAOVERLAPPED>(base + Proud::FastSocketLayout::kOverlapped);
+  auto *overlapped = reinterpret_cast<LPWSAOVERLAPPED>(
+      base + Proud::FastSocketLayout::kOverlapped);
   const SOCKET sock =
       *reinterpret_cast<SOCKET *>(base + Proud::FastSocketLayout::kSocket);
 
@@ -243,7 +249,8 @@ int Proud::CFastSocket::send(void *data, int len) {
   int lastError = 0;
   while (true) {
     if (WSASend(sock, &buf, 1, &bytesSent, 0, overlapped, nullptr) >= 0) {
-      *reinterpret_cast<BYTE *>(base + Proud::FastSocketLayout::kSendPending) = 1;
+      *reinterpret_cast<BYTE *>(base + Proud::FastSocketLayout::kSendPending) =
+          1;
       ++*reinterpret_cast<int *>(base + Proud::FastSocketLayout::kSendOpCount);
       return 0;
     }
@@ -251,7 +258,8 @@ int Proud::CFastSocket::send(void *data, int len) {
     lastError = WSAGetLastError();
 
     if (lastError == ERROR_IO_PENDING) {
-      *reinterpret_cast<BYTE *>(base + Proud::FastSocketLayout::kSendPending) = 0;
+      *reinterpret_cast<BYTE *>(base + Proud::FastSocketLayout::kSendPending) =
+          0;
       ++*reinterpret_cast<int *>(base + Proud::FastSocketLayout::kSendOpCount);
       return 0;
     }

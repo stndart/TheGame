@@ -2,7 +2,6 @@
 
 #include "ProudNet/Layout.hpp"
 #include "ProudNet/ProcessProudNetLayer.hpp"
-#include "console.h" // IWYU pragma: keep
 
 // sub_D653B0: char __thiscall(worker, wstr_body, received_msg)
 // SEH prologue (7 bytes): 6A FF | 68 11 2E 51 01 | then @ 0xD653B7: mov eax,
