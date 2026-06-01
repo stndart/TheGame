@@ -3,7 +3,8 @@
 namespace Rmi {
 
 // Lobby navigation via ctl handler pipe (nav_goto_lobby). Runs on main thread.
-void NavLogStartup();
+void NavStartup();
+void NavTeardown();
 
 void NavOnStage(const char *phase);
 

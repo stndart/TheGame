@@ -49,6 +49,17 @@ void NamedPipe::write_line_locked(const char *line) {
   LeaveCriticalSection(&g_pipe_lock);
 }
 
+bool Diagnostics::format_custom_message(char *line, size_t line_size,
+                                        const char *type, const char *message) {
+  if (!line || line_size == 0 || !type || !message)
+    return false;
+
+  _snprintf_s(line, line_size, _TRUNCATE,
+              "{\"type\":\"%s\",\"pid\":%lu,\"tid\":%lu,\"message\":\"%s\"}",
+              type, GetCurrentProcessId(), GetCurrentThreadId(), message);
+  return true;
+}
+
 bool Diagnostics::format_exception_event(char *line, size_t line_size,
                                          const char *type,
                                          EXCEPTION_POINTERS *info) {
@@ -65,8 +76,10 @@ bool Diagnostics::format_exception_event(char *line, size_t line_size,
   unsigned long fault_addr = 0;
   if (record->ExceptionCode == 0xC0000005 && record->NumberParameters >= 2) {
     const ULONG_PTR kind = record->ExceptionInformation[0];
-    access = (kind == 0) ? "read" : (kind == 1) ? "write" : (kind == 8) ? "exec"
-                                                                        : "?";
+    access = (kind == 0)   ? "read"
+             : (kind == 1) ? "write"
+             : (kind == 8) ? "exec"
+                           : "?";
     fault_addr = static_cast<unsigned long>(record->ExceptionInformation[1]);
   }
 
@@ -87,7 +100,7 @@ bool Diagnostics::format_exception_event(char *line, size_t line_size,
 
 void NamedPipe::emit_exception_event(const char *type,
                                      EXCEPTION_POINTERS *info) {
-  char line[768];
+  char line[1024];
   if (!format_exception_event(line, sizeof(line), type, info))
     return;
 

@@ -1,7 +1,7 @@
 #include "diagnostics/handler_pipe.hpp"
 
 #include "RMI/NavCommands.hpp"
-#include "diagnostics/handlers.hpp"
+#include "thegame/log.hpp"
 
 #include <cstdio>
 #include <cstring>
@@ -51,7 +51,7 @@ bool connect_pipe_locked() {
       DWORD mode = PIPE_READMODE_BYTE | PIPE_NOWAIT;
       SetNamedPipeHandleState(g_pipe, &mode, nullptr, nullptr);
       if (InterlockedCompareExchange(&g_connected_logged, 1, 0) == 0) {
-        Diagnostics::emit_game_log("handler: pipe connected");
+        thegame::logf("handler: pipe connected");
       }
       return true;
     }
@@ -144,8 +144,7 @@ bool read_more_locked() {
     start = nl + 1;
   }
 
-  const std::size_t remaining =
-      g_read_pending + g_read_pending_len - start;
+  const std::size_t remaining = g_read_pending + g_read_pending_len - start;
   if (start != g_read_pending && remaining > 0)
     memmove(g_read_pending, start, remaining);
   g_read_pending_len = remaining;

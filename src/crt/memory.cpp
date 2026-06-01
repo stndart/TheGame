@@ -1,6 +1,5 @@
 #include <windows.h>
 
-#include "console.h"
 #include "crt/memory.h"
 
 CRT::CRTStubs CRT::stub;

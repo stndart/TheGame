@@ -6,7 +6,7 @@
 ## Session facts (meta.json)
 
 - started 07:02:46Z, ended 07:04:32Z, 79 events, launcher_pid 37612, game pid 36216.
-- game_states: started → intro → connecting_to_server → shard_choice → server_ready → lobby →
+- game_stages: started → intro → connecting_to_server → shard_choice → server_ready → lobby →
   room_list → lobby → shard_choice → server_ready (→ disconnected 07:04:31).
 - step timestamps: intro 07:02:58, connecting 07:03:49, shard_choice 07:03:53.76, server_ready
   07:03:53.86, lobby 07:03:59.38, room_list 07:04:13.63, lobby 07:04:23.36, shard_choice
@@ -59,7 +59,7 @@ SERVER SELECT (shard_choice@48 / server_ready@49):
 54 c2s_rmi 0x03E9 (1001)             framework heartbeat (0xD5C5E0 trace)
 ```
 
-LOBBY (game_state lobby@55):
+LOBBY (game_stage lobby@55):
 ```
 56 proxy 0x3F40 (16192) len=2 \  lobby-enter REQ (gated onPreProcess)
 57 floor 0x3ACE (15054) len=2 /  (same RMI, two layers)
@@ -70,7 +70,7 @@ LOBBY (game_state lobby@55):
 62 proxy 0x3EE4 (16100) len=3     Quick Dive press #2
 ```
 
-ROOM_LIST (game_state room_list@63):
+ROOM_LIST (game_stage room_list@63):
 ```
 64 proxy 0x3F2F (16175) len=2 \  enter custom-match list / list req
 65 floor 0x3A9F (15007) len=2 /

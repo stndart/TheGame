@@ -12,9 +12,8 @@
 // the RMI body via *(u32*)(a1+8); the gating field is result(u16) at body+2
 // (0 == success). See docs/plans/proudnet-rmi-server-plan.md.
 //
-// Disabled by default on the msvc-x86-debug preset (wire-only / server S2C).
-// Re-enable at configure time: -DTHEGAME_DISABLE_RMI_INJECT=OFF.
-// Runtime override (when compiled in): env THEGAME_DISABLE_RMI_INJECT=1.
+// Disabled by default (DISABLE_RMI_INJECT=ON). Re-enable at configure time:
+// -DDISABLE_RMI_INJECT=OFF. Runtime override: env DISABLE_RMI_INJECT=0.
 
 namespace Rmi {
 

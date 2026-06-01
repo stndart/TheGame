@@ -23,6 +23,9 @@ public:
   void emit_exception_event(const char *type, EXCEPTION_POINTERS *info);
 };
 
+bool format_custom_message(char *line, size_t line_size, const char *type,
+                           const char *message);
+
 bool format_exception_event(char *line, size_t line_size, const char *type,
                             EXCEPTION_POINTERS *info);
 

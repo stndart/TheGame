@@ -2,10 +2,9 @@
 
 #include "RMI/Inject.hpp"
 #include "RMI/NavCommands.hpp"
-#include "diagnostics/handlers.hpp"
+#include "thegame/log.hpp"
 
 #include <cstdint>
-#include <cstring>
 #include <windows.h>
 
 namespace {
@@ -23,24 +22,18 @@ template <typename T> T &game_global(const std::uint32_t va) {
   return *reinterpret_cast<T *>(game_va(va));
 }
 
-void *state_machine() {
-  return reinterpret_cast<void *>(game_va(0x1C155C0));
-}
+void *state_machine() { return reinterpret_cast<void *>(game_va(0x1C155C0)); }
 
-void *proxy_singleton() {
-  return reinterpret_cast<void *>(game_va(0x1C1ABA0));
-}
+void *proxy_singleton() { return reinterpret_cast<void *>(game_va(0x1C1ABA0)); }
 
-bool transition_locked() {
-  return game_global<std::uint8_t>(0x1C1E409) != 0;
-}
+bool transition_locked() { return game_global<std::uint8_t>(0x1C1E409) != 0; }
 
 int current_scene() { return game_global<int>(0x1C15644); }
 
 void log_nav(const char *msg) {
   char line[128];
   wsprintfA(line, "nav: %s (tid=%lu)", msg, GetCurrentThreadId());
-  Diagnostics::emit_game_log(line);
+  thegame::logf(line);
 }
 
 using RequestStateFn = char(__thiscall *)(void *, int);
@@ -116,13 +109,13 @@ void Rmi::NavDrainCommands() {
   }
 }
 
-void Rmi::NavLogStartup() {
-  Diagnostics::emit_game_log("nav: command-driven (autonav disabled)");
+void Rmi::NavStartup() {
+  thegame::logf("nav: command-driven (autonav disabled)");
 }
 
-void Rmi::NavOnStage(const char *phase) {
-  (void)phase;
-}
+void Rmi::NavTeardown() { thegame::logf("nav: teardown"); }
+
+void Rmi::NavOnStage(const char *phase) { (void)phase; }
 
 void Rmi::NavPump(const char *phase) {
   (void)phase;

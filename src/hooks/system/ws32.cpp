@@ -8,13 +8,8 @@
 #include <winsock2.h>
 #include <windows.h>
 
-// Set to 1 to log every WS2_32 send/sendto/wsasend call site (very noisy).
-#ifndef WS32_SYSLOGS
-#define WS32_SYSLOGS 0
-#endif
-
 void __cdecl log_parg_n(int i, void *retaddr, void *p) {
-#if WS32_SYSLOGS
+#if WS2_HOOKS
   logf("Call[%i] from 0x%p with arg 0x%p", i, retaddr, p);
 #else
   (void)i;
@@ -25,7 +20,7 @@ void __cdecl log_parg_n(int i, void *retaddr, void *p) {
 
 extern "C" void __declspec(naked) send_syshandle() {
   __asm {
-#if WS32_SYSLOGS
+#if WS2_HOOKS
     pushad
     mov eax, [esp + 0x24]
     mov ebx, [esp + 0x20]
@@ -42,7 +37,7 @@ extern "C" void __declspec(naked) send_syshandle() {
 
 extern "C" void __declspec(naked) sendto_syshandle() {
   __asm {
-#if WS32_SYSLOGS
+#if WS2_HOOKS
     pushad
     mov eax, [esp + 0x24]
     mov ebx, [esp + 0x20]
@@ -94,7 +89,7 @@ extern "C" int WSAAPI wsasend_syshandle(SOCKET s, LPWSABUF bufs,
 
 extern "C" void __declspec(naked) wsasendto_syshandle() {
   __asm {
-#if WS32_SYSLOGS
+#if WS2_HOOKS
     pushad
     mov eax, [esp + 0x24]
     mov ebx, [esp + 0x20]

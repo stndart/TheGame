@@ -35,7 +35,7 @@ just ctl::copy-dll
 just ctl::launch-offline
 ```
 
-`events.jsonl` game_state sequence:
+`events.jsonl` game_stage sequence:
 - `started`, `intro`, `connecting_to_server`
 - connect logs: `127.0.0.1:7000`, then `127.0.0.1:27380`
 - **`shard_choice`** @ line 114

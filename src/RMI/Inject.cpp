@@ -1,6 +1,7 @@
 #include "RMI/Inject.hpp"
 
-#include "diagnostics/handlers.hpp"
+#include "thegame/config.hpp"
+#include "thegame/log.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -21,8 +22,9 @@ constexpr unsigned kReqRoomEnter = 0x3ED3;  // auto room-enter REQ on scene 9
 constexpr unsigned kReqRoomReady = 0x3F2B;  // waiting-room Ready toggle
 constexpr unsigned kReqLeaveRoom = 0x3F45;  // leave room (custom match)
 
-// S2C RES leaf handlers (RVA == IDA EA). Signature: int __stdcall(MsgDelegateArg
-// const* a1); body = *(u32*)(a1+8). gating result(u16) at body+2 (0 == success).
+// S2C RES leaf handlers (RVA == IDA EA). Signature: int
+// __stdcall(MsgDelegateArg const* a1); body = *(u32*)(a1+8). gating result(u16)
+// at body+2 (0 == success).
 //
 // 0x3F30 (sub_437160): on result==0 requests scene 9 (CGameRoom).
 constexpr std::uint32_t kLeafCreateRoomRes = 0x437160;
@@ -36,35 +38,22 @@ constexpr std::uint32_t kLeafStartRes = 0x43D9B0;
 constexpr std::uint32_t kLeafLeaveRoomRes = 0x43D020;
 // 0x3ED4 (sub_4BB560): room-enter ACK / COMPACT member list. body+2 int count,
 // then count * 32B records at body+6. Fills the compact member map (off_1C28684
-// keyed by record+0 = account_id, plus key-set dword_1C2EA08). NOTE: this is NOT
-// the map the room UI VM reads (see 0x3ED8); kept for real-server parity.
+// keyed by record+0 = account_id, plus key-set dword_1C2EA08). NOTE: this is
+// NOT the map the room UI VM reads (see 0x3ED8); kept for real-server parity.
 constexpr std::uint32_t kLeafRoomEnterRes = 0x4BB560;
 // 0x3ED8 (sub_4BB370): room-enter ACK / UI member list (168B records). body+2
 // int count, then count * 0xA8 records at body+6. Fills dword_1C28898 which
-// CGameRoom::onPreProcess -> sub_442F90 -> sub_8DCBF0(slot) actually binds. This
-// is the map whose emptiness faults the UI-variant VM (sub_1307B30). A coherent
-// slot-0 record needs validity bytes set (see inject_room_members_res()).
+// CGameRoom::onPreProcess -> sub_442F90 -> sub_8DCBF0(slot) actually binds.
+// This is the map whose emptiness faults the UI-variant VM (sub_1307B30). A
+// coherent slot-0 record needs validity bytes set (see
+// inject_room_members_res()).
 constexpr std::uint32_t kLeafRoomMembersRes = 0x4BB370;
 constexpr std::size_t kUiMemberStride = 0xA8; // 168B record (sub_8DCBB0 +=42)
 
 // Local player account id our connect inject hands the client (server uses 1).
 constexpr std::uint32_t kLocalAccountId = 1;
 
-bool rmi_inject_disabled() {
-#if defined(THEGAME_DISABLE_RMI_INJECT)
-  return true;
-#else
-  static int cached = -1;
-  if (cached < 0) {
-    char buf[4];
-    cached = (GetEnvironmentVariableA("THEGAME_DISABLE_RMI_INJECT", buf,
-                                       sizeof(buf)) > 0)
-                 ? 1
-                 : 0;
-  }
-  return cached == 1;
-#endif
-}
+bool rmi_inject_disabled() { return thegame::cfg.disable_rmi_inject; }
 
 volatile LONG g_pending_lobby_enter = 0;
 volatile LONG g_pending_create_room = 0;
@@ -86,30 +75,29 @@ void call_res_leaf(std::uint32_t leaf_rva, const void *body) {
 
 void inject_lobby_enter_res() {
   unsigned char body[8] = {0};
-  Diagnostics::emit_game_log(
-      "inject: lobby-enter RES 0x3F41 result=0 -> GameLobby");
+  thegame::logf("inject: lobby-enter RES 0x3F41 result=0 -> GameLobby");
   call_res_leaf(kLeafLobbyEnterRes, body);
 }
 
 void inject_create_room_res() {
-  // body+0: pad (ignored), body+2: result u16 == 0 -> success -> RequestState(9).
+  // body+0: pad (ignored), body+2: result u16 == 0 -> success ->
+  // RequestState(9).
   unsigned char body[8] = {0};
   char msg[96];
-  wsprintfA(msg, "inject: create-room RES 0x3F30 result=0 -> GameRoom (tid=%lu)",
+  wsprintfA(msg,
+            "inject: create-room RES 0x3F30 result=0 -> GameRoom (tid=%lu)",
             GetCurrentThreadId());
-  Diagnostics::emit_game_log(msg);
+  thegame::logf(msg);
   call_res_leaf(kLeafCreateRoomRes, body);
 }
 
 void inject_leave_room_res() {
   unsigned char body[8] = {0};
   char msg[128];
-  wsprintfA(msg,
-            "inject: leave-room RES 0x3F45 mode=%u scene=%d (tid=%lu)",
+  wsprintfA(msg, "inject: leave-room RES 0x3F45 mode=%u scene=%d (tid=%lu)",
             *reinterpret_cast<unsigned *>(game_va(0x1C1A87C)),
-            *reinterpret_cast<int *>(game_va(0x1C15644)),
-            GetCurrentThreadId());
-  Diagnostics::emit_game_log(msg);
+            *reinterpret_cast<int *>(game_va(0x1C15644)), GetCurrentThreadId());
+  thegame::logf(msg);
   call_res_leaf(kLeafLeaveRoomRes, body);
 }
 
@@ -147,23 +135,22 @@ void fill_room_members_ui(unsigned char *rec, std::uint32_t slot,
   put_u32(rec, 0x00, slot); // map key for sub_8DCBF0(slot), NOT account_id
   put_u32(rec, 0x04, 1);    // present (sub_8F98B0 path)
   put_u32(rec, 0x08, team);
-  put_u32(rec, 0x14, 1);    // sub_4F8670 checks stored member +0x14 == 1
-  put_u64(rec, 0x20, 0);    // isLockIn QWORD: not locked
-  rec[0x28] = 1;            // sub_8DCBF0 validity (else +0x2C must be 1)
+  put_u32(rec, 0x14, 1); // sub_4F8670 checks stored member +0x14 == 1
+  put_u64(rec, 0x20, 0); // isLockIn QWORD: not locked
+  rec[0x28] = 1;         // sub_8DCBF0 validity (else +0x2C must be 1)
 }
 
-// Populate CGameRoom's COMPACT member map (off_1C28684). body+2 count=1, one 32B
-// record whose key (record+0) is the local account id. The UI does not read this
-// map directly; injected for real-server parity / coherence.
+// Populate CGameRoom's COMPACT member map (off_1C28684). body+2 count=1, one
+// 32B record whose key (record+0) is the local account id. The UI does not read
+// this map directly; injected for real-server parity / coherence.
 void inject_room_enter_res() {
   unsigned char body[6 + kCompactMemberStride] = {0};
   put_u32(body, 2, 1);
   fill_room_enter_compact(body + 6, kLocalAccountId, 0, 0);
   char msg[96];
-  wsprintfA(msg,
-            "inject: room-enter RES 0x3ED4 count=1 acct=%u slot=0 team=0",
+  wsprintfA(msg, "inject: room-enter RES 0x3ED4 count=1 acct=%u slot=0 team=0",
             kLocalAccountId);
-  Diagnostics::emit_game_log(msg);
+  thegame::logf(msg);
   call_res_leaf(kLeafRoomEnterRes, body);
 }
 
@@ -172,7 +159,7 @@ void inject_room_members_res() {
   unsigned char body[6 + kUiMemberStride] = {0};
   put_u32(body, 2, 1);
   fill_room_members_ui(body + 6, 0, 0);
-  Diagnostics::emit_game_log(
+  thegame::logf(
       "inject: room-members RES 0x3ED8 count=1 slot=0 team=0 (UI map)");
   call_res_leaf(kLeafRoomMembersRes, body);
 }
@@ -182,22 +169,21 @@ void inject_start_res() {
   const std::uintptr_t play_ctx =
       *reinterpret_cast<std::uintptr_t *>(game_va(0x1C25E2C));
   if (!play_ctx) {
-    Diagnostics::emit_game_log(
-        "inject: start RES 0x3F3D skipped (flt_1C25E2C null)");
+    thegame::logf("inject: start RES 0x3F3D skipped (flt_1C25E2C null)");
     return;
   }
 
   unsigned char body[0x40] = {0};
-  put_u16(body, 0x02, 0);       // result = success
-  put_u16(body, 0x26, 1);       // game mode @ body+0x26 (sub_65C1C0 arg)
-  put_u32(body, 0x28, 1);       // -> flt_1C25E2C[0x210] match handle
+  put_u16(body, 0x02, 0); // result = success
+  put_u16(body, 0x26, 1); // game mode @ body+0x26 (sub_65C1C0 arg)
+  put_u32(body, 0x28, 1); // -> flt_1C25E2C[0x210] match handle
 
   char msg[128];
   wsprintfA(msg,
             "inject: start RES 0x3F3D result=0 mode=1 handle=1 ctx=%08X "
             "(tid=%lu)",
             static_cast<unsigned>(play_ctx), GetCurrentThreadId());
-  Diagnostics::emit_game_log(msg);
+  thegame::logf(msg);
   call_res_leaf(kLeafStartRes, body);
 }
 
@@ -216,8 +202,9 @@ void Rmi::NoteC2sSend(unsigned rmi_id) {
     // before CGameRoom::onPreProcess binds slot-0 UI fields.
     InterlockedExchange(&g_pending_populate, 1);
   } else if (id == kReqRoomEnter) {
-    // Client auto-sends enter after scene 9; server may answer 0x3ED4/0x3ED8 on the
-    // worker thread with empty records. Re-populate on the next PumpRoom frame.
+    // Client auto-sends enter after scene 9; server may answer 0x3ED4/0x3ED8 on
+    // the worker thread with empty records. Re-populate on the next PumpRoom
+    // frame.
     InterlockedExchange(&g_pending_populate, 1);
   } else if (id == kReqRoomReady) {
     // One-shot: first Ready press in the room launches the match offline.
@@ -232,7 +219,8 @@ void Rmi::NoteC2sSend(unsigned rmi_id) {
 void Rmi::PumpLobby() {
   if (rmi_inject_disabled())
     return;
-  // Answer lobby-enter REQ (0x3F40) so offline clients do not regress to shard UI.
+  // Answer lobby-enter REQ (0x3F40) so offline clients do not regress to shard
+  // UI.
   if (InterlockedCompareExchange(&g_pending_lobby_enter, 0, 1) == 1) {
     inject_lobby_enter_res();
   }

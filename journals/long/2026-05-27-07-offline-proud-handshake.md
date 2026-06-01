@@ -2,7 +2,7 @@
 
 ## Goal
 
-Reach `ctl` game_state stages `shard_choice` and `main_menu` with `just ctl::launch-offline` against the local Python ProudNet emulator (`just ensure-serve`), not FA-EMU production hosts.
+Reach `ctl` game_stage stages `shard_choice` and `main_menu` with `just ctl::launch-offline` against the local Python ProudNet emulator (`just ensure-serve`), not FA-EMU production hosts.
 
 ## End-to-end flow
 
@@ -90,7 +90,7 @@ just ctl::copy-logs
 
 Evidence:
 
-- `ctl/logs/runs/018_5cb743bb/events.jsonl` - daemon `[stage]` / `game_state` transitions through `shard_choice`, `main_menu`
+- `ctl/logs/runs/018_5cb743bb/events.jsonl` - daemon `[stage]` / `game_stage` transitions through `shard_choice`, `main_menu`
 - `ctl/logs/runs/018_5cb743bb/game_netlogs.txt` - `remap` / `connect:27380` / `w_connect_3:27380` → `127.0.0.1`
 - `ctl/logs/server/wire_<timestamp>.log` - `[GAME host:port] 0x2f → 0x04` on `:27380`, lobby replay TX after `0x25`
 

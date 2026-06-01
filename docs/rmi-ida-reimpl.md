@@ -79,7 +79,7 @@ Globals: `0x1C1ABA0` (account/lobby proxy), `0x1C1ABB0` (match floor).
 | `0x41A920` | Scene → class factory |
 | `0x1C155C0` | State manager base (+128 active, +132 scene, +140 next) |
 
-### UI onPreProcess hooks (`game_state.cpp`)
+### UI onPreProcess hooks (`game_stage.cpp`)
 
 | RVA | Stage |
 | --- | --- |
@@ -98,7 +98,7 @@ Full table: [plans/proudnet-rmi-server-plan.md](plans/proudnet-rmi-server-plan.m
 | File | Role |
 | --- | --- |
 | [`src/RMI/Inject.cpp`](../../src/RMI/Inject.cpp) | Build body + call leaf |
-| [`src/hooks/game_state.cpp`](../../src/hooks/game_state.cpp) | Main-thread pump |
+| [`src/hooks/game_stage.cpp`](../../src/hooks/game_stage.cpp) | Main-thread pump |
 | [`src/RMI/GameSendHook.cpp`](../../src/RMI/GameSendHook.cpp) | C2S latch |
 
 Default **debug** DLL: inject compiled out. Reconfigure `-DTHEGAME_DISABLE_RMI_INJECT=OFF` to compile inject in; env **`THEGAME_DISABLE_RMI_INJECT=1`** disables at runtime.

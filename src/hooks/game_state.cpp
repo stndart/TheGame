@@ -1,70 +1,80 @@
-#include "diagnostics/handlers.hpp"
 #include "RMI/Inject.hpp"
 #include "RMI/Nav.hpp"
 #include "target_hooks.h"
+#include "thegame/config.hpp"
+#include "thegame/log.hpp"
 
-extern "C" void __cdecl diagnostics_game_state_intro() {
-  Diagnostics::emit_game_state("intro");
+extern "C" void __cdecl diagnostics_game_stage_intro() {
+  thegame::stagef("intro");
 }
 
-extern "C" void __cdecl diagnostics_game_state_login() {
-  Diagnostics::emit_game_state("login");
+extern "C" void __cdecl diagnostics_game_stage_login() {
+  thegame::stagef("login");
 }
 
-extern "C" void __cdecl diagnostics_game_state_shard_choice() {
-  Diagnostics::emit_game_state("shard_choice");
+extern "C" void __cdecl diagnostics_game_stage_shard_choice() {
+  thegame::stagef("shard_choice");
 }
 
 // NOTE: this fires at CGameServer::onPreProcess END (0x4347CC) - the server /
 // shard picker finished its onEnter setup. It is NOT the real Main Menu (which
 // needs human interaction to reach). Emitted as "server_ready" to stop the old
-// deceptive "main_menu" label. Real screens are staged below (lobby, room, ...).
-extern "C" void __cdecl diagnostics_game_state_main_menu() {
-  Diagnostics::emit_game_state("server_ready");
-  Rmi::NavOnStage("server_ready");
-  Rmi::NavPump("server_ready");
+// deceptive "main_menu" label. Real screens are staged below (lobby, room,
+// ...).
+extern "C" void __cdecl diagnostics_game_stage_main_menu() {
+  thegame::stagef("server_ready");
+  if (!thegame::cfg.disable_autonav) {
+    Rmi::NavOnStage("server_ready");
+    Rmi::NavPump("server_ready");
+  }
 }
 
-extern "C" void __cdecl diagnostics_game_state_lobby() {
-  Diagnostics::emit_game_state("lobby");
-  Rmi::NavOnStage("lobby");
-  Rmi::NavPump("lobby");
+extern "C" void __cdecl diagnostics_game_stage_lobby() {
+  thegame::stagef("lobby");
+  if (!thegame::cfg.disable_autonav) {
+    Rmi::NavOnStage("lobby");
+    Rmi::NavPump("lobby");
+  }
   // Answer pending lobby-enter REQ (0x3F40) before shard UI regression.
   Rmi::PumpLobby();
 }
 
-extern "C" void __cdecl diagnostics_game_state_room_list() {
-  Diagnostics::emit_game_state("room_list");
-  Rmi::NavOnStage("room_list");
-  Rmi::NavPump("room_list");
+extern "C" void __cdecl diagnostics_game_stage_room_list() {
+  thegame::stagef("room_list");
+  if (!thegame::cfg.disable_autonav) {
+    Rmi::NavOnStage("room_list");
+    Rmi::NavPump("room_list");
+  }
   // Main-thread pump: run a pending Create-Room transition RES here (the frame
   // thread) instead of the ProudNet worker thread.
   Rmi::PumpLobby();
 }
 
-extern "C" void __cdecl diagnostics_game_state_party_room() {
-  Diagnostics::emit_game_state("party_room");
+extern "C" void __cdecl diagnostics_game_stage_party_room() {
+  thegame::stagef("party_room");
 }
 
-extern "C" void __cdecl diagnostics_game_state_room() {
-  Diagnostics::emit_game_state("room");
-  Rmi::NavOnStage("room");
-  Rmi::NavPump("room");
+extern "C" void __cdecl diagnostics_game_stage_room() {
+  thegame::stagef("room");
+  if (!thegame::cfg.disable_autonav) {
+    Rmi::NavOnStage("room");
+    Rmi::NavPump("room");
+  }
   // Main-thread pump, BEFORE the original CGameRoom::onPreProcess binds room
   // data: populate the room (first frame), then honour a pending Ready->start.
   Rmi::PumpRoom();
 }
 
-extern "C" void __cdecl diagnostics_game_state_char_select() {
-  Diagnostics::emit_game_state("char_select");
+extern "C" void __cdecl diagnostics_game_stage_char_select() {
+  thegame::stagef("char_select");
 }
 
-extern "C" void __cdecl diagnostics_game_state_map_loading() {
-  Diagnostics::emit_game_state("map_loading");
+extern "C" void __cdecl diagnostics_game_stage_map_loading() {
+  thegame::stagef("map_loading");
 }
 
-extern "C" void __cdecl diagnostics_game_state_in_game() {
-  Diagnostics::emit_game_state("in_game");
+extern "C" void __cdecl diagnostics_game_stage_in_game() {
+  thegame::stagef("in_game");
 }
 
 // CGameIntro::onPreProcess - switches to eGFxScene_Intro (14)
@@ -72,7 +82,7 @@ extern "C" void __declspec(naked) hook_game_intro() {
   __asm {
     pushad
     pushfd
-    call diagnostics_game_state_intro
+    call diagnostics_game_stage_intro
     popfd
     popad
 
@@ -88,7 +98,7 @@ extern "C" void __declspec(naked) hook_game_login() {
   __asm {
     pushad
     pushfd
-    call diagnostics_game_state_login
+    call diagnostics_game_stage_login
     popfd
     popad
 
@@ -104,7 +114,7 @@ extern "C" void __declspec(naked) hook_game_server_select() {
   __asm {
     pushad
     pushfd
-    call diagnostics_game_state_shard_choice
+    call diagnostics_game_stage_shard_choice
     popfd
     popad
 
@@ -120,7 +130,7 @@ extern "C" void __declspec(naked) hook_game_main_menu() {
   __asm {
     pushad
     pushfd
-    call diagnostics_game_state_main_menu
+    call diagnostics_game_stage_main_menu
     popfd
     popad
 
@@ -137,7 +147,7 @@ extern "C" void __declspec(naked) hook_game_lobby() {
   __asm {
     pushad
     pushfd
-    call diagnostics_game_state_lobby
+    call diagnostics_game_stage_lobby
     popfd
     popad
     push ebp
@@ -151,7 +161,7 @@ extern "C" void __declspec(naked) hook_game_room_list() {
   __asm {
     pushad
     pushfd
-    call diagnostics_game_state_room_list
+    call diagnostics_game_stage_room_list
     popfd
     popad
     push ebp
@@ -165,7 +175,7 @@ extern "C" void __declspec(naked) hook_game_party_room() {
   __asm {
     pushad
     pushfd
-    call diagnostics_game_state_party_room
+    call diagnostics_game_stage_party_room
     popfd
     popad
     push ebp
@@ -179,7 +189,7 @@ extern "C" void __declspec(naked) hook_game_room() {
   __asm {
     pushad
     pushfd
-    call diagnostics_game_state_room
+    call diagnostics_game_stage_room
     popfd
     popad
     push ebp
@@ -193,7 +203,7 @@ extern "C" void __declspec(naked) hook_game_char_select() {
   __asm {
     pushad
     pushfd
-    call diagnostics_game_state_char_select
+    call diagnostics_game_stage_char_select
     popfd
     popad
     push ebp
@@ -207,7 +217,7 @@ extern "C" void __declspec(naked) hook_game_map_loading() {
   __asm {
     pushad
     pushfd
-    call diagnostics_game_state_map_loading
+    call diagnostics_game_stage_map_loading
     popfd
     popad
     push ebp
@@ -221,7 +231,7 @@ extern "C" void __declspec(naked) hook_game_in_game() {
   __asm {
     pushad
     pushfd
-    call diagnostics_game_state_in_game
+    call diagnostics_game_stage_in_game
     popfd
     popad
     push ebp
@@ -268,36 +278,60 @@ HookStub g_target_game_main_menu = {
 };
 
 HookStub g_target_game_lobby = {
-    0x42BD50, (uint32_t)(uintptr_t)hook_game_lobby, "hook_game_lobby",
-    {0},      false,                                0x42BD56,
+    0x42BD50,
+    (uint32_t)(uintptr_t)hook_game_lobby,
+    "hook_game_lobby",
+    {0},
+    false,
+    0x42BD56,
 };
 
 HookStub g_target_game_room_list = {
-    0x4362E0, (uint32_t)(uintptr_t)hook_game_room_list, "hook_game_room_list",
-    {0},      false,                                    0x4362E6,
+    0x4362E0,
+    (uint32_t)(uintptr_t)hook_game_room_list,
+    "hook_game_room_list",
+    {0},
+    false,
+    0x4362E6,
 };
 
 HookStub g_target_game_party_room = {
-    0x42F690, (uint32_t)(uintptr_t)hook_game_party_room, "hook_game_party_room",
-    {0},      false,                                     0x42F696,
+    0x42F690,
+    (uint32_t)(uintptr_t)hook_game_party_room,
+    "hook_game_party_room",
+    {0},
+    false,
+    0x42F696,
 };
 
 HookStub g_target_game_room = {
-    0x439B00, (uint32_t)(uintptr_t)hook_game_room, "hook_game_room",
-    {0},      false,                               0x439B06,
+    0x439B00, (uint32_t)(uintptr_t)hook_game_room, "hook_game_room", {0}, false,
+    0x439B06,
 };
 
 HookStub g_target_game_char_select = {
-    0x4F2DB0, (uint32_t)(uintptr_t)hook_game_char_select, "hook_game_char_select",
-    {0},      false,                                      0x4F2DB6,
+    0x4F2DB0,
+    (uint32_t)(uintptr_t)hook_game_char_select,
+    "hook_game_char_select",
+    {0},
+    false,
+    0x4F2DB6,
 };
 
 HookStub g_target_game_map_loading = {
-    0x4806E0, (uint32_t)(uintptr_t)hook_game_map_loading, "hook_game_map_loading",
-    {0},      false,                                      0x4806E6,
+    0x4806E0,
+    (uint32_t)(uintptr_t)hook_game_map_loading,
+    "hook_game_map_loading",
+    {0},
+    false,
+    0x4806E6,
 };
 
 HookStub g_target_game_in_game = {
-    0x47F610, (uint32_t)(uintptr_t)hook_game_in_game, "hook_game_in_game",
-    {0},      false,                                  0x47F616,
+    0x47F610,
+    (uint32_t)(uintptr_t)hook_game_in_game,
+    "hook_game_in_game",
+    {0},
+    false,
+    0x47F616,
 };

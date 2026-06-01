@@ -144,7 +144,7 @@ Create RES only needs `result@+2 == 0`.
 
 ## In-process injection (harness)
 
-Files: [`src/RMI/Inject.cpp`](../../src/RMI/Inject.cpp), wired from send hook + [`game_state.cpp`](../../src/hooks/game_state.cpp) (main-thread pump).
+Files: [`src/RMI/Inject.cpp`](../../src/RMI/Inject.cpp), wired from send hook + [`game_stage.cpp`](../../src/hooks/game_stage.cpp) (main-thread pump).
 
 ```c
 void *arg[8] = {0};
@@ -157,7 +157,7 @@ arg[2] = body;   // result u16 @ body+2 = 0
 - **Debug build:** inject **off** by default (`msvc-x86-debug` / `THEGAME_DISABLE_RMI_INJECT=ON`). **Re-enable:** reconfigure with `-DTHEGAME_DISABLE_RMI_INJECT=OFF`. Runtime `THEGAME_DISABLE_RMI_INJECT=1` when inject is compiled in.
 - Full table (REQ latch → RES leaf, body sizes): [`src/RMI/Inject.cpp`](../../src/RMI/Inject.cpp), [proudnet-rmi-server-plan.md § Inject-only](../plans/proudnet-rmi-server-plan.md).
 
-Verified: create-room REQ → inject → `game_state: room` (run 180).
+Verified: create-room REQ → inject → `game_stage: room` (run 180).
 
 ---
 

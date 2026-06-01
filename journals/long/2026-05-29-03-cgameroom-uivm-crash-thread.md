@@ -58,7 +58,7 @@ So after a bare `0x3F30` transition these are non-null but empty/zeroed. The cra
 - `CNetClientImpl::OnMessageReceived` (`sub_D65940`, our `drain_receive_queue` hook) drains the recv
   queue and dispatches per message - observed on tids 32880/13432, distinct from the main thread
   28308 (CGameXxx ctor / app-init). So dispatch + RES leaves run on the ProudNet worker thread.
-- `Diagnostics::emit_game_state` dedups via `g_last_game_phase`, which is why each stage prints once
+- `Diagnostics::emit_game_stage` dedups via `g_last_game_phase`, which is why each stage prints once
   even though `IState::onPreProcess` (the hooked `0x439B00` etc.) fires every frame on the main
   thread. That dedup hid the per-frame cadence and made the onPreProcess hooks look like onEnter.
 

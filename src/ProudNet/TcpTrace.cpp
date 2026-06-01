@@ -3,6 +3,9 @@
 #include "diagnostics/handlers.hpp"
 #include "game/net/proud_frame_parse.hpp"
 #include "game/net/socket_trace.hpp"
+#include "thegame/config.hpp"
+#include "thegame/log.hpp"
+#include "thegame/paths.hpp"
 
 #include <cstdio>
 #include <fstream>
@@ -15,9 +18,9 @@ std::ofstream g_pn_tcp_file;
 constexpr size_t kMaxFramesPerLine = 32;
 
 void ensure_log_open() {
-  if (g_pn_tcp_file.is_open())
+  if (thegame::cfg.no_proud_logs || g_pn_tcp_file.is_open())
     return;
-  g_pn_tcp_file.open(Proud::TcpTrace::kLogFileName, std::ios::app);
+  g_pn_tcp_file.open(thegame::proud_log_path(), std::ios::app);
   if (g_pn_tcp_file.is_open())
     g_pn_tcp_file << "# proudnet-tcp headers (tid port dir chunk frames)\n";
 }
@@ -103,6 +106,8 @@ void append_frames_text(std::ostream &out,
 void log_line(SOCKET sock, u_short port, const char *dir, size_t chunk_len,
               const uint8_t *raw, const ProudFrameParse::ParsedFrame *frames,
               size_t frame_count, size_t incomplete_tail) {
+  if (thegame::cfg.no_proud_logs)
+    return;
   ensure_log_open();
   if (!g_pn_tcp_file.is_open())
     return;
@@ -119,21 +124,20 @@ void log_line(SOCKET sock, u_short port, const char *dir, size_t chunk_len,
   g_pn_tcp_file << "\n";
   g_pn_tcp_file.flush();
 
-#ifdef THEGAME_PN_TCP_PIPE
-  Diagnostics::PnTcpFrameHeader pipe_frames[kMaxFramesPerLine];
-  for (size_t i = 0; i < frame_count; ++i) {
-    pipe_frames[i].payload_len =
-        static_cast<unsigned>(frames[i].payload_len);
-    pipe_frames[i].opcode = frames[i].inner.opcode;
-    pipe_frames[i].rmi_id = frames[i].inner.rmi_id;
-    pipe_frames[i].body_len = static_cast<unsigned>(frames[i].inner.body_len);
-    pipe_frames[i].has_rmi = frames[i].inner.has_rmi ? 1 : 0;
+  if (thegame::cfg.pipes && !thegame::cfg.silent_proud) {
+    Diagnostics::PnTcpFrameHeader pipe_frames[kMaxFramesPerLine];
+    for (size_t i = 0; i < frame_count; ++i) {
+      pipe_frames[i].payload_len =
+          static_cast<unsigned>(frames[i].payload_len);
+      pipe_frames[i].opcode = frames[i].inner.opcode;
+      pipe_frames[i].rmi_id = frames[i].inner.rmi_id;
+      pipe_frames[i].body_len = static_cast<unsigned>(frames[i].inner.body_len);
+      pipe_frames[i].has_rmi = frames[i].inner.has_rmi ? 1 : 0;
+    }
+    Diagnostics::emit_proudnet_tcp(
+        tid, port, dir, static_cast<unsigned long long>(sock), chunk_len,
+        pipe_frames, frame_count, incomplete_tail);
   }
-  Diagnostics::emit_proudnet_tcp(
-      tid, port, dir,
-      static_cast<unsigned long long>(sock),
-      chunk_len, pipe_frames, frame_count, incomplete_tail);
-#endif
 }
 
 } // namespace
@@ -142,7 +146,7 @@ namespace Proud {
 namespace TcpTrace {
 
 void log_connect(SOCKET sock, const char *addr, u_short port) {
-  if (!SocketTrace::is_pn_track_port(port))
+  if (thegame::cfg.no_proud_logs || !SocketTrace::is_pn_track_port(port))
     return;
 
   ensure_log_open();
@@ -155,11 +159,10 @@ void log_connect(SOCKET sock, const char *addr, u_short port) {
                 << " addr=" << (addr ? addr : "?") << "\n";
   g_pn_tcp_file.flush();
 
-#ifdef THEGAME_PN_TCP_PIPE
-  Diagnostics::emit_proudnet_tcp_connect(
-      tid, static_cast<unsigned long long>(sock),
-      addr, port);
-#endif
+  if (thegame::cfg.pipes && !thegame::cfg.silent_proud) {
+    Diagnostics::emit_proudnet_tcp_connect(
+        tid, static_cast<unsigned long long>(sock), addr, port);
+  }
 }
 
 void log_chunk(SOCKET sock, const void *data, size_t len, bool inbound,

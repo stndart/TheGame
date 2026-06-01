@@ -20,7 +20,7 @@
 | `commands` | `nav_goto_lobby` (comma-separated list) | — |
 | `nav_goto_lobby` | `ok` | Queue → `NavDrainCommands` arms C2S enter + `g_want_lobby`; `NavPump` runs `try_goto_lobby` |
 
-**Threading:** a **reader thread** ([`handler_pipe.cpp`](../../src/diagnostics/handler_pipe.cpp)) reads the pipe and enqueues work; **never** calls game UI/RMI/inject. **`NavPump`** ([`Nav.cpp`](../../src/RMI/Nav.cpp)) drains the queue on the **main thread** from `game_state` hooks (`server_ready`, `lobby`, …).
+**Threading:** a **reader thread** ([`handler_pipe.cpp`](../../src/diagnostics/handler_pipe.cpp)) reads the pipe and enqueues work; **never** calls game UI/RMI/inject. **`NavPump`** ([`Nav.cpp`](../../src/RMI/Nav.cpp)) drains the queue on the **main thread** from `game_stage` hooks (`server_ready`, `lobby`, …).
 
 **Shard picker:** `shard_choice` is still **manual** on online launch; pipe nav starts after `server_ready`.
 
@@ -38,7 +38,7 @@ just ctl::copy-logs
 just ctl::kill-all
 ```
 
-Grep `events.jsonl` / `game_logs.txt` for `nav: command nav_goto_lobby`, `nav: c2s 0x3F0C`, `game_state` → `lobby`.
+Grep `events.jsonl` / `game_logs.txt` for `nav: command nav_goto_lobby`, `nav: c2s 0x3F0C`, `game_stage` → `lobby`.
 
 ---
 
@@ -56,7 +56,7 @@ Autonav is **not** a GFx click simulator and **not** a hook on Scaleform button 
 
 | Kind | What we do | Typical GFx / human equivalent |
 | --- | --- | --- |
-| **Stage hook** | Detour first 6 bytes of each `CGame*::onPreProcess`; emit ctl `game_state` + call `NavOnStage` / `NavPump` | “We entered this screen this frame” |
+| **Stage hook** | Detour first 6 bytes of each `CGame*::onPreProcess`; emit ctl `game_stage` + call `NavOnStage` / `NavPump` | “We entered this screen this frame” |
 | **One real UI handler** | `sub_42CAE0` (`onClickRoomList`) with `MsgDelegateArg* = nullptr` | Custom Match → room list button |
 | **State machine API** | `sub_41F0D0` (`RequestState`) on `&dword_1C155C0` | Direct scene change when click/inject is not enough |
 | **C2S RMI** | `sub_65AEA0` (proxy, explicit id) or `sub_A0B290` (floor, id in first u16 of buffer) | What the screen’s `onPreProcess` would have sent |
@@ -68,7 +68,7 @@ We **do not** call today: `sub_48A7C0` (create-room dialog / `ClickCreateRoom`),
 
 | Context | Safe for nav/inject? |
 | --- | --- |
-| **`game_state` hooks** (`hook_game_*` in [`game_state.cpp`](../../src/hooks/game_state.cpp)) | **Yes** — main thread, during `onPreProcess` before original game code resumes |
+| **`game_stage` hooks** (`hook_game_*` in [`game_stage.cpp`](../../src/hooks/game_stage.cpp)) | **Yes** — main thread, during `onPreProcess` before original game code resumes |
 | **`NavPump` / `try_*` / `invoke_on_click_room_list`** | **Yes** — only reached from those hooks (or `NavOnStage` in the same call) |
 | **`PumpLobby` / `PumpRoom`** | **Yes** — called from lobby / room_list / room hooks on main thread |
 | **`GameSendHook`** (`hook_pn_game_rmi_send` @ `0x65AEA0`, `hook_pn_game_rmi_floor` @ `0xA0B290`) | **Observe only** — sets inject latches; does **not** call UI or inject |
@@ -119,9 +119,9 @@ Nav runs if **`THEGAME_NAV_AUTO`** is a known mode **or** **`THEGAME_NAV_ACTION`
 
 ## Hooks: ctl stages, GAME classes, and TheGame.dll entry points
 
-All gameplay hooks use the same pattern: save registers → call diagnostics C function → restore → execute original 6-byte prologue → jump to `target+6`. Installed from [`game_state.cpp`](../../src/hooks/game_state.cpp) / [`target_hooks.h`](../../include/target_hooks.h).
+All gameplay hooks use the same pattern: save registers → call diagnostics C function → restore → execute original 6-byte prologue → jump to `target+6`. Installed from [`game_stage.cpp`](../../src/hooks/game_stage.cpp) / [`target_hooks.h`](../../include/target_hooks.h).
 
-| ctl `game_state` | Hook symbol | RVA (GAME VA) | Class / notes | Autonav calls |
+| ctl `game_stage` | Hook symbol | RVA (GAME VA) | Class / notes | Autonav calls |
 | --- | --- | --- | --- | --- |
 | `intro` | `hook_game_intro` | `0x42A010` | `CGameIntro` | — |
 | `login` | `hook_game_login` | `0x42B280` | `CGameLogin` | — |
@@ -316,7 +316,7 @@ sequenceDiagram
 | [`src/RMI/Nav.cpp`](../../src/RMI/Nav.cpp) | Autonav state machine, UI/C2S calls |
 | [`include/RMI/Nav.hpp`](../../include/RMI/Nav.hpp) | `NavOnStage`, `NavPump`, `NavLogStartup` |
 | [`src/RMI/Inject.cpp`](../../src/RMI/Inject.cpp) | S2C RES leaves, `PumpLobby` / `PumpRoom` |
-| [`src/hooks/game_state.cpp`](../../src/hooks/game_state.cpp) | Stage hooks → `NavOnStage` + `NavPump` + inject pumps |
+| [`src/hooks/game_stage.cpp`](../../src/hooks/game_stage.cpp) | Stage hooks → `NavOnStage` + `NavPump` + inject pumps |
 | [`src/hooks/entrypoint.cpp`](../../src/hooks/entrypoint.cpp) | `NavLogStartup` at DLL init |
 | [`ctl/controller/commands/launch.py`](../../ctl/controller/commands/launch.py) | `--nav-auto`, `write_nav_auto` |
 | [`ctl/controller/cli.py`](../../ctl/controller/cli.py) | Client-side sidecar write before RPC |
@@ -343,7 +343,7 @@ Full hook table: [Hooks](#hooks-ctl-stages-game-classes-and-thegamedll-entry-poi
 
 ### 1. `server_ready` (once + pump every frame)
 
-**Trigger:** `diagnostics_game_state_main_menu` → `NavOnStage("server_ready")` + `NavPump`.
+**Trigger:** `diagnostics_game_stage_main_menu` → `NavOnStage("server_ready")` + `NavPump`.
 
 | Action | Implementation |
 | --- | --- |
@@ -481,7 +481,7 @@ just ctl::run-nav-matrix
 | `inject: create-room RES` | PumpLobby transition |
 | `inject: room-enter RES` / `room-members` | PumpRoom populate |
 | `inject: start RES` | Ready → map load path |
-| `game_state` phases | ctl progression |
+| `game_stage` phases | ctl progression |
 
 ---
 

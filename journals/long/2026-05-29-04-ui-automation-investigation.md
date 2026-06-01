@@ -2,7 +2,7 @@
 
 ## 1. What ctl does today
 
-- **Passive:** `game_state` phases on `\\.\pipe\thegame-diagnostics` → `events.jsonl`.
+- **Passive:** `game_stage` phases on `\\.\pipe\thegame-diagnostics` → `events.jsonl`.
 - **Active:** launch/kill/copy-dll/logs; `wait-for-stage <phase>`.
 - **No** SendInput, PostMessage, UIAutomation, or diagnostics commands to the game.
 
@@ -51,7 +51,7 @@ No `WM_*` / `SendMessage` path found in docs or hooks.
 
 ### Tier A - Observation (done)
 
-Hooks in `src/hooks/game_state.cpp` at onPreProcess prologues; emit ctl stages.
+Hooks in `src/hooks/game_stage.cpp` at onPreProcess prologues; emit ctl stages.
 
 ### Tier B - Network/state (in progress)
 
@@ -91,7 +91,7 @@ DLL handler on **main thread** (queue from pipe reader or pump from existing sta
 - Maps actions to Tier B calls.
 - ctl: `uv run ctl nav create-room` → writes one line to pipe (needs **bidirectional** pipe or shared command file - today pipe is **game → ctl only**).
 
-**Simpler short-term:** file trigger `ctl/logs/ctl/nav.cmd` polled from `game_state` hook when `server_ready`.
+**Simpler short-term:** file trigger `ctl/logs/ctl/nav.cmd` polled from `game_stage` hook when `server_ready`.
 
 ### Tier D - Direct UI RVA calls
 
@@ -119,7 +119,7 @@ DLL handler on **main thread** (queue from pipe reader or pump from existing sta
 
 ## 6. ctl roadmap (no game run required to implement)
 
-1. Sync `KNOWN_STAGES` with `game_state.cpp`.
+1. Sync `KNOWN_STAGES` with `game_stage.cpp`.
 2. `wait-menu` → alias `wait-stage server_ready`.
 3. Recipes: `wait-lobby`, `wait-room-list`, `wait-room` (long timeouts).
 4. `launch-offline` pass env: `THEGAME_DISABLE_RMI_INJECT`, `THEGAME_NAV_AUTO=room_list` (future).

@@ -63,73 +63,33 @@
             },
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Debug",
-                "THEGAME_DISABLE_RMI_INJECT": "ON"
+                "DISABLE_RMI_INJECT": "ON"
             }
         },
         {
             "inherits": "msvc-x86-debug",
-            "name": "msvc-x86-debug-nohooks",
+            "name": "msvc-x86-debug-headless",
+            "displayName": "Windows MSVC x86 (Ninja) Debug, no console",
+            "cacheVariables": {
+                "THEGAME_NO_CONSOLE": "ON"
+            }
+        },
+        {
+            "inherits": "msvc-x86-debug",
+            "name": "msvc-x86-debug-no-hooks",
             "displayName": "Windows MSVC x86 (Ninja) Debug, no hooks",
             "cacheVariables": {
-                "THEGAME_NO_HOOKS": "ON"
+                "DISABLE_HOOKS": "ON"
             }
         },
         {
             "inherits": "msvc-x86-debug",
-            "name": "msvc-x86-debug-entrypoint-only",
-            "displayName": "Windows MSVC x86 (Ninja) Debug, entrypoint-only hooks",
+            "name": "msvc-x86-debug-max",
+            "displayName": "Windows MSVC x86 (Ninja) Debug, maximum debug info",
             "cacheVariables": {
-                "THEGAME_HOOKS_ENTRYPOINT_ONLY": "ON"
-            }
-        },
-        {
-            "inherits": "msvc-x86-debug-entrypoint-only",
-            "name": "msvc-x86-debug-entrypoint-only-no-veh",
-            "displayName": "Windows MSVC x86 (Ninja) Debug, entrypoint-only, no VEH",
-            "cacheVariables": {
-                "THEGAME_NO_VEH": "ON"
-            }
-        },
-        {
-            "inherits": "msvc-x86-debug-diag",
-            "name": "msvc-x86-debug-diag-no-map",
-            "displayName": "Windows MSVC x86 (Ninja) Debug, diag without map/in_game",
-            "cacheVariables": {
-                "THEGAME_HOOKS_DIAG_ONLY": "OFF",
-                "THEGAME_HOOKS_DIAG_NO_MAP": "ON"
-            }
-        },
-        {
-            "inherits": "msvc-x86-debug-diag",
-            "name": "msvc-x86-debug-diag-map-only",
-            "displayName": "Windows MSVC x86 (Ninja) Debug, map_loading hook only",
-            "cacheVariables": {
-                "THEGAME_HOOKS_DIAG_ONLY": "OFF",
-                "THEGAME_HOOKS_DIAG_MAP_ONLY": "ON"
-            }
-        },
-        {
-            "inherits": "msvc-x86-debug",
-            "name": "msvc-x86-debug-diag",
-            "displayName": "Windows MSVC x86 (Ninja) Debug, diag-only hooks",
-            "cacheVariables": {
-                "THEGAME_HOOKS_DIAG_ONLY": "ON"
-            }
-        },
-        {
-            "inherits": "msvc-x86-debug",
-            "name": "msvc-x86-debug-diag-net",
-            "displayName": "Windows MSVC x86 (Ninja) Debug, diag + minimal net hooks",
-            "cacheVariables": {
-                "THEGAME_HOOKS_DIAG_NET": "ON"
-            }
-        },
-        {
-            "inherits": "msvc-x86-debug",
-            "name": "msvc-x86-debug-break-on-av",
-            "displayName": "Windows MSVC x86 (Ninja) Debug, full hooks + break-on-AV (debugger only)",
-            "cacheVariables": {
-                "THEGAME_BREAK_ON_AV": "ON"
+                "DISABLE_PARK_THREAD": "OFF",
+                "DISABLE_INT": "OFF",
+                "MINIDUMP_ENABLED": "ON"
             }
         }
     ],
@@ -145,43 +105,18 @@
             "configuration": "Debug"
         },
         {
-            "name": "debug-nohooks",
-            "configurePreset": "msvc-x86-debug-nohooks",
+            "name": "debug-headless",
+            "configurePreset": "msvc-x86-debug-headless",
             "configuration": "Debug"
         },
         {
-            "name": "debug-entrypoint-only",
-            "configurePreset": "msvc-x86-debug-entrypoint-only",
+            "name": "debug-no-hooks",
+            "configurePreset": "msvc-x86-debug-no-hooks",
             "configuration": "Debug"
         },
         {
-            "name": "debug-entrypoint-only-no-veh",
-            "configurePreset": "msvc-x86-debug-entrypoint-only-no-veh",
-            "configuration": "Debug"
-        },
-        {
-            "name": "debug-diag-no-map",
-            "configurePreset": "msvc-x86-debug-diag-no-map",
-            "configuration": "Debug"
-        },
-        {
-            "name": "debug-diag-map-only",
-            "configurePreset": "msvc-x86-debug-diag-map-only",
-            "configuration": "Debug"
-        },
-        {
-            "name": "debug-diag",
-            "configurePreset": "msvc-x86-debug-diag",
-            "configuration": "Debug"
-        },
-        {
-            "name": "debug-diag-net",
-            "configurePreset": "msvc-x86-debug-diag-net",
-            "configuration": "Debug"
-        },
-        {
-            "name": "debug-break-on-av",
-            "configurePreset": "msvc-x86-debug-break-on-av",
+            "name": "debug-max",
+            "configurePreset": "msvc-x86-debug-max",
             "configuration": "Debug"
         }
     ]

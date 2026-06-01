@@ -1,15 +1,13 @@
 #pragma once
 
-#include <fstream>
+// Compatibility shim — prefer #include "thegame/log.hpp"
+#include "thegame/log.hpp"
 
-static std::ofstream log_file;
-static std::ofstream netlog_file;
-static bool console_created = false;
-
-void create_console();
-
-void log_message(const char *message);
-
-void logf(const char *format, ...);
-void logns(int socket, const char *addr, int port);
-void logn(int socket, size_t len, char *data, bool in = false);
+using thegame::console_created;
+using thegame::create_console;
+using thegame::log_file;
+using thegame::log_message;
+using thegame::logf;
+using thegame::logn;
+using thegame::logns;
+using thegame::netlog_file;

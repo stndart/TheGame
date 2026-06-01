@@ -18,11 +18,11 @@ Client **loads a map** (live match level) from the offline path that already rea
 just ensure-serve → just ctl::copy-dll → just ctl::launch-offline → just ctl::wait-stage <stage>
 → just ctl::copy-logs → ctl/logs/runs/<run>/{events.jsonl,game_netlogs.txt}
 ```
-Default **debug** DLL has inject compiled out (wire/server S2C). Create-room wire **PASS:** run **`187_eafd5dd0`** (242 B burst `0x3F30`+`0x3ED4`+`0x3ED8`, no `inject:` line; `game_state: room`). See [journals/2026-05-29-05-wire-s2c-rmi-builders.md](../journals/2026-05-29-05-wire-s2c-rmi-builders.md).
+Default **debug** DLL has inject compiled out (wire/server S2C). Create-room wire **PASS:** run **`187_eafd5dd0`** (242 B burst `0x3F30`+`0x3ED4`+`0x3ED8`, no `inject:` line; `game_stage: room`). See [journals/2026-05-29-05-wire-s2c-rmi-builders.md](../journals/2026-05-29-05-wire-s2c-rmi-builders.md).
 
 ## Game-state machine → ctl stages
 
-Hooks [`src/hooks/game_state.cpp`](../src/hooks/game_state.cpp). Verified through run 181.
+Hooks [`src/hooks/game_stage.cpp`](../src/hooks/game_stage.cpp). Verified through run 181.
 
 | Stage | Class | onPreProcess RVA |
 |-------|-------|------------------|
@@ -142,7 +142,7 @@ REQ/RES pairing and body layouts: [proudnet-game-rmi.md](proudnet-game-rmi.md) �
 
 | Area | Path |
 |------|------|
-| Stages / inject pump | [`src/hooks/game_state.cpp`](../src/hooks/game_state.cpp), [`src/RMI/Inject.cpp`](../src/RMI/Inject.cpp) |
+| Stages / inject pump | [`src/hooks/game_stage.cpp`](../src/hooks/game_stage.cpp), [`src/RMI/Inject.cpp`](../src/RMI/Inject.cpp) |
 | C2S hooks | [`src/RMI/GameSendHook.cpp`](../src/RMI/GameSendHook.cpp) |
 | Wire builders | [`server/server/proud_rmi.py`](../server/server/proud_rmi.py), [`game_transport.py`](../server/server/game_transport.py) |
 | Offline tests | `server/server/test_wire_create_room.py`, `test_wire_start_match.py`, `test_wire_leave_room.py` |

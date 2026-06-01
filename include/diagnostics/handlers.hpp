@@ -7,10 +7,14 @@ namespace Diagnostics {
 void startup();
 void teardown();
 bool started();
-void emit_game_state(const char *phase);
-bool should_suppress_game_log(const char *message);
-void emit_game_log(const char *message);
-void emit_exception_event(const char *type, EXCEPTION_POINTERS *info);
+
+// emit family writes stuff to the diagnostics pipe
+void emit_message(const char *type, const char *message);
+void emit_game_stage(const char *stage);
+void emit_game_log(const char *line);
+void emit_exception_event(const char *type, EXCEPTION_POINTERS *info,
+                          const char *message = nullptr);
+void emit_custom_exception(const char *message);
 
 struct PnTcpFrameHeader {
   unsigned payload_len;

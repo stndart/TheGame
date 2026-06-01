@@ -6,7 +6,7 @@
 namespace Proud {
 namespace TcpTrace {
 
-constexpr const char *kLogFileName = "proudnet_tcp.txt";
+constexpr const char *kLogFileName = "proudlogs.txt";
 
 void log_connect(SOCKET sock, const char *addr, u_short port);
 void log_chunk(SOCKET sock, const void *data, size_t len, bool inbound,

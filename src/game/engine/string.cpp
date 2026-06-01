@@ -10,11 +10,6 @@
 #include "game/engine/MemoryDefines.h"
 #include "game/engine/String.h"
 
-#define ALLOC_LOG 0
-#define RESERVE_LOG 0
-#define CONCAT_LOG 0
-#define FORMAT_LOG 0
-
 String::StringBody *String::nullstr =
     *reinterpret_cast<StringBody **>(0x017B75E4);
 

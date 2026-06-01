@@ -1,17 +1,10 @@
-// #include "console.h"
+#include <atlexcept.h>
 #include <cstring>
 #include <windows.h>
-
-#include <atlexcept.h>
 
 #include "game/engine/AtomicOperations.h"
 #include "game/engine/MemoryDefines.h"
 #include "game/engine/WString.h"
-
-#define ALLOC_LOG 0
-#define RESERVE_LOG 0
-#define CONCAT_LOG 0
-#define FORMAT_LOG 0
 
 WString::WStringBody *WString::nullwstr =
     *reinterpret_cast<WStringBody **>(0x017B75E8);

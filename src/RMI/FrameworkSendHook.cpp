@@ -1,6 +1,6 @@
-#include "diagnostics/handlers.hpp"
 #include "hook_manager.h"
 #include "target_hooks.h"
+#include "thegame/log.hpp"
 
 #include <windows.h>
 
@@ -20,28 +20,32 @@ extern "C" void __cdecl log_c2s_rmi(unsigned rmi_id, unsigned remote_count) {
   char buf[96];
   const unsigned id = rmi_id & 0xFFFFu;
   wsprintfA(buf, "c2s_rmi id=0x%04X (%u) remotes=%u", id, id, remote_count);
-  Diagnostics::emit_game_log(buf);
+  thegame::logf(buf);
 }
 
 extern "C" void __declspec(naked) hook_pn_rmi_send() {
   __asm {
     pushad
     pushfd
-    mov eax, [esp + 0x3C]   // RMIId      (entry esp+0x18, +0x24 for pushad+pushfd)
-    mov ecx, [esp + 0x2C]   // remoteCount (entry esp+0x08, +0x24)
+    mov eax, [esp + 0x3C] // RMIId      (entry esp+0x18, +0x24 for pushad+pushfd)
+    mov ecx, [esp + 0x2C] // remoteCount (entry esp+0x08, +0x24)
     push ecx
     push eax
     call log_c2s_rmi
     add esp, 8
     popfd
     popad
-    push 0FFFFFFFFh         // replay stolen: push -1
-    push 01511D84h          // replay stolen: push offset SEH_D5C5E0
+    push 0FFFFFFFFh // replay stolen: push -1
+    push 01511D84h // replay stolen: push offset SEH_D5C5E0
     jmp [g_target_pn_rmi_send.return_addr]
   }
 }
 
 HookStub g_target_pn_rmi_send = {
-    0xD5C5E0, (uint32_t)(uintptr_t)hook_pn_rmi_send, "hook_pn_rmi_send",
-    {0},      false,                                 0xD5C5E7,
+    0xD5C5E0,
+    (uint32_t)(uintptr_t)hook_pn_rmi_send,
+    "hook_pn_rmi_send",
+    {0},
+    false,
+    0xD5C5E7,
 };

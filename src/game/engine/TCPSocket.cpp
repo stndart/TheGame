@@ -1,8 +1,8 @@
 #include "game/engine/TCPSocket.h"
-#include "diagnostics/handlers.hpp"
 #include "ProudNet/GrowableBuffer.hpp"
 #include "ProudNet/SocketError.hpp"
 #include "ProudNet/TcpTrace.hpp"
+#include "diagnostics/handlers.hpp"
 #include "game/net/socket_trace.hpp"
 #include "game/server_override.hpp"
 
@@ -32,7 +32,7 @@ int TCPSocket::Connect(WString wideHostname, int port) {
     return WSAEFAULT;
 
   if (port == 7000) {
-    Diagnostics::emit_game_state("connecting_to_server");
+    thegame::stagef("connecting_to_server");
   }
   if (SocketTrace::is_pn_track_port(static_cast<u_short>(port)))
     SocketTrace::track_connect(m_socketId, static_cast<u_short>(port));
@@ -40,10 +40,12 @@ int TCPSocket::Connect(WString wideHostname, int port) {
   // Convert wide char hostname to multibyte
   MultiByteHolder multibyteHolder;
   multibyteHolder.ConvertWideToMultiByte(wideHostname.c_str(), CP_THREAD_ACP);
-  std::string host = multibyteHolder.current_ptr ? multibyteHolder.current_ptr : "";
+  std::string host =
+      multibyteHolder.current_ptr ? multibyteHolder.current_ptr : "";
   const std::string override_ip = ServerOverride::remap_host(host.c_str());
   if (!override_ip.empty()) {
-    logf("TCPSocket::Connect remap %s -> %s", host.c_str(), override_ip.c_str());
+    logf("TCPSocket::Connect remap %s -> %s", host.c_str(),
+         override_ip.c_str());
     host = override_ip;
   }
 
@@ -58,7 +60,8 @@ int TCPSocket::Connect(WString wideHostname, int port) {
 
   // Try to interpret as IP address first
   serverAddr.sin_addr.s_addr = inet_addr(host.c_str());
-  const unsigned long remapped = ServerOverride::remap_ipv4(serverAddr.sin_addr.s_addr);
+  const unsigned long remapped =
+      ServerOverride::remap_ipv4(serverAddr.sin_addr.s_addr);
   if (remapped)
     serverAddr.sin_addr.s_addr = remapped;
 
@@ -89,7 +92,7 @@ int TCPSocket::Connect(WString wideHostname, int port) {
     logf("TCPSocket:27380 target %s:%u", ipstr.c_str(), port);
 
   Proud::TcpTrace::log_connect(m_socketId, ipstr.c_str(),
-                          static_cast<u_short>(port));
+                               static_cast<u_short>(port));
 
   if (connect(m_socketId, (sockaddr *)&serverAddr, sizeof(serverAddr)) ==
       SOCKET_ERROR) {
