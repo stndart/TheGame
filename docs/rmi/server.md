@@ -9,7 +9,7 @@ How the **Python dummy server** builds S2C game RMI frames and what replay artif
 One GAME-leg **burst** = concatenated Proud TCP frames; each inner payload:
 
 ```text
-[0x02][rmi_id:2 LE][body…]
+[0x02][rmi_id:2 LE][body...]
 ```
 
 Builders: [`server/server/proud_rmi.py`](../../server/server/proud_rmi.py), framing in `proud_frame.py`, triggers in `game_transport.py`.

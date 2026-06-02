@@ -1,6 +1,6 @@
 # Game RMI protocol & in-process emulation (GAME.exe)
 
-**Status:** living reference, started 2026-05-29 (runs 179–181). This is the **application-layer (game RMI)** reference - how the game's own request/response messages are sent, received, dispatched, and how we drive the client forward by **injecting S2C responses in-process**. Companion to the transport docs ([../proudnet/protocol.md](../proudnet/protocol.md), [../proudnet/message-dispatch.md](../proudnet/message-dispatch.md), [../proudnet-sdk-crossmap.md](../proudnet-sdk-crossmap.md)) and the working plan ([proudnet-rmi-server-plan.md](proudnet-rmi-server-plan.md)). **Stateless specs:** [../rmi/overview.md](../rmi/overview.md), [../rmi/client.md](../rmi/client.md), [../rmi/server.md](../rmi/server.md).
+**Status:** living reference, started 2026-05-29 (runs 179-181). This is the **application-layer (game RMI)** reference - how the game's own request/response messages are sent, received, dispatched, and how we drive the client forward by **injecting S2C responses in-process**. Companion to the transport docs ([../proudnet/protocol.md](../proudnet/protocol.md), [../proudnet/message-dispatch.md](../proudnet/message-dispatch.md), [../proudnet-sdk-crossmap.md](../proudnet-sdk-crossmap.md)) and the working plan ([proudnet-rmi-server-plan.md](proudnet-rmi-server-plan.md)). **Stateless specs:** [../rmi/overview.md](../rmi/overview.md), [../rmi/client.md](../rmi/client.md), [../rmi/server.md](../rmi/server.md).
 
 All addresses are **IDA effective addresses == RVA** (image base `0x400000`), e.g. `sub_437160` lives at VA `0x437160`. GAME.exe IDA instance @ MCP port **13337**.
 
@@ -15,7 +15,7 @@ Confidence tags: **[V]** verified live (DLL hook + run logs) or by direct decomp
  UI click ─▶ send-proxy (sub_65AEA0 / sub_A0B290)        wire 0x02 RMI frame
             └▶ app RMI frame [id:2][body]                 └▶ drain sub_D65940
                └▶ transport wrap (0x25 reliable/compress)    └▶ dispatch sub_D653B0
-                  └▶ TCP [13 57][len][0x25 …]   (opaque)        └▶ MessageType switch → case Rmi
+                  └▶ TCP [13 57][len][0x25 ...]   (opaque)        └▶ MessageType switch → case Rmi
                                                                    └▶ sub_D64F10 (read id, find leaf)
                                                                       └▶ RES leaf handler(MsgDelegateArg*)
                                                                          body = *(u32*)(arg+8)
@@ -38,7 +38,7 @@ Key facts:
 Outer TCP frame (framer recv `sub_D84BB0`, send `sub_D84970`):
 
 ```
-[13 57] [len_tag] [len_bytes…] [payload]
+[13 57] [len_tag] [len_bytes...] [payload]
   • magic 0x5713 (bytes 13 57)
     • len_tag: 1 → 1-byte len, 2 → 2-byte LE, 4 → 4-byte LE  (sub_D59250 / sub_D59DB0)
 ```
@@ -89,11 +89,11 @@ Two proxy singletons:
 | **`dword_1C1ABA0`** | 16xxx (`0x3E__`/`0x3F__`) | `sub_65AEA0` | account → lobby → room → shop |
 | **`dword_1C1ABB0`** | 15xxx (`0x3A__`/`0x3B__`) | `sub_A0B290` direct | match / party / in-game |
 
-The application RMI frame handed to the floor is **`[rmi_id:2 LE][body…]`** (`*(u16*)msg` == id). `len` includes the 2-byte id. **[V]**
+The application RMI frame handed to the floor is **`[rmi_id:2 LE][body...]`** (`*(u16*)msg` == id). `len` includes the 2-byte id. **[V]**
 
 **Not the game RMIs:** framework proxy core `sub_D5C5E0` (`IRmiProxy::RmiSend`, SEH resume `0xD5C5E7`) carries only builtin heartbeat/session ids **1001/1006/1019** (`0x3E9/0x3EE/0x3FB`). Ignore for gameplay. **[V]**
 
-**Our capture hooks** ([`src/RMI/GameSendHook.cpp`](../src/RMI/GameSendHook.cpp)): `hook_pn_game_rmi_send` @ `sub_65AEA0` logs `c2s_grmi proxy id=… len=…`; `hook_pn_rmi_floor` @ `sub_A0B290` logs `c2s_grmi floor id=… len=…`. They currently log **id + len only** - to dump bodies for wire correlation, read `len` bytes at `msg` (`[esp+0x28]` in the floor stub after pushad/pushfd) and hexdump.
+**Our capture hooks** ([`src/RMI/GameSendHook.cpp`](../src/RMI/GameSendHook.cpp)): `hook_pn_game_rmi_send` @ `sub_65AEA0` logs `c2s_grmi proxy id=... len=...`; `hook_pn_rmi_floor` @ `sub_A0B290` logs `c2s_grmi floor id=... len=...`. They currently log **id + len only** - to dump bodies for wire correlation, read `len` bytes at `msg` (`[esp+0x28]` in the floor stub after pushad/pushfd) and hexdump.
 
 ---
 
@@ -121,13 +121,13 @@ Every registered S2C leaf is bound as a delegate `MSG_RETURN handler(MsgDelegate
 body   = *(u32*)(a1 + 8)        // raw RMI body pointer
 +0x00  u16   pad / seq / echoed id   (IGNORED by handlers)
 +0x02  u16   result / error code     (0 = success; nonzero → sub_675160 popup, no transition)
-+0x04  …     handler-specific fields
++0x04  ...     handler-specific fields
 ```
 
 Verified against two independent leaves:
 
-- `sub_4BA070` (connect RES `0x3F3E`): `v2 = *(a1+8); if (*(u16*)(v2+2)) { sub_675160(...); return; } sub_8DA5D0(v2); …` - parses the 0x180 body from `v2`. **[V]**
-- `sub_437160` (create RES `0x3F30`): `if (*(u16*)(*(a1+8)+2)) sub_675160(...); else … sub_41F0D0(9);` **[V]**
+- `sub_4BA070` (connect RES `0x3F3E`): `v2 = *(a1+8); if (*(u16*)(v2+2)) { sub_675160(...); return; } sub_8DA5D0(v2); ...` - parses the 0x180 body from `v2`. **[V]**
+- `sub_437160` (create RES `0x3F30`): `if (*(u16*)(*(a1+8)+2)) sub_675160(...); else ... sub_41F0D0(9);` **[V]**
 
 **`sub_675160(u16 code)`** = shared "server error" popup. Seeing it = your result field was nonzero.
 
@@ -253,7 +253,7 @@ Other stages (intro/login/shard) - see [proudnet-rmi-server-plan.md](proudnet-rm
 
 ---
 
-## 9. Verified action → REQ / RES map (runs 179–181) **[V]**
+## 9. Verified action → REQ / RES map (runs 179-181) **[V]**
 
 C2S captured in-process; RES leaves confirmed by decompile. "proxy" = 16xxx via `sub_65AEA0`/`1C1ABA0`; "floor" = 15xxx via `sub_A0B290`/`1C1ABB0`.
 
@@ -281,7 +281,7 @@ C2S captured in-process; RES leaves confirmed by decompile. "proxy" = 16xxx via 
 | +2 | WCHAR[~26] | room name (UTF-16; validated ≥2 chars, profanity `sub_9716D0`) |
 | ~+0x36 | u8 | password-present flag |
 | ~+0x38 | WCHAR[] | password |
-| ~+0x42 | u32×6 | mode, channel (`sub_48C5F0`), max players, map id, option, … |
+| ~+0x42 | u32×6 | mode, channel (`sub_48C5F0`), max players, map id, option, ... |
 | late | u8 | friendly-fire/observer flag |
 
 The **create RES does not echo these** - `sub_437160` only needs `result@+2 == 0`; the room config was built locally during the REQ. **[V]**
@@ -307,13 +307,13 @@ bool sub_6653B0(this) {
 }
 ```
 
-Called from `ClickGameStart` UI `sub_43C0D0` (cases 2–11). Case 0 = solo/no-net: **directly** `RequestState(11)` with no network. Case 1 → `sub_665940` (proxy `0x3F3A`/16186, floor 15014).
+Called from `ClickGameStart` UI `sub_43C0D0` (cases 2-11). Case 0 = solo/no-net: **directly** `RequestState(11)` with no network. Case 1 → `sub_665940` (proxy `0x3F3A`/16186, floor 15014).
 
 ---
 
 ## 10. Wire S2C builders (Python server) **[V/WIP]**
 
-**Format (same as replay):** one GAME-leg **burst** = concatenated Proud TCP frames, each inner payload `[0x02][rmi_id:2 LE][body…]`. See `server/server/proud_rmi.py`, `proud_frame.py`, `game_transport.py`.
+**Format (same as replay):** one GAME-leg **burst** = concatenated Proud TCP frames, each inner payload `[0x02][rmi_id:2 LE][body...]`. See `server/server/proud_rmi.py`, `proud_frame.py`, `game_transport.py`.
 
 | RMI | Builder | Min body (IDA) | Notes |
 |-----|---------|----------------|-------|
@@ -335,7 +335,7 @@ Called from `ClickGameStart` UI `sub_43C0D0` (cases 2–11). Case 0 = solo/no-ne
 | +0x26 | u16 | game mode |
 | +0x28 | u32 | → `flt_1C25E2C+0x210` |
 
-**Create-room burst:** `build_create_room_res_burst()` → `0x3F30` + `0x3ED4` + `0x3ED8` (242 B total). Example wire prefix: `13 57 01 0b  02 30 3f  00 00 00 00 00 00 00 00  …`.
+**Create-room burst:** `build_create_room_res_burst()` → `0x3F30` + `0x3ED4` + `0x3ED8` (242 B total). Example wire prefix: `13 57 01 0b  02 30 3f  00 00 00 00 00 00 00 00  ...`.
 
 **Trigger (server cannot parse C2S RMI inside `0x25`):** after `lobby_replay.json` bursts are exhausted, reply when GAME C2S `0x25` blob length matches **`CREATE_ROOM_RES_ON_25_BODY_LEN=115`** (run 184) or session **N** (`CREATE_ROOM_RES_ON_SESSION_N`). Config in `server/.env` (`GENERATE_CREATE_ROOM_RES_ON_REQ=true`).
 
@@ -383,7 +383,7 @@ After the bare create injection forced scene 9, the **main thread** crashed `0xC
 ## 12. Open questions / suspicions / corrections
 
 - **CORRECTION:** [proudnet-rmi-server-plan.md](proudnet-rmi-server-plan.md) "Action → REQ id" table lists `sub_6653B0` as the **NetUserConnect** REQ (id `0x3F3D`). Per decompile this session, **`sub_6653B0` is the game-START sender** (proxy `0x3F3D`/16189, floor 15017), called from `ClickGameStart sub_43C0D0`. The connect REQ sender is elsewhere (connect RES is `0x3F3E sub_4BA070`; its REQ is not `sub_6653B0`). Treat the plan-doc row as stale. **[V]**
-- `flt_1C25E2C` - what manager/object? Its `+0x210` receives the start RES `+0x28` dword. If null in the waiting room, the start RES won't transition. Need to find who sets `flt_1C25E2C` (many writers in `0x82xxxx–0x8Axxxx`; likely match/play-context ctor). **[S]**
+- `flt_1C25E2C` - what manager/object? Its `+0x210` receives the start RES `+0x28` dword. If null in the waiting room, the start RES won't transition. Need to find who sets `flt_1C25E2C` (many writers in `0x82xxxx-0x8Axxxx`; likely match/play-context ctor). **[S]**
 - `dword_1C1A980` (map id read by CBasePlayLoading) - no direct writers found via xref; likely written through a computed pointer or set from room config. **[S]**
 - Server **HostID** for injected `CReceivedMessage +0x1C`: assumed `1` (server fast-path in `sub_D00FE0`). Confirm by logging `+0x1C` on a real incoming S2C. **[S]**
 - `0x3F2B` Ready RES id (`0x3F2C`?) and the `10246`-byte `0x3AC6` player block layout are uncharacterized. **[S]**

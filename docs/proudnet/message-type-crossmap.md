@@ -1,6 +1,6 @@
 # `Proud::MessageType` — GAME.exe ↔ PN18 crossmap (send-path)
 
-IDA **GAME** @ 13337 (`GAME.exe`, base `0x400000`). IDA **PN18** @ 13338 (`ProudNetClient.dll`, base `0x10000000`). Method: outbound functions that call `Message_Write` with a compile-time `push imm8` before `j_?Message_Write@…`, filtered to **send-shaped** paths (`CSendFragRefs::Add` and/or `CSmallStackAllocMessage` + `m_core->Send` pattern).
+IDA **GAME** @ 13337 (`GAME.exe`, base `0x400000`). IDA **PN18** @ 13338 (`ProudNetClient.dll`, base `0x10000000`). Method: outbound functions that call `Message_Write` with a compile-time `push imm8` before `j_?Message_Write@...`, filtered to **send-shaped** paths (`CSendFragRefs::Add` and/or `CSmallStackAllocMessage` + `m_core->Send` pattern).
 
 Related: [message-dispatch.md](message-dispatch.md) (recv `sub_D653B0`), [proudnet-sdk-crossmap.md](../proudnet-sdk-crossmap.md) §6, [`include/ProudNet/MessageType.hpp`](../../include/ProudNet/MessageType.hpp).
 
@@ -17,7 +17,7 @@ Related: [message-dispatch.md](message-dispatch.md) (recv `sub_D653B0`), [proudn
 | **Recv dispatch** | `CNetClientWorker::ProcessMessage_ProudNetLayer` — GAME `sub_D653B0`, PN18 `0x1005A370` — case number = wire byte for handled types. |
 | **Handler crossmap** | Paired handler RVAs from sdk-crossmap §6b when send function lives in the handler. |
 
-PN18 has fewer direct `Message_Write` call sites (many sends go through `CSuperSocket::AddToSendQueue…` without a separate symbol); recv-switch names anchor ordinals where send RVA is missing.
+PN18 has fewer direct `Message_Write` call sites (many sends go through `CSuperSocket::AddToSendQueue...` without a separate symbol); recv-switch names anchor ordinals where send RVA is missing.
 
 ---
 
@@ -28,7 +28,7 @@ PN18 has fewer direct `Message_Write` call sites (many sends go through `CSuperS
 | `0xD5C5E0` | `ProudC2S::Proxy::RmiSend` | **1** | `0x10049D90` | `IRmiProxy::RmiSend` | **1** `MessageType_Rmi` | **A** | Framework/game C2S proxy; same layout you traced in PN18. |
 | `0xD5CC10` | `sub_D5CC10` | **2** | `0x101761C0` | `CNetCoreImpl::SendUserMessage` | **2** `MessageType_UserMessage` | **A** | User-message send clone (not named `RmiSend`). |
 | `0xD5D450` | `sub_D5D450` | **37** or **38** | `0x10174550` | `CNetCoreImpl::Send_CompressLayer` | **47** `MessageType_Compressed` | **B** | GAME splits compress by encrypt mode (37 vs 38); PN18 always writes **47** in compress header. |
-| `0xD5E0A0` | `sub_D5E0A0` | **39** | — | `Send_SecureLayer` / encrypt family | **43–46** (four variants) | **C** | GAME collapsed encrypted wire types to **39**; PN18 recv switch uses `MessageType_Encrypted_*` ×4. Wrapper writes **39** then tail-calls `sub_D5D450`. |
+| `0xD5E0A0` | `sub_D5E0A0` | **39** | — | `Send_SecureLayer` / encrypt family | **43-46** (four variants) | **C** | GAME collapsed encrypted wire types to **39**; PN18 recv switch uses `MessageType_Encrypted_*` ×4. Wrapper writes **39** then tail-calls `sub_D5D450`. |
 
 `0xD5A030` / `0xD5A090` (GAME types **1** / **2**) only build stack headers for other senders — not full `RmiSend` paths.
 
@@ -66,7 +66,7 @@ GAME column = byte read by `Message_Read` @ `0xD59300` / case in `sub_D653B0`. P
 | 24 | `18` | → `0xD63750` | — | **C** | PN18 case **24** = `PeerUdp_ServerHolepunchAck` in scan; GAME maps **24** to `NotifyClientServerUdpMatched` handler — **ordinal collision across builds**. Treat **24** as unreliable without packet capture. |
 | 25 | `19` | → `0xD60A50` | `MessageType_P2PUnreliablePing` | **A** | |
 | 26 | `1A` | → `0xD63A70` | `MessageType_P2PUnreliablePong` | **A** | |
-| 27 | `1B` | default | — | **C** | PN18 **send** `Send_BroadcastLayer…` @ **27** (three writes). |
+| 27 | `1B` | default | — | **C** | PN18 **send** `Send_BroadcastLayer...` @ **27** (three writes). |
 | 28 | `1C` | default | `MessageType_UnreliablePong` | **B** | |
 | 29 | `1D` | → `0xD64D60` | `MessageType_ReliableUdp_Frame` / `SendOneFrame` | **B** | PN18 send `SendOneFrame` @ **29**. |
 | 30 | `1E` | noop | `MessageType_ArbitraryTouch` | **B** | |
@@ -78,14 +78,14 @@ GAME column = byte read by `Message_Read` @ `0xD59300` / case in `sub_D653B0`. P
 | 36 | `24` | → `0xD61760` | `MessageType_UnreliableRelay2` | **B** | |
 | 37 | `25` | Compressed → `0xD5DC10` | — | **D** | GAME compress **on wire** for client; see also **38**. |
 | 38 | `26` | Compressed → `0xD5DC10` | — | **D** | `sub_D5D450` picks **37** vs **38** from `RmiContext` encrypt mode. |
-| 39 | `27` | Encrypted → `0xD5CA30` | `MessageType_Encrypted_*` (**43–46**) | **B** | GAME single encrypted ordinal. |
+| 39 | `27` | Encrypted → `0xD5CA30` | `MessageType_Encrypted_*` (**43-46**) | **B** | GAME single encrypted ordinal. |
 | 40 | `28` | → `0xD62110` | `MessageType_P2PUnreliablePing` (reply send) | **C** | PN18 **send** scan @ **40** for ping path. |
 | 41 | `29` | → `0xD60FB0` | — | **C** | |
-| 42–46 | `2A–2E` | default | encrypted / policy family | **C** | GAME defaults; PN18 encrypted **43–46**. |
-| 47 | `2F` | default | `MessageType_Compressed` | **B** | PN18 compress on send; GAME uses **37–38** instead. |
+| 42-46 | `2A-2E` | default | encrypted / policy family | **C** | GAME defaults; PN18 encrypted **43-46**. |
+| 47 | `2F` | default | `MessageType_Compressed` | **B** | PN18 compress on send; GAME uses **37-38** instead. |
 | 48 | `30` | noop | — | **A** | |
 | 49 | `31` | → `0xD62330` | — | **C** | |
-| 50 | `32` | → `0xD61120` | `SendDummyOnTcp…` @ **52** | **C** | GAME highest send immediate; PN18 dummy send uses **52** (another renumber). |
+| 50 | `32` | → `0xD61120` | `SendDummyOnTcp...` @ **52** | **C** | GAME highest send immediate; PN18 dummy send uses **52** (another renumber). |
 
 ---
 
@@ -125,15 +125,15 @@ All rows: GAME functions with `Message_Write(imm8)` + `CSendFragRefs::Add`. Sort
 | 34 | `0xD61F20` | `sub_D61F20` | | 33 | server time request | `0x100B69C0` | C | Ordinal shift **34↔33**. |
 | 35 | `0xD30F40` | `sub_D30F40` | | 35 | `MessageType_ReliableRelay2` | — | B | |
 | 38 | `0xD5D450` | `sub_D5D450` | yes | 47 | `MessageType_Compressed` | `0x10174550` | B | Also **37** on GAME when encrypt mode = fast. |
-| 39 | `0xD5E0A0` | `sub_D5E0A0` | yes | 43–46 | `MessageType_Encrypted_*` | — | C | GAME **39** only. |
+| 39 | `0xD5E0A0` | `sub_D5E0A0` | yes | 43-46 | `MessageType_Encrypted_*` | — | C | GAME **39** only. |
 | 40 | `0xD956C0` | `sub_D956C0` | | 40 | P2P ping send | `0x1005B590` | C | |
 | 41 | `0xD282E0` | `sub_D282E0` | | 41 | — | — | C | |
 | 46 | `0xD2CA20` | `sub_D2CA20` | | 46 | — | — | C | |
-| 47 | `0xD619C0` | `sub_D619C0` | | 47 | `MessageType_Compressed` | — | B | GAME still has **47** on some paths; client recv uses **37–38**. |
+| 47 | `0xD619C0` | `sub_D619C0` | | 47 | `MessageType_Compressed` | — | B | GAME still has **47** on some paths; client recv uses **37-38**. |
 | 49 | `0xCFEDC0` | `sub_CFEDC0` | | 49 | — | — | C | |
 | 50 | `0xD62330` | `sub_D62330` | | 52 | TCP dummy | `0x100F3A40` | C | **50↔52** renumber. |
 
-**Not listed:** `sub_D5A030` / `sub_D5A090` (header-only), `sub_D03970` / `sub_D7E030` / `sub_D7E1E0` / `sub_D7E460` (stack builders), runtime-type wrappers (`sub_D880F0`, `sub_CFD140`, …).
+**Not listed:** `sub_D5A030` / `sub_D5A090` (header-only), `sub_D03970` / `sub_D7E030` / `sub_D7E1E0` / `sub_D7E460` (stack builders), runtime-type wrappers (`sub_D880F0`, `sub_CFD140`, ...).
 
 ---
 
@@ -146,12 +146,12 @@ All rows: GAME functions with `Message_Write(imm8)` + `CSendFragRefs::Add`. Sort
 | 18 | `0x100B57E0` | `SendServerHolepunch` |
 | 20 | `0x1005C5A0` | `ProcessMessage_ServerHolepunchAck` (reply) |
 | 22 | `0x1013FCC0` | `Heartbeat` |
-| 37–38 | `0x1013F700` / `0x1013F930` | holepunch send/ack |
+| 37-38 | `0x1013F700` / `0x1013F930` | holepunch send/ack |
 | 39 | `0x10063D70` | `P2PPingOnNeed` |
 | 42 | `0x10059BE0` | `ProcessMessage_S2CRoutedMulticast1` |
 | 47 | `0x10174550` | `Send_CompressLayer` |
 | 52 | `0x100F3A40` | `SendDummyOnTcpOnTooLongUnsending` |
-| 55–56 | `0x10063D70` / `0x1005FB00` | P2P reliable ping/pong |
+| 55-56 | `0x10063D70` / `0x1005FB00` | P2P reliable ping/pong |
 
 ---
 
@@ -170,7 +170,7 @@ All rows: GAME functions with `Message_Write(imm8)` + `CSendFragRefs::Add`. Sort
 
 1. **`0xD5C5E0` ↔ `0x10049D90`** @ type **1** is the correct mental model for framework `RmiSend` (your 90% case).
 2. **Game PIDL traffic** does not use that RVA — it uses `sub_65AEA0` / `sub_A0B290` without going through `Message_Write` in the hot path for many proxies.
-3. **Do not copy PN18 enum integers wholesale** into GAME server frames: remap **37–38↔47** and **39↔43–46**, and validate **5/6** connect and **24** holepunch families on captured bytes.
+3. **Do not copy PN18 enum integers wholesale** into GAME server frames: remap **37-38↔47** and **39↔43-46**, and validate **5/6** connect and **24** holepunch families on captured bytes.
 4. Update [`include/ProudNet/MessageType.hpp`](../../include/ProudNet/MessageType.hpp) when a row promotes from **C→A** via wire capture.
 
 *Last updated: 2026-05-30 (IDA MCP scan GAME + PN18).*

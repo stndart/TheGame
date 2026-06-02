@@ -40,10 +40,10 @@ In-DLL inject remains default for offline UX (`pn_rmi_inject.cpp`); disable with
 
 ## Run 187 (`187_eafd5dd0`) - PASS
 
-Wire log `wire_20260529T105008Z.log` lines 205–206:
+Wire log `wire_20260529T105008Z.log` lines 205-206:
 
-- `RX :27380 … op=0x25 (session) data=115B` (create-room C2S)
-- `TX … len=242B hex32=1357010b02303f…` (generated burst: `0x3F30` + `0x3ED4` + `0x3ED8`)
+- `RX :27380 ... op=0x25 (session) data=115B` (create-room C2S)
+- `TX ... len=242B hex32=1357010b02303f...` (generated burst: `0x3F30` + `0x3ED4` + `0x3ED8`)
 
 `events.jsonl`: `0x3F30`/`0x3AA0` len=98 → `game_stage: room` - **no** `inject: create-room` line.
 

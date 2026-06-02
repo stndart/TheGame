@@ -28,7 +28,7 @@ Authoritative install list: [`src/main.cpp`](../../src/main.cpp) (`HookManager::
 | `pn_drain_receive_queue` | `0xD65940` | **trace** tail-jump | SEH resume `0xD65947`; worker = `*(client+0x5C)` |
 | `w_connect_2` / `w_connect_3` | `0x14314E0` / `0x14F6DC0` | **full jmp** | `proud_connect.cpp` |
 
-IAT traces (`connect`, `send`, `WSASend`, …): `src/hooks/system/ws32.cpp`.
+IAT traces (`connect`, `send`, `WSASend`, ...): `src/hooks/system/ws32.cpp`.
 
 ---
 
@@ -45,7 +45,7 @@ IAT traces (`connect`, `send`, `WSASend`, …): `src/hooks/system/ws32.cpp`.
 
 ## Hooking rules (learned 2026-05-28)
 
-1. **Never tail-call `game_va(RVA + 5)`** on functions with an MSVC **SEH prologue** (`push -1; push handler; mov eax, fs:[0]; …`). The 5-byte `E9` patch splits the second `push imm32` → crash (`0xC0000096` @ entry+`0xF`).
+1. **Never tail-call `game_va(RVA + 5)`** on functions with an MSVC **SEH prologue** (`push -1; push handler; mov eax, fs:[0]; ...`). The 5-byte `E9` patch splits the second `push imm32` → crash (`0xC0000096` @ entry+`0xF`).
 2. **Use IDA** (IDA Pro MCP when available, or IDA UI) to read the first instructions and set **`k*Resume`** = first safe address **after** the stolen prefix (typically **+7** for the 7-byte SEH prefix). Record in `pn_layout.hpp` / hook file comments.
 3. **Do not** dump prologue bytes from `GAME.exe` with ad-hoc Python scripts; use **IDA MCP** (`get_bytes`, decompile, xref) or existing journals.
 4. **Full jmp** reimpls may still call GAME via `game_va(full_RVA)` + `restore_hook` for sub-handlers (compress, `Message_Read`, per-case handlers) until those are reimplemented.
@@ -57,7 +57,7 @@ IAT traces (`connect`, `send`, `WSASend`, …): `src/hooks/system/ws32.cpp`.
 ## ProcessMessage layer
 
 - **Reimpl:** `process_message_proudnet_layer` @ `0xD653B0` - reads type via `Message_Read`, dispatches ~50 cases; handlers still tail-call GAME RVAs from [`pn_layout.hpp`](../../include/game/net/pn_layout.hpp).
-- **Cases 37–39:** unwrap via `restore_hook` + `kProcessCompressed` / `kProcessEncrypted` (full entry, not `+5`), then recurse layer.
+- **Cases 37-39:** unwrap via `restore_hook` + `kProcessCompressed` / `kProcessEncrypted` (full entry, not `+5`), then recurse layer.
 - **Enum / table:** [`MessageType.hpp`](../../include/ProudNet/MessageType.hpp), [../proudnet/message-dispatch.md](../proudnet/message-dispatch.md).
 
 Toggle trace vs full reimpl for the layer (debug): env `THEGAME_PN_PROCESS_FULL_REIMPL` in `pn_process_message_hook.cpp` (default full reimpl).
@@ -71,9 +71,9 @@ Construction → sockets goal from project plan; not complete:
 | Area | RVAs (examples) | Status |
 |------|-----------------|--------|
 | TCP framing | `0xD84BB0`, `0xD84970` | Hooks written, **off** in `main.cpp` |
-| `PNCliWorker` thread | `0xD668B0`, `0xD70A10`… | Not hooked |
-| FSM driver | `0xD6F7B0` | States 1–3 hooked; driver itself not |
-| Per-case `ProcessMessage` handlers | `0xD64F10`, … | Tail-call GAME from reimpl |
+| `PNCliWorker` thread | `0xD668B0`, `0xD70A10`... | Not hooked |
+| FSM driver | `0xD6F7B0` | States 1-3 hooked; driver itself not |
+| Per-case `ProcessMessage` handlers | `0xD64F10`, ... | Tail-call GAME from reimpl |
 | `Message_Read` / stream | `0xD59300`, `0xD58B30` | Tail-call GAME |
 | Game RMI after ProudNet | `0x4BA070` (`0x3F3E`) | Not hooked |
 
@@ -93,4 +93,4 @@ just ctl::wait-stage shard_choice 240
 just ctl::copy-logs
 ```
 
-Inspect `ctl/logs/runs/<run_id>/events.jsonl` for `0xC0000005`, `0xC0000096`, `0xE06D7363`, and hook log prefixes (`pn_drain_recv:`, `pn_tcp_frame:`, …).
+Inspect `ctl/logs/runs/<run_id>/events.jsonl` for `0xC0000005`, `0xC0000096`, `0xE06D7363`, and hook log prefixes (`pn_drain_recv:`, `pn_tcp_frame:`, ...).

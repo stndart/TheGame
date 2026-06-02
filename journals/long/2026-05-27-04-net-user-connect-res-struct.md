@@ -24,7 +24,7 @@ NetUserConnectRES body layout so the Python server emits correct bytes.
 ### Outer ProudNet TCP frame
 
 ```
-[13 57] [tag] [len_bytes…] [payload…]
+[13 57] [tag] [len_bytes...] [payload...]
 ```
 
 - `13 57`: magic word 0x5713 (LE). Confirmed at D84BB0+d84c68: `cmp word ptr ..., 5713h`.
@@ -41,7 +41,7 @@ NetUserConnectRES body layout so the Python server emits correct bytes.
 ### Inner payload
 
 ```
-[opcode: 1 byte] [rmi_id: 2 bytes LE] [body…]
+[opcode: 1 byte] [rmi_id: 2 bytes LE] [body...]
 ```
 opcode 0x02 = OP_MESSAGE (RMI). Confirmed: 0x4B86AD `mov dword ptr [esp+1Ch], 3F3Eh`
 stores RMI ID 0x3F3E in the dispatch entry for sub_4BA070.
@@ -69,7 +69,7 @@ Offset  Size  Field           Assembly evidence
 +0x060    4   field_60        mov edx, [esi+60h] → [charobj+0x107C]  (4ba269)
 +0x064  140   _gap            zeroed; +0x70 passed to sub_415440  (4ba19e)
 +0x0EC    4   account_id      mov eax, [esi+0ECh] → netmgr+0x88,+0x8C  (4ba0e8) ← CRITICAL
-+0x0F0  120   CharSlot[3]     add esi,0F0h; loop 3×; stride 0x28  (4ba2a7–4ba300)
++0x0F0  120   CharSlot[3]     add esi,0F0h; loop 3×; stride 0x28  (4ba2a7-4ba300)
 +0x168    4   (unused)
 +0x16C    4   num_char_slots  mov eax, [edx+16Ch]  (4ba312)
 +0x170   16   pad to 0x180    sub_65EAA0 reads up to +0x17C

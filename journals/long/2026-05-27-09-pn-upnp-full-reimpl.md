@@ -16,11 +16,11 @@ IDA types `this` as `struct in_addr *` but offsets used (`+72`, `+76`, `+100`, `
 
 ### Behaviour summary
 
-1. Vector-construct 20 `String` fragments for SOAP template (`<?xml version="1.0"?>…AddPortMapping…`).
+1. Vector-construct 20 `String` fragments for SOAP template (`<?xml version="1.0"?>...AddPortMapping...`).
 2. Fill `%d` slots from object fields (external/internal ports).
 3. Pick TCP vs UDP from `this+76`.
 4. Internal client IP via `sub_D6DD30`.
-5. Concatenate SOAP body; build `POST %s HTTP/1.1…` with wide→multibyte host from parent object `v2+90`.
+5. Concatenate SOAP body; build `POST %s HTTP/1.1...` with wide→multibyte host from parent object `v2+90`.
 6. `sub_D72FC0` performs HTTP POST to IGD; stores response string at `this+12` (`*(this+3)` as String handle).
 
 ### Return value

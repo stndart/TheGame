@@ -23,7 +23,7 @@ Compress / encrypt on **client** (`sub_D653B0`):
 | Ordinals | Callee | v1.8 analogue |
 | --- | --- | --- |
 | **37, 38** | `0xD5DC10` → recurse layer | `ProcessMessage_Compressed` (PDB **47**) |
-| **39** | `0xD5CA30` → recurse layer | `ProcessMessage_Encrypted` (PDB **43–46**) |
+| **39** | `0xD5CA30` → recurse layer | `ProcessMessage_Encrypted` (PDB **43-46**) |
 
 **Early returns:** `Message_Read` fails → restore offset (`0xD589C0`) → `return 0`; unhandled switch → same; success → `return 1`.
 
@@ -54,11 +54,11 @@ Compress / encrypt on **client** (`sub_D653B0`):
 | 17 | `MessageType_RequestStartServerHolepunch` | `0xD608D0` | + peer guard |
 | 18 | - | - | **default** |
 | 19 | `MessageType_ServerHolepunchAck` | `0xD63510` | |
-| 20–23 | - | - | **default** |
+| 20-23 | - | - | **default** |
 | 24 | - | `0xD63750` | + peer guard |
 | 25 | - | `0xD60A50` | + peer guard |
 | 26 | - | `0xD63A70` | + peer guard |
-| 27–28 | - | - | **default** |
+| 27-28 | - | - | **default** |
 | 29 | - | `0xD64D60` | + peer guard |
 | 30, 48 | - | - | **noop** |
 | 31 | - | `0xD5FCD0` | |
@@ -67,21 +67,21 @@ Compress / encrypt on **client** (`sub_D653B0`):
 | 34 | - | `0xD60E10` | |
 | 35 | - | `0xD625E0` | |
 | 36 | - | `0xD61760` | |
-| 37–38 | Compressed | `0xD5DC10` | unwrap + recurse |
+| 37-38 | Compressed | `0xD5DC10` | unwrap + recurse |
 | 39 | Encrypted | `0xD5CA30` | unwrap + recurse |
 | 40 | - | `0xD62110` | |
 | 41 | - | `0xD60FB0` | |
-| 42–47 | - | - | **default** on client |
+| 42-47 | - | - | **default** on client |
 | 49 | - | `0xD62330` | |
 | 50 | - | `0xD61120` | |
 
-Post-switch: unconsumed bytes (except types 37–38) → format error (`sub_D83110`).
+Post-switch: unconsumed bytes (except types 37-38) → format error (`sub_D83110`).
 
 ---
 
 ## `sub_D366A0` - alternate path summary
 
-Caller **`sub_D37BC0`**. Case **47** handled here only (client `sub_D653B0`: default). Cases **1–2** `return 0` after handler. Full table: [../proudnet-sdk-crossmap.md §6b](../proudnet-sdk-crossmap.md).
+Caller **`sub_D37BC0`**. Case **47** handled here only (client `sub_D653B0`: default). Cases **1-2** `return 0` after handler. Full table: [../proudnet-sdk-crossmap.md §6b](../proudnet-sdk-crossmap.md).
 
 ---
 
@@ -89,13 +89,13 @@ Caller **`sub_D37BC0`**. Case **47** handled here only (client `sub_D653B0`: def
 
 | §6 entry | GAME `sub_D653B0` |
 | --- | --- |
-| **1–4, 11, 13, 15, 17, 19** | Implemented |
+| **1-4, 11, 13, 15, 17, 19** | Implemented |
 | **5, 12, 16** | **default** |
 | **21, 23** | **default** |
-| **25–42** UDP/relay/ping | Partial; **27–28, 42–46 default** |
-| **47** Compressed | Client uses **37–38**; **47 unhandled** |
-| **43–46** encrypted | Client **39** only |
-| **54–56** multicast/linger | **default** |
+| **25-42** UDP/relay/ping | Partial; **27-28, 42-46 default** |
+| **47** Compressed | Client uses **37-38**; **47 unhandled** |
+| **43-46** encrypted | Client **39** only |
+| **54-56** multicast/linger | **default** |
 
 **Other `Message_Read` xrefs:** `0xD8B4A0` (`GetWorkTypeFromMessageHeader`), `0xD28660`.
 

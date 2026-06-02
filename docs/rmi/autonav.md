@@ -98,13 +98,13 @@ Compile default OFF. **`NavPump` always runs** — handler-pipe commands are not
 
 | Hook | RVA | Log line |
 | --- | --- | --- |
-| `hook_pn_rmi_send` | `0xD5C5E0` | `[rmi] c2s frame …` |
-| `hook_pn_game_rmi_send` | `0x65AEA0` | `[rmi] c2s proxy …` |
-| `hook_pn_rmi_floor` | `0xA0B290` | `[rmi] c2s floor …` |
-| `ProcessMessageProudNetLayer` case Rmi | `0xD653B0` | `[rmi] s2c …` |
+| `hook_pn_rmi_send` | `0xD5C5E0` | `[rmi] c2s frame ...` |
+| `hook_pn_game_rmi_send` | `0x65AEA0` | `[rmi] c2s proxy ...` |
+| `hook_pn_rmi_floor` | `0xA0B290` | `[rmi] c2s floor ...` |
+| `ProcessMessageProudNetLayer` case Rmi | `0xD653B0` | `[rmi] s2c ...` |
 
 ---
 
 ## Investigation journal
 
-Timeline, run IDs (302–311), mistakes (`nav_goto_lobby` vs full shard path, stale `last_run`, idle UI pump), and lessons: [journals/long/2026-06-02-01-nav-pass-shard-select.md](../../journals/long/2026-06-02-01-nav-pass-shard-select.md) (brief: [journals/2026-06-02-01-nav-pass-shard-select.md](../../journals/2026-06-02-01-nav-pass-shard-select.md)).
+Timeline, run IDs (302-311), mistakes (`nav_goto_lobby` vs full shard path, stale `last_run`, idle UI pump), and lessons: [journals/long/2026-06-02-01-nav-pass-shard-select.md](../../journals/long/2026-06-02-01-nav-pass-shard-select.md) (brief: [journals/2026-06-02-01-nav-pass-shard-select.md](../../journals/2026-06-02-01-nav-pass-shard-select.md)).

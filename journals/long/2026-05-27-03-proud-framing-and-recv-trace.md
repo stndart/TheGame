@@ -25,7 +25,7 @@ Success also needs `sub_8DCD70()` (local char list) and posts NOTIFY **16025** w
 
 ### PN FSM (`sub_D6F7B0`)
 
-States 0–5: connect → send (`w_wsasend_1`) → recv (`w_wsarecv_1`, 32KiB) → append (`sub_D71CE0`) → copy to String.
+States 0-5: connect → send (`w_wsasend_1`) → recv (`w_wsarecv_1`, 32KiB) → append (`sub_D71CE0`) → copy to String.
 
 `sub_D71CE0` call at `0xD6CA34`: `ecx=[conn+0x20]`, stack `(src, len)`.
 
@@ -34,7 +34,7 @@ States 0–5: connect → send (`w_wsasend_1`) → recv (`w_wsarecv_1`, 32KiB) �
 | Msg ID | Handler |
 |--------|---------|
 | 16014 | `sub_4BA520` → ConnectRES-style (`sub_8DAEF0`) |
-| 16017–16021, 16193–16194 | various `sub_4BA*` |
+| 16017-16021, 16193-16194 | various `sub_4BA*` |
 
 ## Code changes
 

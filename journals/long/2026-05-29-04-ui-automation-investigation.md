@@ -6,7 +6,7 @@
 - **Active:** launch/kill/copy-dll/logs; `wait-for-stage <phase>`.
 - **No** SendInput, PostMessage, UIAutomation, or diagnostics commands to the game.
 
-**Gap:** `ctl/controller/gamestate/stages.py` `KNOWN_STAGES` stops at `main_menu`; DLL emits `server_ready`, `lobby`, `room_list`, `room`, …
+**Gap:** `ctl/controller/gamestate/stages.py` `KNOWN_STAGES` stops at `main_menu`; DLL emits `server_ready`, `lobby`, `room_list`, `room`, ...
 
 **Stale recipe:** `just ctl::wait-menu` waits for `main_menu` - use `wait-stage server_ready`.
 
@@ -99,7 +99,7 @@ DLL handler on **main thread** (queue from pipe reader or pump from existing sta
 |-----|------|-------|
 | `0x42CAE0` | Medium | No RMI; needs scene ≠ 5 |
 | `0x48A7C0` | High | Needs real UI arg + ECX |
-| `0x41F0D0` | Medium–High | Main thread; missing populate for scene 9 |
+| `0x41F0D0` | Medium-High | Main thread; missing populate for scene 9 |
 
 ### Tier E - Win32 input
 

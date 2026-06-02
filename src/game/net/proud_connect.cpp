@@ -25,7 +25,7 @@ struct ConnectSockbuf {
   sockaddr_in name;
 };
 
-// sub_1431030 - copy peer fields from ctx into mgr (+34524, +34572, …).
+// sub_1431030 - copy peer fields from ctx into mgr (+34524, +34572, ...).
 static void copy_ctx_fields(int *ctx) {
   auto *const mgr = reinterpret_cast<unsigned char *>(*ctx);
   auto *const ctx_bytes = reinterpret_cast<unsigned char *>(ctx);
@@ -418,15 +418,16 @@ extern "C" int __fastcall ProudConnect::w_connect_2(int *out_zero,
     const unsigned long err = GetLastError();
     const char *msg = format_wsa_error(ctx, err);
     if (!thegame::cfg.no_network_logs)
-      lognf(static_cast<int>(sock), "sa_addr inet_ntop() failed with errno %lu: %s",
-            err, msg);
+      lognf(static_cast<int>(sock),
+            "sa_addr inet_ntop() failed with errno %lu: %s", err, msg);
     close_socket_ctx(ctx, sock);
     return 0;
   }
 
   memcpy(ctx_bytes + 0x40, ctx_bytes + 0x9E, 0x2Eu);
   if (!thegame::cfg.no_network_logs)
-    logns(static_cast<int>(sock), reinterpret_cast<const char *>(ctx_bytes + 0x40),
+    logns(static_cast<int>(sock),
+          reinterpret_cast<const char *>(ctx_bytes + 0x40),
           ntohs(sockbuf.name.sin_port));
 
   copy_ctx_fields(ctx);

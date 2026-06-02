@@ -48,7 +48,7 @@ Bound from shard UI registration (`sub_434B50`); log string `"onNetChangeServerF
 - If **`!byte_1C1E409`** (not in fade lock) and **`dword_1C15644 != 4`**:
   - `sub_49E530` / `sub_40B340` (fades)
   - **`sub_41F0D0(&dword_1C155C0, 4)`** — **RequestState → lobby scene**
-- `sub_63E9B0("setServerListInfoHide", …)` and follow-up UI refresh
+- `sub_63E9B0("setServerListInfoHide", ...)` and follow-up UI refresh
 
 **Lesson:** reaching **`lobby` stage** is tied to **scene id 4** (`dword_1C15644`), not to an arbitrary C2S notify.
 
@@ -76,11 +76,11 @@ ctl emits **`lobby`** when main-menu lobby state runs — **after** scene/UI tra
 - Capture main TID from first stage hook; install **`WH_GETMESSAGE`** hook to call `NavPump`.
 - Wakeup thread: **`PostThreadMessage(WM_NULL)`** every 500 ms while nav pending.
 
-**Lesson:** *“Enqueued” ≠ “ran on main thread.”* Always confirm **`[nav] command …`** in `events.jsonl`.
+**Lesson:** *“Enqueued” ≠ “ran on main thread.”* Always confirm **`[nav] command ...`** in `events.jsonl`.
 
 ### Phase B — command runs, lobby never reached (runs **304-307**)
 
-**Symptoms:** `[nav] command nav_goto_lobby`, `[nav] c2s 0x3F40`, sometimes `[rmi] s2c …`; **`wait-stage lobby` timeout**.
+**Symptoms:** `[nav] command nav_goto_lobby`, `[nav] c2s 0x3F40`, sometimes `[rmi] s2c ...`; **`wait-stage lobby` timeout**.
 
 **Mistake:** Interpreted as “server doesn’t answer” or “need inject” first.
 
@@ -141,7 +141,7 @@ Implementation: [`pump_goto_lobby()`](../../src/RMI/Nav.cpp)
 
 We do **not** call `sub_4354D0` or synthesize farm-change RES. We call **`RequestState(4)`** directly after **`0x3EB2`**, on the **main thread**, when fade lock allows.
 
-**Works** on current friends-server online e2e (311). **Risk:** missing globals/fades `sub_4354D0` sets (`word_1C1AC00`, `byte_1C1D578`, …) may break other flows (offline dummy, second shard change, UI polish).
+**Works** on current friends-server online e2e (311). **Risk:** missing globals/fades `sub_4354D0` sets (`word_1C1AC00`, `byte_1C1D578`, ...) may break other flows (offline dummy, second shard change, UI polish).
 
 **Lesson:** Prefer **mirroring the handler that runs on success**, not only the last packet in a capture. Long-term options: (a) dummy S2C for `0x3EB2`, (b) call `sub_434F20` with real binder `this`, (c) minimal fake `CReceivedMessage` into `sub_4354D0`.
 
@@ -167,7 +167,7 @@ We do **not** call `sub_4354D0` or synthesize farm-change RES. We call **`Reques
 
 ### 6.2 verify patterns vs log format
 
-Nav logs: `[nav] command nav_pass_shard_select (tid=…)`. Verify uses substring `command nav_pass_shard_select` — OK.
+Nav logs: `[nav] command nav_pass_shard_select (tid=...)`. Verify uses substring `command nav_pass_shard_select` — OK.
 
 Do not verify only `enqueued` — that was the false positive in run **302**.
 
@@ -181,7 +181,7 @@ Early builds pumped from `diagnostics_game_stage_shard_select` when autonav enab
 
 1. **Map commands to the full UI sequence** — shard picker needs **`0x3EB2` + scene transition + notify**, not one ID from a table.
 2. **Stage hooks are sparse** — deduped `shard_select` is not a frame loop; use **message pump hook** for idle GFx screens.
-3. **Prove execution, not enqueue** — require `[nav] command …` line.
+3. **Prove execution, not enqueue** — require `[nav] command ...` line.
 4. **Prove outcome, not C2S** — require `[stage] lobby` (or equivalent in-game invariant).
 5. **Read IDA click + RES pair** — REQ (`434F20`) and success handler (`4354D0`) before naming ctl commands.
 6. **Don’t duplicate stage-hook sends** — `0x3F0C`/`0x3E99` at `shard_select` is already game-owned.

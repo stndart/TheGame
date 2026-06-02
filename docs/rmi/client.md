@@ -13,7 +13,7 @@ Two chokepoints (plain prologue `55 8B EC 83 E4 F8` - steal 6, resume +6):
 | **`sub_65AEA0`** | `__thiscall(proxy, msg, len, rmiId:int16)` | Proxy wrapper (16xxx) | **explicit** `rmiId` |
 | **`sub_A0B290`** | `(proxy, msg, len)` | Floor transmit (15xxx) | `*(u16*)msg` |
 
-Application frame: **`[rmi_id:2 LE][body…]`**; `len` includes the 2-byte id.
+Application frame: **`[rmi_id:2 LE][body...]`**; `len` includes the 2-byte id.
 
 **Not game RMIs:** framework `sub_D5C5E0` (`IRmiProxy::RmiSend`) - heartbeat ids **1001/1006/1019** only.
 
@@ -23,10 +23,10 @@ Application frame: **`[rmi_id:2 LE][body…]`**; `len` includes the 2-byte id.
 
 | Hook | Target | Log prefix |
 | --- | --- | --- |
-| `hook_pn_rmi_send` | `sub_D5C5E0` | `[rmi] c2s framework …` |
-| `hook_pn_game_rmi_send` | `sub_65AEA0` | `[rmi] c2s proxy …` |
-| `hook_pn_rmi_floor` | `sub_A0B290` | `[rmi] c2s floor …` |
-| `ProcessMessageProudNetLayer` (case Rmi) | `sub_D653B0` | `[rmi] s2c …` |
+| `hook_pn_rmi_send` | `sub_D5C5E0` | `[rmi] c2s framework ...` |
+| `hook_pn_game_rmi_send` | `sub_65AEA0` | `[rmi] c2s proxy ...` |
+| `hook_pn_rmi_floor` | `sub_A0B290` | `[rmi] c2s floor ...` |
+| `ProcessMessageProudNetLayer` (case Rmi) | `sub_D653B0` | `[rmi] s2c ...` |
 
 Logs **id + len** (framework: + remotes); no filtering. Read body at `msg` for hex dumps.
 
@@ -53,7 +53,7 @@ Every S2C leaf: `int __stdcall handler(MsgDelegateArg const* a1)`, `retn 4`.
 body   = *(u32*)(a1 + 8)
 +0x00  u16   pad (ignored)
 +0x02  u16   result (0 = success; nonzero → sub_675160 popup)
-+0x04  …     handler-specific fields
++0x04  ...     handler-specific fields
 ```
 
 Verified leaves:
@@ -129,7 +129,7 @@ Full table + body layouts: [../plans/proudnet-game-rmi.md §9](../plans/proudnet
 | +2 | WCHAR[~26] | room name |
 | ~+0x36 | u8 | password flag |
 | ~+0x38 | WCHAR[] | password |
-| ~+0x42 | u32×6 | mode, channel, max players, map, … |
+| ~+0x42 | u32×6 | mode, channel, max players, map, ... |
 
 Create RES only needs `result@+2 == 0`.
 

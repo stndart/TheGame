@@ -18,8 +18,8 @@
 - The VM is driven by `CGameRoom::onPreProcess` (`0x439B00`, vtable slot 15). On entry it marshals
   room/member fields into UI variants via `sub_442F90` (quick-character / quick-select panel),
   `sub_4419F0` + siblings (custom-match path, gated `dword_1C1A87C >= 1`), and many
-  `sub_63E9B0("Set…", variant, flag)` calls (`SetDiveRoomMessage`, `SetAutoMatchLobby`,
-  `SetQuickCharacterInfo`, `SetQuickSelect`, …). Variants carry the `-1,-1` null-handle sentinel
+  `sub_63E9B0("Set...", variant, flag)` calls (`SetDiveRoomMessage`, `SetAutoMatchLobby`,
+  `SetQuickCharacterInfo`, `SetQuickSelect`, ...). Variants carry the `-1,-1` null-handle sentinel
   (`v23[0]=v23[1]=-1`). With an empty room, one binding resolves its target against a stale/`-1`
   pointer and the VM faults at `+0x40`.
 

@@ -9,7 +9,7 @@ End-to-end **transport** bytes for the offline dummy server (`127.0.0.1`, ports 
 | Source | Trust |
 | --- | --- |
 | Client hooks + IDA (`sub_D84BB0`, framing) | High for IDA-confirmed structures |
-| `ctl/logs/runs/…`, `game_netlogs.txt` | High for ordering and sizes |
+| `ctl/logs/runs/...`, `game_netlogs.txt` | High for ordering and sizes |
 | `GITS-FA-emulation/` → `server/server/data/*.json` | Convenience replay only - see [§ opaque blobs](../rmi/server.md#opaque-blobs) |
 | Synthetic fallbacks in `proud_rmi.py` | Low |
 
@@ -23,7 +23,7 @@ End-to-end **transport** bytes for the offline dummy server (`127.0.0.1`, ports 
 | --- | --- |
 | **Proud TCP frame** | Length-prefixed message; magic `13 57`. |
 | **Inner payload** | Bytes inside a frame after length decode; first byte = **transport opcode**. |
-| **Transport opcode** | ProudNet connection FSM byte (`0x2F` hello, `0x04` key, …). Distinct from **RMI id** and **MessageType** ordinal. |
+| **Transport opcode** | ProudNet connection FSM byte (`0x2F` hello, `0x04` key, ...). Distinct from **RMI id** and **MessageType** ordinal. |
 | **RMI carrier** | Transport opcode `0x02` → `[0x02][rmi_id:2 LE][body]`. |
 | **ENTRY / GAME / PROBE** | TCP legs on ports 7000 / 27380 / 20009. |
 | **Burst** | One S2C byte string (may contain multiple concatenated Proud frames) after client `0x25` on GAME leg. |
@@ -116,10 +116,10 @@ After E9: client opens PROBE `:20009` and GAME `:27380`.
 
 | Step | C2S | S2C | Notes |
 | --- | --- | --- | --- |
-| G1–G6 | Same as E1–E6 | Same as E2–E6 | Independent TCP connection. |
+| G1-G6 | Same as E1-E6 | Same as E2-E6 | Independent TCP connection. |
 | G7 | `0x1C` | `0x1C` | Server echoes keepalive. |
 | G8 | `0x1B` (opt) | `0x1D` pong | Pong = ping prefix + uint32 ms LE. |
-| G9–G11 | `0x25` ×3 | Bursts 0–2 | Verbatim replay; see [../rmi/server.md](../rmi/server.md). |
+| G9-G11 | `0x25` ×3 | Bursts 0-2 | Verbatim replay; see [../rmi/server.md](../rmi/server.md). |
 | G12 | `0x25` (later) | - | No reply after bursts exhausted. |
 | G13 | - | Post-init schedule (9 frames) | Delayed after last burst. |
 | G14 | - | S2C `0x1C` every 5 s | |
@@ -217,7 +217,7 @@ Hello (C2S):     2f 0f 00 00 40 (inside len=5 payload)
 Key blob (S2C):  04 + [182 B PN_KEY_BLOB]
 ACK (S2C):       06
 Redirect (S2C):  0a + connId + token16 + flags4 + iplen + ip + rand2
-RMI carrier:     02 [rmi_id:2 LE] [body…]
+RMI carrier:     02 [rmi_id:2 LE] [body...]
 ```
 
 *Last updated: 2026-05-29 - transport layer; RMI bodies moved to `docs/rmi/`.*

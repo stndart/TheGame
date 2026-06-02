@@ -33,6 +33,8 @@ Open GAME in IDA, wait for auto-analysis, then:
 
 Or IDA MCP `py_exec_file` with the absolute path to that script.
 
+**Note:** Full export (~113k functions) takes several minutes; run via **File → Script file** (not MCP — 60s tool timeout). Watch stdout for `edge scan` progress lines.
+
 ### Environment variables
 
 | Variable | Default | Meaning |
@@ -40,7 +42,7 @@ Or IDA MCP `py_exec_file` with the absolute path to that script.
 | `TEXTWALL_OUT` | `tools/textwall-graph/out/graph.json.gz` | Output path |
 | `TEXTWALL_SEGMENT` | `auto` | Segment selector (see below) |
 | `TEXTWALL_LIST_SEGMENTS` | `0` | `1` = print all segments and exit |
-| `TEXTWALL_INCLUDE_LIB_THUNKS` | `0` | `1` = include `j_` / `FUNC_LIB` thunks |
+| `TEXTWALL_INCLUDE_LIB_THUNKS` | `0` | `1` = skip no thunk/lib filtering (~120k nodes); `0` drops `FUNC_LIB` / `FUNC_THUNK` / `j_*` (~113k) |
 
 **GAME.exe** has no `.text` section; executable code lives in **two unnamed CODE segments**. Default `auto` includes every IDA `CODE` class segment (both unnamed blobs). To inspect names/ranges first:
 

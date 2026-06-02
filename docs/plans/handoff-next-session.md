@@ -26,8 +26,8 @@ harness.
   `lobby` → `room_list` etc. Stage hooks for every screen are wired and correct (the old
   deceptive `main_menu` is now `server_ready`); RVAs in the plan doc's stage table.
 - **C2S RMI capture is on the game proxy and per-action ids are pinned (run 179).** Hooks in
-  `src/hooks/net/pn_game_rmi_send_hook.cpp`: `sub_65AEA0` → `c2s_grmi proxy id=…` (16xxx band,
-  explicit id); `sub_A0B290` → `c2s_grmi floor id=…` (15xxx+18xxx bands, id=`*(u16*)msg`).
+  `src/hooks/net/pn_game_rmi_send_hook.cpp`: `sub_65AEA0` → `c2s_grmi proxy id=...` (16xxx band,
+  explicit id); `sub_A0B290` → `c2s_grmi floor id=...` (15xxx+18xxx bands, id=`*(u16*)msg`).
   Both verified stable through a full nav pass, no faults. `0xD5C5E0` (`pn_rmi_send_hook.cpp`) is
   only a **framework heartbeat** trace (ids 1001/1006/1019) - NOT the game RMIs.
   The full proxy map + verified action→REQ table is in proudnet-rmi-server-plan.md (sections

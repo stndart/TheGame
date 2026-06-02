@@ -36,11 +36,11 @@ How ProudNet is structured in **The Game** offline client path and what each lay
 | --- | --- |
 | **Proud TCP frame** | Length-prefixed messages on every Proud leg (`13 57` magic). Parser `sub_D84BB0`, framer `sub_D84970`. |
 | **Transport opcode** | First byte of inner payload - hello, key exchange, redirect, session (`0x25`), plaintext RMI carrier (`0x02`). |
-| **Connection FSM** | Per-TCP-connection worker states 0–5 (`PNConnectionNode`, driver `sub_D6F7B0`). Select, send, recv, append. |
+| **Connection FSM** | Per-TCP-connection worker states 0-5 (`PNConnectionNode`, driver `sub_D6F7B0`). Select, send, recv, append. |
 | **`CFastSocket`** | Overlapped WSASend/WSARecv on worker socket @ `this+0x12C`. |
 | **`ProcessMessage_ProudNetLayer`** | Internal envelope dispatch (`sub_D653B0`): `Message_Read` → 50-case `MessageType` switch. Case **1** = RMI → game layer. |
-| **Game RMI** | Application request/response ids (`0x3F3E`, `0x3F30`, …) registered at startup. See [../rmi/overview.md](../rmi/overview.md). |
-| **ctl stages** | UI milestones from `TheGame.dll` hooks (`shard_choice`, `lobby`, `room`, …) - observable outcome, not wire opcodes. |
+| **Game RMI** | Application request/response ids (`0x3F3E`, `0x3F30`, ...) registered at startup. See [../rmi/overview.md](../rmi/overview.md). |
+| **ctl stages** | UI milestones from `TheGame.dll` hooks (`shard_choice`, `lobby`, `room`, ...) - observable outcome, not wire opcodes. |
 
 ---
 
@@ -63,7 +63,7 @@ Production hosts remap to `127.0.0.1` via `include/game/server_override.hpp` (`T
 ```text
 [ TCP bytes ]
     └─ Proud TCP frame (magic + varint length + payload )
-        └─ Transport opcode (0x2F hello, 0x04 key, …, 0x02 RMI carrier, 0x25 session )
+        └─ Transport opcode (0x2F hello, 0x04 key, ..., 0x02 RMI carrier, 0x25 session )
             └─ (when MessageType path) internal envelope byte from Message_Read
                 └─ (case 1) Game RMI id + body
 ```

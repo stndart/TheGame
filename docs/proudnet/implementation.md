@@ -38,8 +38,8 @@ Hook registration: [`src/main.cpp`](../../src/main.cpp) (`HookManager::make_hook
 | --- | --- | --- |
 | TCP recv framer | `0xD84BB0` | SEH prologue; resume `0xD84BB7`; `pn_tcp_frame_hook.cpp` |
 | TCP send framer | `0xD84970` | Resume `0xD84977`; never hook `0xD84910` |
-| FSM driver | `0xD6F7B0` | States 1–3 hooked; driver not |
-| Per-case ProcessMessage handlers | `0xD64F10`, … | Tail-call GAME from reimpl |
+| FSM driver | `0xD6F7B0` | States 1-3 hooked; driver not |
+| Per-case ProcessMessage handlers | `0xD64F10`, ... | Tail-call GAME from reimpl |
 | `Message_Read` / `CMessage::Read` | `0xD59300`, `0xD58B30` | Tail-call GAME from reimpl |
 
 ---

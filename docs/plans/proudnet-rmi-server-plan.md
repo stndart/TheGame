@@ -8,7 +8,7 @@ Client **loads a map** (live match level) from the offline path that already rea
 
 ## Strategy
 
-1. RE game RMI semantics; replace opaque FA-EMU replay **one S2C at a time** ([proudnet-game-rmi.md](proudnet-game-rmi.md) §0–10).
+1. RE game RMI semantics; replace opaque FA-EMU replay **one S2C at a time** ([proudnet-game-rmi.md](proudnet-game-rmi.md) §0-10).
 2. **DLL** = C2S capture + optional in-process RES injection; **Python server** = wire S2C builders (`server/server/proud_rmi.py`, `game_transport.py`).
 3. C2S app RMIs are inside transport `0x25` (opaque on socket); S2C game RMIs are plaintext inner `0x02`+id+body.
 
@@ -62,7 +62,7 @@ Hooks [`src/hooks/game_stage.cpp`](../src/hooks/game_stage.cpp). Verified throug
 | ID | Name | Server builder | Test |
 |----|------|----------------|------|
 | *(burst 0)* | 10× inner `0x02` + op `0x27` + 5904 B tail | `build_lobby_burst0_*` + tail from JSON | PASS (unit); BLOB (runtime default) |
-| `0x3EDC`…`0x3ECA` | burst-0 framed RMIs | `build_lobby_burst0_*_frame` | PASS (unit) |
+| `0x3EDC`...`0x3ECA` | burst-0 framed RMIs | `build_lobby_burst0_*_frame` | PASS (unit) |
 | `0x3E8E` | NetConnectRES (in unframed tail) | `build_net_connect_res_frame` (64 B stub) | WIP |
 | `0x3E99` | notify 15060 | `build_notify_15060_frame` | PASS (unit) |
 | *(burst 1)* | connect burst | `build_net_user_connect_res_frame` + tail OR full JSON | PASS (644 B unit); BLOB (runtime) |
@@ -93,7 +93,7 @@ Inventory: `uv run python -m server.tools.scan_lobby_replay` from `server/`.
 | `0x3F41` | lobby-enter RES | - | NO | `0x3F40`/`0x3ACE` len 2 |
 | `0x3EE4` | Quick Dive | - | NO | `0x3EE4`/`0x3AAF` len 3 |
 | `0x3F2B`→`?` | Ready RES | - | NO | `0x3F2B`/`0x3AA8` len 3 |
-| `0x3F03`/`0x3F47`/… | room sync (account band) | - | NO | various |
+| `0x3F03`/`0x3F47`/... | room sync (account band) | - | NO | various |
 
 Triggers: `CREATE_ROOM_RES_ON_25_BODY_LEN=115`, burst mode - see `server/.env` and [proudnet-game-rmi.md](proudnet-game-rmi.md) §10.
 
@@ -125,7 +125,7 @@ Full timeline: [journals/long/2026-05-29-02-c2s-rmi-per-action-ids-run179.md](..
 | start | `0x3F3D` | `0x3AA9` | 2 |
 | leave | `0x3F45` | `0x3AA3` | 6 |
 
-REQ/RES pairing and body layouts: [proudnet-game-rmi.md](proudnet-game-rmi.md) §7–9 (not REQ=RES−1).
+REQ/RES pairing and body layouts: [proudnet-game-rmi.md](proudnet-game-rmi.md) §7-9 (not REQ=RES−1).
 
 ## Current frontier
 

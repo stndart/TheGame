@@ -182,8 +182,11 @@ def _in_segments(ea, segments):
 
 
 def _is_lib_thunk(fn):
+    """Skip import stubs / thunks. Do not use 0x4000 — that is not FUNC_LIB on IDA 9."""
     flags = getattr(fn, "flags", 0)
-    if flags & 0x00004000:
+    if flags & ida_funcs.FUNC_LIB:
+        return True
+    if getattr(ida_funcs, "FUNC_THUNK", 0) and (flags & ida_funcs.FUNC_THUNK):
         return True
     name = ida_funcs.get_func_name(fn.start_ea) or ""
     if name.startswith("j_") or name.startswith("__imp_"):
@@ -194,6 +197,7 @@ def _is_lib_thunk(fn):
 def _collect_functions(segments, include_thunks):
     ea_to_i = {}
     nodes = []
+    skipped = {"lib": 0}
     for start in idautils.Functions():
         if not _in_segments(start, segments):
             continue
@@ -201,29 +205,37 @@ def _collect_functions(segments, include_thunks):
         if not f:
             continue
         if not include_thunks and _is_lib_thunk(f):
+            skipped["lib"] += 1
             continue
         idx = len(nodes)
         ea_to_i[start] = idx
         name = ida_funcs.get_func_name(start) or idc.get_name(start) or ""
         size = int(f.end_ea - f.start_ea)
         nodes.append({"i": idx, "ea": "0x%X" % start, "name": name, "size": size})
-    return nodes, ea_to_i
+    return nodes, ea_to_i, skipped
 
 
 def _collect_edges(ea_to_i, include_thunks):
     edges_set = set()
-    for start in ea_to_i:
+    starts = list(ea_to_i.keys())
+    total = len(starts)
+    report_every = max(1, total // 25)
+
+    for idx, start in enumerate(starts):
+        if idx % report_every == 0:
+            print("  edge scan %d/%d (%d edges)" % (idx, total, len(edges_set)))
+
         caller_i = ea_to_i[start]
         f = ida_funcs.get_func(start)
         if not f:
             continue
         if not include_thunks and _is_lib_thunk(f):
             continue
+
         for head in idautils.FuncItems(start):
-            for xr in idautils.XrefsFrom(head, 0):
-                if not xr.iscode:
-                    continue
-                callee_f = ida_funcs.get_func(xr.to)
+            # CodeRefsFrom is much faster than filtering all XrefsFrom on large IDBs
+            for ref_ea in idautils.CodeRefsFrom(head, 0):
+                callee_f = ida_funcs.get_func(ref_ea)
                 if not callee_f:
                     continue
                 callee_start = callee_f.start_ea
@@ -233,6 +245,7 @@ def _collect_edges(ea_to_i, include_thunks):
                 if callee_i == caller_i:
                     continue
                 edges_set.add((caller_i, callee_i))
+
     return sorted(edges_set)
 
 
@@ -253,8 +266,9 @@ def main():
 
     image_base = idc.get_imagebase() if hasattr(idc, "get_imagebase") else 0x400000
 
-    nodes, ea_to_i = _collect_functions(segments, include_thunks)
+    nodes, ea_to_i, skipped = _collect_functions(segments, include_thunks)
     edges = _collect_edges(ea_to_i, include_thunks)
+    total_funcs = sum(1 for _ in idautils.Functions())
 
     idb_path = idc.get_idb_path() if hasattr(idc, "get_idb_path") else ""
     seg_meta = [_seg_info_dict(s) for s in segments]
@@ -270,6 +284,8 @@ def main():
             "edge_count": len(edges),
             "export_version": EXPORT_VERSION,
             "include_lib_thunks": include_thunks,
+            "ida_function_count": total_funcs,
+            "skipped_lib_or_thunk": skipped["lib"],
         },
         "nodes": nodes,
         "edges": [[u, v] for u, v in edges],
@@ -287,7 +303,9 @@ def main():
             json.dump(payload, f, separators=(",", ":"))
 
     print("TEXTWALL_EXPORT_OK")
-    print("  nodes=%d edges=%d" % (len(nodes), len(edges)))
+    print("  nodes=%d edges=%d (ida_functions=%d)" % (len(nodes), len(edges), total_funcs))
+    if not include_thunks:
+        print("  skipped: lib/thunk/import_name=%d" % skipped["lib"])
     print("  segments=%s (%d)" % (seg_label, len(segments)))
     for info in seg_meta:
         print("    %s %s-%s" % (info["name"], info["start"], info["end"]))

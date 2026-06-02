@@ -93,7 +93,7 @@ arg[2] = body;
 
 | Run / doc | Note |
 | --- | --- |
-| Offline nav matrix runs **228–232** | Inject on; full lobby→room path |
+| Offline nav matrix runs **228-232** | Inject on; full lobby→room path |
 | Run **207** | Lobby → `shard_choice` bounce without inject — fragile wire-only |
 | [autonav.md](autonav.md) legacy sections | Env chaining + inject cooperation |
 

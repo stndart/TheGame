@@ -67,7 +67,7 @@ PN18 size **264** (`0x108`). GAME object larger (~328+ B).
 | **`0x104`** | **`m_socket`** | **`0x12C`** | primary socket |
 | - | - | **`0xE4`** | AddrPort update |
 
-**Rule:** PN18 `m_recvOverlapped`…`m_sendBuffer` → add **+8**; `m_sendOverlapped`…`m_socket` → add **+0x28**.
+**Rule:** PN18 `m_recvOverlapped`...`m_sendBuffer` → add **+8**; `m_sendOverlapped`...`m_socket` → add **+0x28**.
 
 | Role | GAME | PN18 symbol | PN18 RVA |
 | --- | --- | --- | --- |
@@ -117,11 +117,11 @@ From `ProcessMessage_ProudNetLayer` @ `0x1005a370`:
 | 11 | `MessageType_NotifyProtocolVersionMismatch` |
 | 12 | `MessageType_NotifyServerDeniedConnection` |
 | 13 | `MessageType_NotifyServerConnectSuccess` |
-| 15–17, 19 | recovery / holepunch |
+| 15-17, 19 | recovery / holepunch |
 | 21, 23 | UDP matched / holepunch ack |
-| 25–42 | UDP / relay / ping |
+| 25-42 | UDP / relay / ping |
 | 47 | `MessageType_Compressed` |
-| 54–56 | multicast / linger |
+| 54-56 | multicast / linger |
 
 GAME per-case RVAs: [proudnet/message-dispatch.md](proudnet/message-dispatch.md). **GAME ↔ PN18 `MessageType` send-path table:** [proudnet/message-type-crossmap.md](proudnet/message-type-crossmap.md).
 
@@ -134,7 +134,7 @@ GAME per-case RVAs: [proudnet/message-dispatch.md](proudnet/message-dispatch.md)
 | `CMessage::SkipRead` | `0x10051830` | `0xD589C0` |
 | `ProcessMessage_ProudNetLayer` | `0x1005A370` | `0xD653B0` |
 | `ProcessMessage_Encrypted` | `0x101758E0` | `0xD5CA30` (GAME case **39**) |
-| `ProcessMessage_Compressed` | `0x10175FE0` | `0xD5DC10` (GAME cases **37–38**) |
+| `ProcessMessage_Compressed` | `0x10175FE0` | `0xD5DC10` (GAME cases **37-38**) |
 | `IsFromRemoteClientPeer` | `0x1005B4B0` | `0xD5FD30` |
 | `OnMessageReceived` | `0x100BB1E0` | `0xD65940` |
 | Alternate batch dispatch | - | `0xD366A0` / caller `0xD37BC0` |
@@ -146,7 +146,7 @@ GAME per-case RVAs: [proudnet/message-dispatch.md](proudnet/message-dispatch.md)
 | `ProcessMessage_Rmi` | `0x1005AC20` | `0xD64F10` | 1 |
 | `ProcessMessage_UserOrHlaMessage` | `0x1005B0F0` | `0xD65170` / `0xD5FFD0` | 2 / 3 |
 | `ProcessMessage_NotifyServerConnectSuccess` | `0x1005DF50` | `0xD61490` | 13 |
-| `ProcessMessage_Compressed` | `0x10175FE0` | `0xD5DC10` | 37–38 |
+| `ProcessMessage_Compressed` | `0x10175FE0` | `0xD5DC10` | 37-38 |
 | `ProcessMessage_Encrypted` | `0x101758E0` | `0xD5CA30` | 39 |
 | `CFastSocket::IssueSend` | `0x101343D0` | `0xD567F0` | - |
 | `CFastSocket::IssueRecv` | `0x10134260` | `0xD56470` | - |
@@ -161,13 +161,13 @@ Full per-case GAME table: [proudnet/message-dispatch.md](proudnet/message-dispat
 | v1.8 symbol | v1.8 RVA | GAME RVA | Notes |
 | --- | --- | --- | --- |
 | `Proud::Message_Read` (`MessageType`) | `0x10086B60` | `0xD59300` | Bit-align + 1-byte type via `CMessage::Read` |
-| `j_?Message_Read@…MessageType…` (thunk) | `0x100079B4` | `0xD59300` | Thunk target = `Message_Read` |
+| `j_?Message_Read@...MessageType...` (thunk) | `0x100079B4` | `0xD59300` | Thunk target = `Message_Read` |
 | `CMessage::Read` (`unsigned char&`) | `0x1008A5E0` | `0xD58B30` | Bit-offset buffer read |
 | `CMessage::SkipRead` | `0x10051830` | `0xD589C0` | Restore read offset on failure |
 | `CNetClientWorker::ProcessMessage_ProudNetLayer` | `0x1005A370` | `0xD653B0` | PN18 **57** cases, GAME **50** |
 | `GetWorkTypeFromMessageHeader` | `0x101355A0` | `0xD8B4A0` | type **1→1, 2→2, else 3** |
-| `ProcessMessage_Encrypted` | `0x101758E0` | `0xD5CA30` | PN18 **43–46**; GAME **39** |
-| `ProcessMessage_Compressed` | `0x10175FE0` | `0xD5DC10` | PN18 **47**; GAME **37–38** |
+| `ProcessMessage_Encrypted` | `0x101758E0` | `0xD5CA30` | PN18 **43-46**; GAME **39** |
+| `ProcessMessage_Compressed` | `0x10175FE0` | `0xD5DC10` | PN18 **47**; GAME **37-38** |
 | `IsFromRemoteClientPeer` | `0x1005B4B0` | `0xD5FD30` | Peer guard |
 | `OnMessageReceived` | `0x100BB1E0` | `0xD65940` | Recv-list drain |
 | Alternate batch dispatch | - | `0xD366A0` | caller `0xD37BC0` |
@@ -204,17 +204,17 @@ Full per-case GAME table: [proudnet/message-dispatch.md](proudnet/message-dispat
 | *(no label)* | - | `0xD60E10` | case **34** |
 | `ProcessMessage_ReliableRelay2` | `0x1005ED90` | `0xD625E0` | case **35** |
 | *(no label)* | - | `0xD61760` | case **36** |
-| `ProcessMessage_Compressed` | `0x10175FE0` | `0xD5DC10` | cases **37–38** |
+| `ProcessMessage_Compressed` | `0x10175FE0` | `0xD5DC10` | cases **37-38** |
 | `ProcessMessage_Encrypted` | `0x101758E0` | `0xD5CA30` | case **39** |
 | *(no label)* | - | `0xD62110` | case **40** |
 | *(no label)* | - | `0xD60FB0` | case **41** |
-| *(encrypted/compressed)* | - | - | cases **42–47** default |
+| *(encrypted/compressed)* | - | - | cases **42-47** default |
 | *(no label)* | - | `0xD62330` | case **49** |
 | *(no label)* | - | `0xD61120` | case **50** |
 | `ProcessMessage_PeerUdp_ServerHolepunchAck` | `0x1005CAE0` | - | §6 case **23** default |
 | `ProcessMessage_ReliableUdp_Frame` | `0x1005BCC0` | - | UDP family |
 | `ProcessMessage_UnreliableRelay2` | `0x1005F2A0` | - | relay family |
-| `ProcessMessage_LingerDataFrame2` | `0x1005F5C0` | - | §6 **54–56** default |
+| `ProcessMessage_LingerDataFrame2` | `0x1005F5C0` | - | §6 **54-56** default |
 | `ProcessMessage_S2CRoutedMulticast1` | `0x10059BE0` | - | default |
 | `ProcessMessage_S2CRoutedMulticast2` | `0x1005A1C0` | - | default |
 
@@ -229,10 +229,10 @@ Full per-case GAME table: [proudnet/message-dispatch.md](proudnet/message-dispat
 | *(batch)* | - | `0xD27780` | case **12** |
 | *(batch)* | - | `0xD27F10` | case **14** |
 | *(batch)* | - | `0xD27A40` | case **16** |
-| `ProcessMessage_Compressed` | `0x10175FE0` | `0xD5DC10` | cases **37–38** |
+| `ProcessMessage_Compressed` | `0x10175FE0` | `0xD5DC10` | cases **37-38** |
 | `ProcessMessage_Encrypted` | `0x101758E0` | `0xD5CA30` | case **39** |
 | *(batch)* | - | `0xD297C0` | case **47** (client: default) |
-| *(batch 18–23, 27–28, 40–41)* | - | `0xD29BA0`…`0xD34E80` | see message-dispatch.md |
+| *(batch 18-23, 27-28, 40-41)* | - | `0xD29BA0`...`0xD34E80` | see message-dispatch.md |
 
 #### TCP framing & connection worker
 
@@ -260,7 +260,7 @@ Full per-case GAME table: [proudnet/message-dispatch.md](proudnet/message-dispat
 | `Proud::CMessage` | 48 |
 | `Proud::CReceivedMessage` | 96 |
 | `Proud::CSocketBuffer` | 28 |
-| `Proud::CFastArray<uint8_t,…>` | 28 |
+| `Proud::CFastArray<uint8_t,...>` | 28 |
 | `Proud::AddrPort` | 24 |
 
 ---

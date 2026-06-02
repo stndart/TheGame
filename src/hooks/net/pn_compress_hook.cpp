@@ -26,7 +26,7 @@ using ProcessEncryptedFn = char(__thiscall *)(void *core, void *received_msg,
 
 } // namespace
 
-// sub_D5DC10 - __thiscall (ECX=core). SEH: 6A FF 68 … | resume @ 0xD5DC17.
+// sub_D5DC10 - __thiscall (ECX=core). SEH: 6A FF 68 ... | resume @ 0xD5DC17.
 // Passthrough: restore_hook then call full entry RVA (not RVA+5).
 extern "C" char process_compressed_c(void *core, std::uint32_t type,
                                      void *received_msg, void *stack_mem) {
@@ -62,7 +62,8 @@ extern "C" char process_encrypted_c(void *core, void *received_msg,
                                     void *stack_mem) {
   static int logs = 0;
   if (logs < kLogLimit && !thegame::cfg.no_proud_logs) {
-    logpnf(0, "encrypt: core=%p msg=%p stack=%p", core, received_msg, stack_mem);
+    logpnf(0, "encrypt: core=%p msg=%p stack=%p", core, received_msg,
+           stack_mem);
     ++logs;
   }
 

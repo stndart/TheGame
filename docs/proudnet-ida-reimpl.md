@@ -61,7 +61,7 @@ Per-case table: [proudnet/message-dispatch.md](proudnet/message-dispatch.md).
 
 ```text
 sub_D668B0   PNCliWorker thread
-  sub_D70A10 → sub_D708F0 → sub_D6FF20 (task) → sub_D6F7B0 (states 0–5)
+  sub_D70A10 → sub_D708F0 → sub_D6FF20 (task) → sub_D6F7B0 (states 0-5)
 ```
 
 | RVA | State | Role | Hook |
@@ -148,7 +148,7 @@ Game RMI RVAs: [rmi-ida-reimpl.md](rmi-ida-reimpl.md).
 
 | RVA | Member | File |
 | --- | --- | --- |
-| `0xCEFCC0`–`0xCF1DD0` | String ops | `src/hooks/str/string.cpp` |
+| `0xCEFCC0`-`0xCF1DD0` | String ops | `src/hooks/str/string.cpp` |
 | `0x5584C0` / `0x578BB0` | inline buf capacity | `str/inline_buf.cpp` |
 | `0x535740` / `0x578C90` | converters | `str/converters.cpp` |
 

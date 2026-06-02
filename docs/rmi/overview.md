@@ -13,7 +13,7 @@ Application-layer **request/response** messages above ProudNet transport. The ga
  UI click ─▶ send-proxy (sub_65AEA0 / sub_A0B290)        wire 0x02 RMI frame
             └▶ app frame [id:2][body]                   └▶ drain sub_D65940
                └▶ transport wrap (0x25)                      └▶ dispatch sub_D653B0
-                  └▶ TCP [13 57][len][0x25 …]   (opaque)        └▶ MessageType case Rmi
+                  └▶ TCP [13 57][len][0x25 ...]   (opaque)        └▶ MessageType case Rmi
                                                                    └▶ sub_D64F10 → leaf handler
 ```
 

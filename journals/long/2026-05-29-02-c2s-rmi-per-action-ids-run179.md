@@ -33,7 +33,7 @@ Proxy id = stack arg `rmiId:int16`; floor id = `*(u16*)msg` (first LE u16 of the
 
 ## Full grmi timeline (events.jsonl line → reading)
 
-LOGIN / handshake burst (before shard_choice, lines 22, 35–47) - not user actions:
+LOGIN / handshake burst (before shard_choice, lines 22, 35-47) - not user actions:
 ```
 22 floor 0x4654 (18004) len=1565    initial auth/session payload (18xxx band)
 35 floor 0x3ACA (15050) len=10
