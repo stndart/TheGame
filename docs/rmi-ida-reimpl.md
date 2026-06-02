@@ -93,15 +93,9 @@ Full table: [plans/proudnet-rmi-server-plan.md](plans/proudnet-rmi-server-plan.m
 
 ---
 
-## Injection harness
+## Injection harness (removed)
 
-| File | Role |
-| --- | --- |
-| [`src/RMI/Inject.cpp`](../../src/RMI/Inject.cpp) | Build body + call leaf |
-| [`src/hooks/game_stage.cpp`](../../src/hooks/game_stage.cpp) | Main-thread pump |
-| [`src/RMI/GameSendHook.cpp`](../../src/RMI/GameSendHook.cpp) | C2S latch |
-
-Default **debug** DLL: inject compiled out. Reconfigure `-DTHEGAME_DISABLE_RMI_INJECT=OFF` to compile inject in; env **`THEGAME_DISABLE_RMI_INJECT=1`** disables at runtime.
+Removed in v1. Archive: [rmi/fake-server-hooks.md](rmi/fake-server-hooks.md). RMI trace: [`src/RMI/Log.cpp`](../../src/RMI/Log.cpp), [`ProcessProudNetLayer.cpp`](../../src/ProudNet/ProcessProudNetLayer.cpp).
 
 ---
 

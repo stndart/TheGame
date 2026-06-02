@@ -93,11 +93,18 @@ void append_frames_text(std::ostream &out,
   out << "]";
 }
 
+const uint8_t kOpKeepalive = 0x1C;
+
 void log_line(SOCKET sock, u_short port, const char *dir, size_t chunk_len,
               const uint8_t *raw, const ProudFrameParse::ParsedFrame *frames,
               size_t frame_count, size_t incomplete_tail) {
   if (thegame::cfg.no_proud_logs)
     return;
+
+  if (thegame::cfg.silent_keepalive) {
+    if (frame_count == 1 && frames[0].inner.opcode == kOpKeepalive)
+      return;
+  }
 
   const DWORD tid = GetCurrentThreadId();
   std::ostringstream line;
@@ -115,8 +122,7 @@ void log_line(SOCKET sock, u_short port, const char *dir, size_t chunk_len,
   if (thegame::cfg.pipes) {
     Diagnostics::PnTcpFrameHeader pipe_frames[kMaxFramesPerLine];
     for (size_t i = 0; i < frame_count; ++i) {
-      pipe_frames[i].payload_len =
-          static_cast<unsigned>(frames[i].payload_len);
+      pipe_frames[i].payload_len = static_cast<unsigned>(frames[i].payload_len);
       pipe_frames[i].opcode = frames[i].inner.opcode;
       pipe_frames[i].rmi_id = frames[i].inner.rmi_id;
       pipe_frames[i].body_len = static_cast<unsigned>(frames[i].inner.body_len);

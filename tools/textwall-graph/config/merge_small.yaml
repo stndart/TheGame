@@ -1,0 +1,12 @@
+# Aggressive merge of tiny SCCs into neighbors (condensation cross-edges).
+algorithm: scc
+min_component_size: 1
+
+merge:
+  enabled: true
+  max_scc_size: 20
+  min_shared_edges: 2
+
+report:
+  include_nodes: true
+  bucket_small: false

@@ -2,10 +2,12 @@
 
 #include "ProudNet/Layout.hpp"
 #include "ProudNet/MessageType.hpp"
+#include "RMI/Log.hpp"
 #include "hook_manager.h"
 #include "target_hooks.h"
 
 #include <cstddef>
+#include <cstdint>
 #include <windows.h>
 
 namespace {
@@ -35,6 +37,24 @@ using WorkerWstrMsgFn = void(__thiscall *)(void *worker, void *wstr_body,
                                            void *msg);
 
 constexpr std::size_t kStackReceivedMessageBytes = 0x30;
+
+// CReceivedMessage direct-buffer layout — see docs/rmi/client.md.
+void log_incoming_rmi(void *received_msg) {
+  const auto *const stream =
+      reinterpret_cast<const std::uint8_t *>(received_msg);
+  const auto *const data =
+      *reinterpret_cast<const std::uint8_t *const *>(stream + 0x0C);
+  const auto len =
+      *reinterpret_cast<const std::uint32_t *>(stream + 0x10);
+  const auto host =
+      *reinterpret_cast<const std::uint32_t *>(stream + 0x1C);
+  if (!data || len < 3)
+    return;
+  const unsigned rmi_id =
+      static_cast<unsigned>(data[1]) |
+      (static_cast<unsigned>(data[2]) << 8);
+  Rmi::LogS2c(rmi_id, len, host);
+}
 
 char call_process_compressed(void *core, std::uint32_t type, void *received_msg,
                              void *stack_mem) {
@@ -156,6 +176,7 @@ bool Proud::ProcessMessageProudNetLayer(void *worker, void *wstr_body,
 
   switch (type) {
   case Proud::MessageType::Type::Rmi: {
+    log_incoming_rmi(received_msg);
     unsigned char out_flag = 0;
     const auto fn = reinterpret_cast<WorkerRmiFn>(
         game_va(static_cast<std::uint32_t>(Proud::Rva::kHandlerRmi)));

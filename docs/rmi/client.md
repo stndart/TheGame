@@ -23,10 +23,12 @@ Application frame: **`[rmi_id:2 LE][body…]`**; `len` includes the 2-byte id.
 
 | Hook | Target | Log prefix |
 | --- | --- | --- |
-| `hook_pn_game_rmi_send` | `sub_65AEA0` | `c2s_grmi proxy id=…` |
-| `hook_pn_rmi_floor` | `sub_A0B290` | `c2s_grmi floor id=…` |
+| `hook_pn_rmi_send` | `sub_D5C5E0` | `[rmi] c2s framework …` |
+| `hook_pn_game_rmi_send` | `sub_65AEA0` | `[rmi] c2s proxy …` |
+| `hook_pn_rmi_floor` | `sub_A0B290` | `[rmi] c2s floor …` |
+| `ProcessMessageProudNetLayer` (case Rmi) | `sub_D653B0` | `[rmi] s2c …` |
 
-Logs **id + len**; read body at `msg` for hex dumps.
+Logs **id + len** (framework: + remotes); no filtering. Read body at `msg` for hex dumps.
 
 ---
 
@@ -75,7 +77,7 @@ For dispatch through `sub_D653B0` (ctor `sub_D12450`):
 
 Buffer: `[MessageType=0x01][rmi_id:2 LE][body]`.
 
-> Offline harness: **direct leaf call** (injection) - see below. Default **debug** DLL compiles inject **out** (wire/server S2C).
+> S2C dispatch uses the full `CReceivedMessage` path above. Fake-server inject was removed — see [fake-server-hooks.md](fake-server-hooks.md).
 
 ---
 
@@ -142,22 +144,9 @@ Create RES only needs `result@+2 == 0`.
 
 ---
 
-## In-process injection (harness)
+## In-process injection (removed)
 
-Files: [`src/RMI/Inject.cpp`](../../src/RMI/Inject.cpp), wired from send hook + [`game_stage.cpp`](../../src/hooks/game_stage.cpp) (main-thread pump).
-
-```c
-void *arg[8] = {0};
-arg[2] = body;   // result u16 @ body+2 = 0
-((int(__stdcall*)(void*))game_va(leaf_rva))(arg);
-```
-
-- **Latch** on C2S send hook when REQ id matches.
-- **Pump** on main thread from `room_list` / `room` onPreProcess - not from drain thread.
-- **Debug build:** inject **off** by default (`msvc-x86-debug` / `THEGAME_DISABLE_RMI_INJECT=ON`). **Re-enable:** reconfigure with `-DTHEGAME_DISABLE_RMI_INJECT=OFF`. Runtime `THEGAME_DISABLE_RMI_INJECT=1` when inject is compiled in.
-- Full table (REQ latch → RES leaf, body sizes): [`src/RMI/Inject.cpp`](../../src/RMI/Inject.cpp), [proudnet-rmi-server-plan.md § Inject-only](../plans/proudnet-rmi-server-plan.md).
-
-Verified: create-room REQ → inject → `game_stage: room` (run 180).
+The fake-server S2C inject harness was **removed in v1**. Archive: [fake-server-hooks.md](fake-server-hooks.md). Use the friends server wire + `[rmi] s2c` logs instead.
 
 ---
 

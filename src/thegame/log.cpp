@@ -81,7 +81,7 @@ void eventf(const char *format, ...) {
 
 void stagef(const char *stage) {
   char buffer[512];
-  sprintf_s(buffer, "[stage]: %s", stage);
+  sprintf_s(buffer, "[stage] %s", stage);
   log_message(buffer);
   if (cfg.pipes)
     Diagnostics::emit_game_stage(stage);
@@ -90,11 +90,10 @@ void stagef(const char *stage) {
 void log_boot_paths() {
   logf("thegame logs: main=%s net=%s proud=%s", main_log_path().c_str(),
        net_log_path().c_str(), proud_log_path().c_str());
-  logf(
-      "thegame flags: hooks=%d entrypoint=%d veh=%d pipes=%d rmi_inject_off=%d",
-      cfg.disable_hooks ? 0 : 1, cfg.disable_entrypoint_hook ? 0 : 1,
-      cfg.disable_veh ? 0 : 1, cfg.pipes ? 1 : 0,
-      cfg.disable_rmi_inject ? 1 : 0);
+  logf("thegame flags: hooks=%d entrypoint=%d veh=%d pipes=%d autonav_off=%d",
+       cfg.disable_hooks ? 0 : 1, cfg.disable_entrypoint_hook ? 0 : 1,
+       cfg.disable_veh ? 0 : 1, cfg.pipes ? 1 : 0,
+       cfg.disable_autonav ? 1 : 0);
   logf("thegame log flags: no_net=%d silent_net=%d no_proud=%d silent_proud=%d",
        cfg.no_network_logs ? 1 : 0, cfg.silent_network ? 1 : 0,
        cfg.no_proud_logs ? 1 : 0, cfg.silent_proud ? 1 : 0);

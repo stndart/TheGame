@@ -1,0 +1,33 @@
+# Textwall graph clustering (standalone; run from repo root or this dir)
+
+set windows-shell := ["powershell.exe", "-NoLogo", "-Command"]
+
+root := justfile_directory()
+graph := root / "out" / "graph.json.gz"
+config := root / "config" / "default.yaml"
+out := root / "out" / "clusters.json"
+
+default:
+    @just --list
+
+# Install package editable (once)
+install:
+    pip install -e "{{root}}"
+
+# Cluster with default SCC config
+cluster graph=graph config=config out=out:
+    python -m textwall_graph.clusterize "{{graph}}" -c "{{config}}" -o "{{out}}" --histogram
+
+# Cluster with aggressive small-SCC merge
+cluster-merge graph=graph out=root / "out" / "clusters_merge.json":
+    python -m textwall_graph.clusterize "{{graph}}" -c "{{root}}/config/merge_small.yaml" -o "{{out}}" --histogram
+
+# Undirected WCC mode
+cluster-wcc graph=graph out=root / "out" / "clusters_wcc.json":
+    python -m textwall_graph.clusterize "{{graph}}" -c "{{root}}/config/wcc.yaml" -o "{{out}}" --histogram
+
+# Sweep all presets under config/
+sweep graph=graph:
+    python -m textwall_graph.clusterize "{{graph}}" -c "{{root}}/config/default.yaml" -o "{{root}}/out/clusters_default.json" --histogram
+    python -m textwall_graph.clusterize "{{graph}}" -c "{{root}}/config/merge_small.yaml" -o "{{root}}/out/clusters_merge_small.json" --histogram
+    python -m textwall_graph.clusterize "{{graph}}" -c "{{root}}/config/wcc.yaml" -o "{{root}}/out/clusters_wcc.json" --histogram

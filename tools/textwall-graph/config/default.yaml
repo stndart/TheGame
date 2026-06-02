@@ -1,0 +1,12 @@
+# Base clustering: directed SCC, no merge.
+algorithm: scc
+min_component_size: 1
+
+merge:
+  enabled: false
+  max_scc_size: 1
+  min_shared_edges: 1
+
+report:
+  include_nodes: true
+  bucket_small: false

@@ -62,8 +62,7 @@
                 "strategy": "external"
             },
             "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Debug",
-                "DISABLE_RMI_INJECT": "ON"
+                "CMAKE_BUILD_TYPE": "Debug"
             }
         },
         {

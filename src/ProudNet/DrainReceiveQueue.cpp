@@ -27,11 +27,8 @@ void Proud::DrainReceiveQueue(void *net_client) {
            worker_from_client(net_client));
     ++logs;
   }
-  // NOTE: S2C RES injection used to be pumped here, but this hook runs on the
-  // ProudNet worker thread. The RES leaves drive RequestState/UI/scripting-VM
-  // work that must run on the main (frame) thread; pumping here raced the frame
-  // loop and intermittently faulted the UI VM. Injection now pumps from the
-  // IState::onPreProcess hooks (main thread). See RMI/Inject.{hpp,cpp}.
+  // NOTE: in-process S2C inject was removed (v1); friends server is authoritative.
+  // See docs/rmi/fake-server-hooks.md.
 }
 
 void Proud::DrainReceiveQueueCallOriginal(void *net_client) {

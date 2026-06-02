@@ -11,6 +11,8 @@ void NavEnqueueCommand(NavCmd cmd);
 
 bool NavDequeueCommand(NavCmd *out);
 
+bool NavHasQueuedCommands();
+
 const char *NavCommandList();
 
 } // namespace Rmi

@@ -109,8 +109,7 @@ These are just basically some flags combinations
 | `DISABLE_PARK_THREAD`     | ON      | Experimental - parks a thread when a fatal exception occurs.                                           |
 | `DISABLE_INT`             | ON      | Experimental - raises a debug interrupt on exception. You would need to bypass AC to get this working. |
 | `MINIDUMP_ENABLED`        | OFF     | Experimental - makes a minidump on fatal exception (AV).                                               |
-| `DISABLE_RMI_INJECT`      | ON      | Experimental - the client *sometimes* acts as the upstream server, answering it's own RMIs.            |
-| `DISABLE_AUTONAV`         | ON      | Experimental - disables autonavigation hooks                                                           |
+| `DISABLE_AUTONAV`         | OFF     | Legacy no-op; handler-pipe nav always pumps. `ctl launch` forces `0` in launcher env.                   |
 | `NO_NETWORK_LOGS`         | OFF     |                                                                                                        |
 | `SILENT_KEEPALIVE`        | ON      | Prevents logging pings on 20009 port.                                                                  |
 | `SILENT_NETWORK`          | OFF     | Do not print network logs in main log.                                                                 |

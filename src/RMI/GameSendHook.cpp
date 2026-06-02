@@ -2,10 +2,8 @@
 
 #include <windows.h>
 
-#include "RMI/Inject.hpp"
+#include "RMI/Log.hpp"
 #include "thegame/log.hpp"
-
-using thegame::logf;
 
 // GAME application RMI proxy send chokepoints (NOT the framework proxy
 // 0xD5C5E0, which only carries builtin heartbeat/ping ids 1001/1006/1019).
@@ -24,18 +22,11 @@ using thegame::logf;
 // get +0x24 in the stub for pushad(0x20)+pushfd(0x04).
 
 extern "C" void __cdecl log_c2s_rmi_proxy(unsigned rmi_id, unsigned len) {
-  char buf[96];
-  const unsigned id = rmi_id & 0xFFFFu;
-  wsprintfA(buf, "c2s_grmi proxy id=0x%04X (%u) len=%u", id, id, len);
-  thegame::logf(buf);
-  Rmi::NoteC2sSend(id);
+  Rmi::LogC2sProxy(rmi_id, len);
 }
 
 extern "C" void __cdecl log_c2s_rmi_floor(unsigned rmi_id, unsigned len) {
-  char buf[96];
-  const unsigned id = rmi_id & 0xFFFFu;
-  wsprintfA(buf, "c2s_grmi floor id=0x%04X (%u) len=%u", id, id, len);
-  thegame::logf(buf);
+  Rmi::LogC2sFloor(rmi_id, len);
 }
 
 // sub_65AEA0: rmiId (int16) at entry [esp+0x0C], len at [esp+0x08].

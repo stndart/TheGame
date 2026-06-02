@@ -1,80 +1,71 @@
-#include "RMI/Inject.hpp"
 #include "RMI/Nav.hpp"
 #include "target_hooks.h"
 #include "thegame/config.hpp"
 #include "thegame/log.hpp"
 
+namespace {
+
+// Handler-pipe nav must run even when DISABLE_AUTONAV is set in the environment
+// (legacy flag). Stage hooks pump when onPreProcess runs; ctl commands also use
+// NavSchedulePump (window message) because shard UI does not tick every frame.
+void nav_pump(const char *phase) { Rmi::NavPump(phase); }
+
+} // namespace
+
 extern "C" void __cdecl diagnostics_game_stage_intro() {
   thegame::stagef("intro");
+  nav_pump("intro");
 }
 
 extern "C" void __cdecl diagnostics_game_stage_login() {
   thegame::stagef("login");
+  nav_pump("login");
 }
 
-extern "C" void __cdecl diagnostics_game_stage_shard_choice() {
-  thegame::stagef("shard_choice");
+// CGameServer::onPreProcess begin @ 0x4345B0 (no ctl stage emit).
+extern "C" void __cdecl diagnostics_game_stage_server_begin() {
+  nav_pump("server_begin");
 }
 
-// NOTE: this fires at CGameServer::onPreProcess END (0x4347CC) - the server /
-// shard picker finished its onEnter setup. It is NOT the real Main Menu (which
-// needs human interaction to reach). Emitted as "server_ready" to stop the old
-// deceptive "main_menu" label. Real screens are staged below (lobby, room,
-// ...).
-extern "C" void __cdecl diagnostics_game_stage_main_menu() {
-  thegame::stagef("server_ready");
-  if (!thegame::cfg.disable_autonav) {
-    Rmi::NavOnStage("server_ready");
-    Rmi::NavPump("server_ready");
-  }
+// CGameServer::onPreProcess end @ 0x4347CC — shard picker UI is active.
+extern "C" void __cdecl diagnostics_game_stage_shard_select() {
+  thegame::stagef("shard_select");
+  nav_pump("shard_select");
 }
 
 extern "C" void __cdecl diagnostics_game_stage_lobby() {
   thegame::stagef("lobby");
-  if (!thegame::cfg.disable_autonav) {
-    Rmi::NavOnStage("lobby");
-    Rmi::NavPump("lobby");
-  }
-  // Answer pending lobby-enter REQ (0x3F40) before shard UI regression.
-  Rmi::PumpLobby();
+  nav_pump("lobby");
 }
 
 extern "C" void __cdecl diagnostics_game_stage_room_list() {
   thegame::stagef("room_list");
-  if (!thegame::cfg.disable_autonav) {
-    Rmi::NavOnStage("room_list");
-    Rmi::NavPump("room_list");
-  }
-  // Main-thread pump: run a pending Create-Room transition RES here (the frame
-  // thread) instead of the ProudNet worker thread.
-  Rmi::PumpLobby();
+  nav_pump("room_list");
 }
 
 extern "C" void __cdecl diagnostics_game_stage_party_room() {
   thegame::stagef("party_room");
+  nav_pump("party_room");
 }
 
 extern "C" void __cdecl diagnostics_game_stage_room() {
   thegame::stagef("room");
-  if (!thegame::cfg.disable_autonav) {
-    Rmi::NavOnStage("room");
-    Rmi::NavPump("room");
-  }
-  // Main-thread pump, BEFORE the original CGameRoom::onPreProcess binds room
-  // data: populate the room (first frame), then honour a pending Ready->start.
-  Rmi::PumpRoom();
+  nav_pump("room");
 }
 
 extern "C" void __cdecl diagnostics_game_stage_char_select() {
   thegame::stagef("char_select");
+  nav_pump("char_select");
 }
 
 extern "C" void __cdecl diagnostics_game_stage_map_loading() {
   thegame::stagef("map_loading");
+  nav_pump("map_loading");
 }
 
 extern "C" void __cdecl diagnostics_game_stage_in_game() {
   thegame::stagef("in_game");
+  nav_pump("in_game");
 }
 
 // CGameIntro::onPreProcess - switches to eGFxScene_Intro (14)
@@ -109,12 +100,12 @@ extern "C" void __declspec(naked) hook_game_login() {
   }
 }
 
-// CGameServer::onPreProcess Begin - server / shard picker
+// CGameServer::onPreProcess Begin - server / shard picker (no stage emit)
 extern "C" void __declspec(naked) hook_game_server_select() {
   __asm {
     pushad
     pushfd
-    call diagnostics_game_stage_shard_choice
+    call diagnostics_game_stage_server_begin
     popfd
     popad
 
@@ -125,12 +116,12 @@ extern "C" void __declspec(naked) hook_game_server_select() {
   }
 }
 
-// CGameServer::onPreProcess End - main menu ready (g_kMainMenu wired)
+// CGameServer::onPreProcess End - shard selection screen ready
 extern "C" void __declspec(naked) hook_game_main_menu() {
   __asm {
     pushad
     pushfd
-    call diagnostics_game_stage_main_menu
+    call diagnostics_game_stage_shard_select
     popfd
     popad
 

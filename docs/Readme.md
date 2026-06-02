@@ -19,7 +19,8 @@
 | --- | --- |
 | [rmi/overview.md](rmi/overview.md) | Intent - numbering spaces, end-to-end flow |
 | [rmi/client.md](rmi/client.md) | Client - C2S send, S2C receive, leaf convention, registrars |
-| [rmi/autonav.md](rmi/autonav.md) | **Autonav** - `THEGAME_NAV_AUTO`, UI handlers, ctl verify |
+| [rmi/autonav.md](rmi/autonav.md) | **Autonav** - ctl handler pipe (`nav_goto_lobby`), UI handler pattern |
+| [rmi/fake-server-hooks.md](rmi/fake-server-hooks.md) | **Archival** - removed in-process S2C inject harness |
 | [rmi/server.md](rmi/server.md) | Server - wire builders, triggers, opaque replay artifacts |
 | [rmi-ida-reimpl.md](rmi-ida-reimpl.md) | IDA ↔ reimpl - game RMI RVAs, handler tables, hooks |
 

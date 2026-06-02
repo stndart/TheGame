@@ -41,12 +41,8 @@
 #define MINIDUMP_ENABLED 0
 #endif
 
-#ifndef DISABLE_RMI_INJECT
-#define DISABLE_RMI_INJECT 1
-#endif
-
 #ifndef DISABLE_AUTONAV
-#define DISABLE_AUTONAV 1
+#define DISABLE_AUTONAV 0
 #endif
 
 #ifndef NO_NETWORK_LOGS
@@ -110,7 +106,6 @@ struct Cfg {
   bool disable_park_thread;
   bool disable_int;
   bool minidump_enabled;
-  bool disable_rmi_inject;
   bool disable_autonav;
   bool no_network_logs;
   bool silent_keepalive;

@@ -1,5 +1,7 @@
 #include "RMI/NavCommands.hpp"
 
+#include "RMI/Nav.hpp"
+#include "thegame/log.hpp"
 #include <windows.h>
 
 namespace {
@@ -25,9 +27,23 @@ void Rmi::NavEnqueueCommand(NavCmd cmd) {
     return;
   ensure_lock();
   EnterCriticalSection(&g_queue_lock);
-  if (g_tail - g_head < kQueueSize)
+  if (g_tail - g_head < kQueueSize) {
     g_queue[g_tail++ % kQueueSize] = cmd;
+    if (cmd == NavCmd::GotoLobby)
+      thegame::logf("[nav] enqueued nav_goto_lobby (handler pipe)");
+    NavSchedulePump();
+  } else {
+    thegame::logf("[nav] command queue full, dropped");
+  }
   LeaveCriticalSection(&g_queue_lock);
+}
+
+bool Rmi::NavHasQueuedCommands() {
+  ensure_lock();
+  EnterCriticalSection(&g_queue_lock);
+  const bool has = g_head < g_tail;
+  LeaveCriticalSection(&g_queue_lock);
+  return has;
 }
 
 bool Rmi::NavDequeueCommand(NavCmd *out) {

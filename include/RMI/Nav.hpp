@@ -6,10 +6,11 @@ namespace Rmi {
 void NavStartup();
 void NavTeardown();
 
-void NavOnStage(const char *phase);
-
 void NavPump(const char *phase);
 
 void NavDrainCommands();
+
+// Post a main-thread pump (handler pipe enqueues off-thread).
+void NavSchedulePump();
 
 } // namespace Rmi
