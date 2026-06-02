@@ -5,25 +5,15 @@
 #include "game/net/socket_trace.hpp"
 #include "thegame/config.hpp"
 #include "thegame/log.hpp"
-#include "thegame/paths.hpp"
 
 #include <cstdio>
-#include <fstream>
 #include <iomanip>
+#include <sstream>
 #include <windows.h>
 
 namespace {
 
-std::ofstream g_pn_tcp_file;
 constexpr size_t kMaxFramesPerLine = 32;
-
-void ensure_log_open() {
-  if (thegame::cfg.no_proud_logs || g_pn_tcp_file.is_open())
-    return;
-  g_pn_tcp_file.open(thegame::proud_log_path(), std::ios::app);
-  if (g_pn_tcp_file.is_open())
-    g_pn_tcp_file << "# proudnet-tcp headers (tid port dir chunk frames)\n";
-}
 
 void append_raw_preview(std::ostream &out, const uint8_t *data, size_t len) {
   constexpr size_t kPreview = 24;
@@ -108,23 +98,21 @@ void log_line(SOCKET sock, u_short port, const char *dir, size_t chunk_len,
               size_t frame_count, size_t incomplete_tail) {
   if (thegame::cfg.no_proud_logs)
     return;
-  ensure_log_open();
-  if (!g_pn_tcp_file.is_open())
-    return;
 
   const DWORD tid = GetCurrentThreadId();
-  g_pn_tcp_file << "tid=" << tid << " port=" << port << " dir=" << dir
-                << " sock=" << static_cast<unsigned long long>(sock)
-                << " chunk=" << chunk_len;
+  std::ostringstream line;
+  line << "tid=" << tid << " port=" << port << " dir=" << dir
+       << " sock=" << static_cast<unsigned long long>(sock)
+       << " chunk=" << chunk_len;
   if (incomplete_tail)
-    g_pn_tcp_file << " incomplete=" << incomplete_tail;
-  append_frames_text(g_pn_tcp_file, frames, frame_count);
+    line << " incomplete=" << incomplete_tail;
+  append_frames_text(line, frames, frame_count);
   if (frame_count == 0 && raw && chunk_len)
-    append_raw_preview(g_pn_tcp_file, raw, chunk_len);
-  g_pn_tcp_file << "\n";
-  g_pn_tcp_file.flush();
+    append_raw_preview(line, raw, chunk_len);
 
-  if (thegame::cfg.pipes && !thegame::cfg.silent_proud) {
+  thegame::logpln(line.str().c_str());
+
+  if (thegame::cfg.pipes) {
     Diagnostics::PnTcpFrameHeader pipe_frames[kMaxFramesPerLine];
     for (size_t i = 0; i < frame_count; ++i) {
       pipe_frames[i].payload_len =
@@ -146,23 +134,9 @@ namespace Proud {
 namespace TcpTrace {
 
 void log_connect(SOCKET sock, const char *addr, u_short port) {
-  if (thegame::cfg.no_proud_logs || !SocketTrace::is_pn_track_port(port))
+  if (!SocketTrace::is_pn_track_port(port))
     return;
-
-  ensure_log_open();
-  if (!g_pn_tcp_file.is_open())
-    return;
-
-  const DWORD tid = GetCurrentThreadId();
-  g_pn_tcp_file << "tid=" << tid << " event=connect port=" << port << " sock="
-                << static_cast<unsigned long long>(sock)
-                << " addr=" << (addr ? addr : "?") << "\n";
-  g_pn_tcp_file.flush();
-
-  if (thegame::cfg.pipes && !thegame::cfg.silent_proud) {
-    Diagnostics::emit_proudnet_tcp_connect(
-        tid, static_cast<unsigned long long>(sock), addr, port);
-  }
+  thegame::logpns(static_cast<int>(sock), addr, port);
 }
 
 void log_chunk(SOCKET sock, const void *data, size_t len, bool inbound,
@@ -195,8 +169,7 @@ void log_chunk(SOCKET sock, const void *data, size_t len, bool inbound,
 }
 
 void close_log_file() {
-  if (g_pn_tcp_file.is_open())
-    g_pn_tcp_file.close();
+  // Closed via thegame::close_logs() in DllMain.
 }
 
 } // namespace TcpTrace

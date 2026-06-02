@@ -1,8 +1,9 @@
 #include "ProudNet/DrainReceiveQueue.hpp"
 
+#include "thegame/config.hpp"
 #include "thegame/log.hpp"
 
-using thegame::logf;
+using thegame::logpnf;
 
 namespace {
 
@@ -21,9 +22,9 @@ void *worker_from_client(void *net_client) {
 
 void Proud::DrainReceiveQueue(void *net_client) {
   static int logs = 0;
-  if (logs < kLogLimit) {
-    logf("pn_drain_recv: client=%p worker=%p", net_client,
-         worker_from_client(net_client));
+  if (logs < kLogLimit && !thegame::cfg.no_proud_logs) {
+    logpnf(0, "drain_recv: client=%p worker=%p", net_client,
+           worker_from_client(net_client));
     ++logs;
   }
   // NOTE: S2C RES injection used to be pumped here, but this hook runs on the

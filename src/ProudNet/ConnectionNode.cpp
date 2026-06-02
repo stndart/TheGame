@@ -7,14 +7,23 @@
 #include "game/engine/String.h"
 #include "game/engine/TCPSocket.h"
 #include "game/engine/WString.h"
+#include "thegame/config.hpp"
 #include "thegame/log.hpp"
 
-using thegame::logf;
+using thegame::logpnf;
 
 namespace {
 
 constexpr std::uintptr_t kGatewayHostWide = 90;
 constexpr std::uintptr_t kGatewayPort = 9316;
+
+int fast_socket_handle(Proud::CFastSocket *fast) {
+  if (!fast)
+    return 0;
+  auto *base = reinterpret_cast<char *>(fast);
+  return static_cast<int>(*reinterpret_cast<SOCKET *>(
+      base + Proud::FastSocketLayout::kSocket));
+}
 
 void set_fast_socket_nonblock(Proud::CFastSocket *fast) {
   if (!fast)
@@ -99,7 +108,10 @@ bool Proud::SendArm::arm_send() {
 }
 
 char Proud::ConnectionNode::run_state_1() {
-  logf("pn_conn: state1 conn=%p fast=%p", this, fast());
+  Proud::CFastSocket *const sock_early = fast();
+  if (!thegame::cfg.no_proud_logs)
+    logpnf(fast_socket_handle(sock_early), "conn state1 conn=%p fast=%p", this,
+           sock_early);
 
   alignas(4) std::uint8_t select_buf[0x220];
   auto *sel = reinterpret_cast<Proud::CSelectContext *>(select_buf);
@@ -145,9 +157,9 @@ char Proud::ConnectionNode::run_state_2() {
   auto *base = reinterpret_cast<char *>(this);
   std::uint32_t overlap_out[8] = {};
 
-  logf("pn_conn: state2 conn=%p fast=%p", this, fast());
-
   Proud::CFastSocket *const sock = fast();
+  if (!thegame::cfg.no_proud_logs)
+    logpnf(fast_socket_handle(sock), "conn state2 conn=%p fast=%p", this, sock);
   if (!sock)
     return 0;
 
@@ -187,10 +199,10 @@ int Proud::ConnectionNode::run_state_3() {
   auto *base = reinterpret_cast<char *>(this);
   std::uint32_t overlap_out[8] = {};
 
-  logf("pn_conn: state3 conn=%p fast=%p recv.size=%d", this, fast(),
-       recv.size_);
-
   Proud::CFastSocket *const sock = fast();
+  if (!thegame::cfg.no_proud_logs)
+    logpnf(fast_socket_handle(sock), "conn state3 conn=%p fast=%p recv.size=%d",
+           this, sock, recv.size_);
   if (!sock)
     return 0;
 

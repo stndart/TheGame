@@ -19,6 +19,9 @@
 #include "thegame/log.hpp"
 
 using thegame::logf;
+using thegame::logn;
+using thegame::lognf;
+using thegame::logns;
 
 inline std::string to_ip_string(int addr) {
   unsigned char *caddr = reinterpret_cast<unsigned char *>(&addr);
@@ -91,9 +94,8 @@ int TCPSocket::Connect(WString wideHostname, int port) {
   std::string ipstr =
       to_ip_string(*reinterpret_cast<int *>(&serverAddr.sin_addr));
 
-  logf("Connecting socket %p to addr %s:%u", m_socketId, ipstr.c_str(), port);
-  if (port == ServerOverride::kGameLegPort)
-    logf("TCPSocket:27380 target %s:%u", ipstr.c_str(), port);
+  if (!thegame::cfg.no_network_logs)
+    logns(m_socketId, ipstr.c_str(), port);
 
   Proud::TcpTrace::log_connect(m_socketId, ipstr.c_str(),
                                static_cast<u_short>(port));
@@ -102,8 +104,10 @@ int TCPSocket::Connect(WString wideHostname, int port) {
       SOCKET_ERROR) {
     int error = WSAGetLastError();
     Proud::SocketReportError(this, error, nullptr);
-    if (error != WSAEWOULDBLOCK && error != WSA_IO_PENDING)
-      logf("Error connecting to %s: %u", ipstr.c_str(), error);
+    if (error != WSAEWOULDBLOCK && error != WSA_IO_PENDING) {
+      if (!thegame::cfg.no_network_logs)
+        lognf(m_socketId, "Error connecting: %u", error);
+    }
     return error;
   }
 
@@ -112,8 +116,9 @@ int TCPSocket::Connect(WString wideHostname, int port) {
 
 int TCPSocket::Send(TCPSocket::MessageToSend *message) {
   // Check if we need to send a warning
-  if (m_sendWarningFlag) {
-    logf("TCPSocket::Send: IssueSend duplicated sock=%p", m_socketId);
+  if (m_sendWarningFlag && !thegame::cfg.no_network_logs) {
+    lognf(m_socketId, "TCPSocket::Send: IssueSend duplicated sock=%p",
+          m_socketId);
   }
 
   // Validate send parameters
@@ -128,6 +133,15 @@ int TCPSocket::Send(TCPSocket::MessageToSend *message) {
   // Range check for buffer count
   if (((uint64_t)message->bufferCount + 0x80000000) >> 32) {
     Proud::growable::throw_send_buffer_count_out_of_range();
+  }
+
+  if (!thegame::cfg.no_network_logs) {
+    if (message->bufferCount > 1) {
+      lognf(m_socketId, "TCPSocket::Send: buffer has %u WSABUFs",
+            message->bufferCount);
+    }
+    logn(m_socketId, message->inlineBufferPtr[0].len,
+         message->inlineBufferPtr[0].buf, false);
   }
 
   // Use WSASend for overlapped I/O

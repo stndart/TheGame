@@ -4,19 +4,23 @@
 
 #include "ProudNet/Layout.hpp"
 #include "game/net/socket_trace.hpp"
+#include "thegame/config.hpp"
 #include "thegame/log.hpp"
 
-using thegame::logf;
+using thegame::logpnf;
 
 namespace {
 
 void log_socket_error(void *socket_obj, int err) {
+  if (thegame::cfg.no_proud_logs)
+    return;
   auto *base = reinterpret_cast<char *>(socket_obj);
   const SOCKET sock =
       *reinterpret_cast<SOCKET *>(base + Proud::FastSocketLayout::kSocket);
   const u_short port = SocketTrace::peer_port(sock);
-  logf("pn_socket_error: fast=%p sock=%p err=%d port=%u", socket_obj,
-       reinterpret_cast<void *>(sock), err, static_cast<unsigned>(port));
+  logpnf(static_cast<int>(sock),
+         "socket_error fast=%p err=%d port=%u", socket_obj, err,
+         static_cast<unsigned>(port));
 }
 
 } // namespace

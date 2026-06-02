@@ -7,9 +7,10 @@
 #include "ProudNet/GrowableBuffer.hpp"
 #include "ProudNet/SocketError.hpp"
 #include "game/net/socket_trace.hpp"
+#include "thegame/config.hpp"
 #include "thegame/log.hpp"
 
-using thegame::logf;
+using thegame::logpnf;
 
 namespace {
 
@@ -111,8 +112,9 @@ char Proud::CFastSocket::recv_complete(unsigned char wait, std::uint32_t *out) {
       reinterpret_cast<PNAddrPort *>(base + Proud::FastSocketLayout::kAddrPort),
       sock);
 
-  logf("pn_recv_complete: fast=%p bytes=%lu", this,
-       static_cast<unsigned long>(transferred));
+  if (!thegame::cfg.no_proud_logs)
+    logpnf(static_cast<int>(sock), "recv_complete fast=%p bytes=%lu", this,
+           static_cast<unsigned long>(transferred));
   return 1;
 }
 
@@ -120,8 +122,12 @@ int Proud::CFastSocket::recv(int len) {
   auto *base = reinterpret_cast<char *>(this);
   SocketTrace::note_fast_socket_ctx(this);
 
-  if (base[Proud::FastSocketLayout::kRecvIssueWarning]) {
-    logf("pn_fast_socket: IssueRecv duplicated fast=%p", this);
+  const SOCKET sock =
+      *reinterpret_cast<SOCKET *>(base + Proud::FastSocketLayout::kSocket);
+
+  if (base[Proud::FastSocketLayout::kRecvIssueWarning] &&
+      !thegame::cfg.no_proud_logs) {
+    logpnf(static_cast<int>(sock), "IssueRecv duplicated fast=%p", this);
   }
 
   if (len <= 0)
@@ -144,8 +150,6 @@ int Proud::CFastSocket::recv(int len) {
   base[Proud::FastSocketLayout::kRecvPending] = 0;
   base[Proud::FastSocketLayout::kRecvPending] = 1;
 
-  const SOCKET sock =
-      *reinterpret_cast<SOCKET *>(base + Proud::FastSocketLayout::kSocket);
   auto *overlapped = reinterpret_cast<LPWSAOVERLAPPED>(
       base + Proud::FastSocketLayout::kOverlapped);
 
@@ -217,8 +221,12 @@ int Proud::CFastSocket::send(void *data, int len) {
   auto *base = reinterpret_cast<char *>(this);
   SocketTrace::note_fast_socket_ctx(this);
 
-  if (*reinterpret_cast<BYTE *>(base + Proud::FastSocketLayout::kSendWarning)) {
-    logf("pn_fast_socket: IssueSend duplicated fast=%p", this);
+  const SOCKET sock =
+      *reinterpret_cast<SOCKET *>(base + Proud::FastSocketLayout::kSocket);
+
+  if (*reinterpret_cast<BYTE *>(base + Proud::FastSocketLayout::kSendWarning) &&
+      !thegame::cfg.no_proud_logs) {
+    logpnf(static_cast<int>(sock), "IssueSend duplicated fast=%p", this);
   }
 
   if (len <= 0)
@@ -240,8 +248,6 @@ int Proud::CFastSocket::send(void *data, int len) {
   DWORD bytesSent = 0;
   auto *overlapped = reinterpret_cast<LPWSAOVERLAPPED>(
       base + Proud::FastSocketLayout::kOverlapped);
-  const SOCKET sock =
-      *reinterpret_cast<SOCKET *>(base + Proud::FastSocketLayout::kSocket);
 
   *reinterpret_cast<BYTE *>(base + Proud::FastSocketLayout::kSendWarning) = 0;
   *reinterpret_cast<BYTE *>(base + Proud::FastSocketLayout::kSendWarning) = 1;

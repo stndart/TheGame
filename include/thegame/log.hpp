@@ -15,8 +15,18 @@ extern bool console_created;
 void create_console();
 void log_message(const char *message);
 void logf(const char *format, ...);
+
+// netlogs.txt (+ optional [net] console line); gated by NO_NETWORK_LOGS /
+// SILENT_NETWORK.
 void logns(int socket, const char *addr, int port);
+void lognf(int socket, const char *format, ...);
 void logn(int socket, size_t len, char *data, bool in = false);
+
+// proudlogs.txt (+ optional [proud] console line); gated by NO_PROUD_LOGS /
+// SILENT_PROUD.
+void logpns(int socket, const char *addr, unsigned short port);
+void logpnf(int socket, const char *format, ...);
+void logpln(const char *line);
 
 void exceptionf(const char *type, EXCEPTION_POINTERS *info,
                 const char *format = "", ...);

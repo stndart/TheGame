@@ -3,9 +3,10 @@
 #include <windows.h>
 
 #include "ProudNet/Layout.hpp"
+#include "thegame/config.hpp"
 #include "thegame/log.hpp"
 
-using thegame::logf;
+using thegame::logpnf;
 
 namespace {
 
@@ -22,8 +23,9 @@ constexpr std::uint32_t kNetClientFactoryResume = 0xD0C0A7;
 using NetClientCtorFn = void *(__thiscall *)(void *self);
 
 extern "C" void log_pn_net_client_factory() {
-  logf("CNetClient factory tid=%lu",
-       static_cast<unsigned long>(GetCurrentThreadId()));
+  if (!thegame::cfg.no_proud_logs)
+    logpnf(0, "CNetClient factory tid=%lu",
+           static_cast<unsigned long>(GetCurrentThreadId()));
 }
 
 extern "C" void *__fastcall hook_pn_net_client_ctor_impl(void *self) {
@@ -32,8 +34,9 @@ extern "C" void *__fastcall hook_pn_net_client_ctor_impl(void *self) {
       game_va(static_cast<uint32_t>(Proud::Rva::kNetClientCtor)));
   void *const ret = orig(self);
   HookManager::make_hook(g_target_pn_net_client_ctor);
-  logf("CNetClient ctor tid=%lu this=%p ret=%p",
-       static_cast<unsigned long>(GetCurrentThreadId()), self, ret);
+  if (!thegame::cfg.no_proud_logs)
+    logpnf(0, "CNetClient ctor tid=%lu this=%p ret=%p",
+           static_cast<unsigned long>(GetCurrentThreadId()), self, ret);
   return ret;
 }
 

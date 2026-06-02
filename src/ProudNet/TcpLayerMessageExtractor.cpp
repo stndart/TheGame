@@ -5,9 +5,10 @@
 #include "ProudNet/Layout.hpp"
 #include "hook_manager.h"
 #include "target_hooks.h"
+#include "thegame/config.hpp"
 #include "thegame/log.hpp"
 
-using thegame::logf;
+using thegame::logpnf;
 
 namespace {
 
@@ -25,8 +26,8 @@ using TcpFrameExtractFn = char(__thiscall *)(void *extractor, void *stream_ctx);
 
 char Proud::CTcpLayerMessageExtractor::extract(void *stream_ctx) {
   static int logs = 0;
-  if (logs < kLogLimit) {
-    logf("pn_tcp_frame: extract self=%p ctx=%p", this, stream_ctx);
+  if (logs < kLogLimit && !thegame::cfg.no_proud_logs) {
+    logpnf(0, "tcp_frame: extract self=%p ctx=%p", this, stream_ctx);
     ++logs;
   }
 
