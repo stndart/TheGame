@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.15)
 project(TheGame LANGUAGES C CXX)
 
+include(cmake/MsvcArchTools.cmake)
 include(cmake/StaticLinking.cmake)
 include(cmake/TheGameOptions.cmake)
 include(cmake/FetchFmt.cmake)

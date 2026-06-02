@@ -27,6 +27,7 @@ void logn(int socket, size_t len, char *data, bool in = false);
 void logpns(int socket, const char *addr, unsigned short port);
 void logpnf(int socket, const char *format, ...);
 void logpln(const char *line);
+void logpln_silent(const char *line); // doesn't print to console
 
 void exceptionf(const char *type, EXCEPTION_POINTERS *info,
                 const char *format = "", ...);

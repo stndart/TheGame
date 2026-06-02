@@ -53,7 +53,7 @@ int TCPSocket::Connect(WString wideHostname, int port) {
 
   std::string remapped_host = ServerOverride::remap_host(host.c_str());
   if (strcmp(remapped_host.c_str(), host.c_str()) != 0) {
-    logf("TCPSocket::Connect remap %s -> %s", host.c_str(),
+    logf("[net] TCPSocket::Connect remap %s -> %s", host.c_str(),
          remapped_host.c_str());
     host = remapped_host;
   }
@@ -87,7 +87,7 @@ int TCPSocket::Connect(WString wideHostname, int port) {
 
   // Remap sockaddr *after* setting the port
   if (ServerOverride::remap_sockaddr_in(&serverAddr)) {
-    logf("TCPSocket::Connect remap %s -> %s", host.c_str(),
+    logf("[net] TCPSocket::Connect remap %s -> %s", host.c_str(),
          thegame::cfg.server_ip.c_str());
   }
 

@@ -12,7 +12,7 @@ using thegame::logf;
 
 void __cdecl log_parg_n(int i, void *retaddr, void *p) {
 #if WS2_HOOKS
-  logf("Call[%i] from 0x%p with arg 0x%p", i, retaddr, p);
+  logf("[net] Call[%i] from 0x%p with arg 0x%p", i, retaddr, p);
 #else
   (void)i;
   (void)retaddr;

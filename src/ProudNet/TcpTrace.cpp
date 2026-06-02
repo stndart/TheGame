@@ -80,7 +80,7 @@ void append_frames_text(std::ostream &out,
     if (i)
       out << ",";
     const auto &f = frames[i];
-    out << "{pl=" << f.payload_len << ",op=0x" << std::hex;
+    out << "{op=0x" << std::hex;
     out.width(2);
     out.fill('0');
     out << static_cast<unsigned>(f.inner.opcode) << std::dec;
@@ -90,7 +90,7 @@ void append_frames_text(std::ostream &out,
       out.fill('0');
       out << f.inner.rmi_id << std::dec;
     }
-    out << ",body=" << f.inner.body_len << "}";
+    out << ",body[" << f.inner.body_len << "]}";
   }
   out << "]";
 }
@@ -110,7 +110,7 @@ void log_line(SOCKET sock, u_short port, const char *dir, size_t chunk_len,
 
   const DWORD tid = GetCurrentThreadId();
   std::ostringstream line;
-  line << fmt::format("{} p={} tid={} sock={} chunk={}", dir, port, tid, sock,
+  line << fmt::format("{} :{} tid={} sock={} chunk={}", dir, port, tid, sock,
                       chunk_len);
   if (incomplete_tail)
     line << " incomplete=" << incomplete_tail;

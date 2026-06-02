@@ -33,6 +33,17 @@ just build
 - CMake: Configure (Windows MSVC x64_x86 (Ninja) Debug)
 - CMake: Build
 
+### Reconfiguring
+
+If you need specify the flags manually, reconfigure (example: disable SILENT_KEEPALIVE):
+
+```powershell
+.\cmake-vs.bat --preset msvc-x86-debug -D SILENT_KEEPALIVE=OFF
+.\cmake-vs.bat --build --preset debug
+```
+
+Or if you need to reset to the defaults - just delete the appropriate `build/{preset}` directory.
+
 ### Vscode clangd extension setup
 
 Add this to `.vscode/settings.json`:
@@ -109,11 +120,11 @@ These are just basically some flags combinations
 | `DISABLE_PARK_THREAD`     | ON      | Experimental - parks a thread when a fatal exception occurs.                                           |
 | `DISABLE_INT`             | ON      | Experimental - raises a debug interrupt on exception. You would need to bypass AC to get this working. |
 | `MINIDUMP_ENABLED`        | OFF     | Experimental - makes a minidump on fatal exception (AV).                                               |
-| `NO_NETWORK_LOGS`         | OFF     |                                                                                                        |
-| `SILENT_KEEPALIVE`        | ON      | Prevents logging pings on 20009 port.                                                                  |
+| `NO_NETWORK_LOGS`         | OFF     | No logs, no `netlogs.txt`                                                                              |
 | `SILENT_NETWORK`          | OFF     | Do not print network logs in main log.                                                                 |
-| `NO_PROUD_LOGS`           | OFF     |                                                                                                        |
-| `SILENT_PROUD`            | OFF     |                                                                                                        |
+| `SILENT_KEEPALIVE`        | ON      | Prevents logging pings on 20009 port. And proud 0x1C pings.                                            |
+| `NO_PROUD_LOGS`           | OFF     | No logs, no `proudlogs.txt`                                                                            |
+| `SILENT_PROUD`            | OFF     | Do not print proud logs in main log.                                                                   |
 
 
 Compile flags only

@@ -237,6 +237,18 @@ void logpln(const char *line) {
     logf("[proud] %s", line);
 }
 
+void logpln_silent(const char *line) {
+  if (cfg.no_proud_logs || !line || !line[0])
+    return;
+
+  ensure_proudlog_open();
+  if (!proudlog_file.is_open())
+    return;
+
+  proudlog_file << line << "\n";
+  proudlog_file.flush();
+}
+
 void close_logs() {
   if (log_file.is_open())
     log_file.close();
