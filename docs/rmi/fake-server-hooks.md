@@ -83,9 +83,9 @@ arg[2] = body;
 | **Doubles real S2C** | Friends server answers the same ids; inject + wire RES race and desync UI |
 | **Wrong thread history** | Early worker-thread pump caused VM faults; main-thread pump fixed offline but not online |
 | **Hides server bugs** | Client appeared healthy while server wire was wrong |
-| **Autonav coupling** | `nav_goto_lobby` called `InjectLobbyEnterRes` instead of waiting for server |
+| **Autonav coupling** | Legacy `nav_goto_lobby` called `InjectLobbyEnterRes` instead of waiting for server (command removed) |
 
-**Replacement:** trust server S2C; use `[rmi]` trace hooks (C2S + S2C) and ctl `nav_goto_lobby` (C2S enter only).
+**Replacement:** trust server S2C; use `[rmi]` trace hooks (C2S + S2C) and ctl **`nav_pass_shard_select`** (shard pick + scene transition + lobby notify).
 
 ---
 

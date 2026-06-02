@@ -87,7 +87,6 @@ int nav_shard_index_from_env() {
   return atoi(buf);
 }
 
-volatile LONG g_goto_lobby_pending = 0;
 volatile LONG g_did_lobby_notify_send = 0;
 
 volatile LONG g_pass_shard_pending = 0;
@@ -102,8 +101,7 @@ HHOOK g_getmsg_hook = nullptr;
 volatile LONG g_getmsg_hook_logged = 0;
 
 bool nav_work_pending() {
-  return InterlockedCompareExchange(&g_goto_lobby_pending, 0, 0) != 0 ||
-         InterlockedCompareExchange(&g_pass_shard_pending, 0, 0) != 0;
+  return InterlockedCompareExchange(&g_pass_shard_pending, 0, 0) != 0;
 }
 
 void note_main_thread() {
@@ -200,42 +198,12 @@ void pump_pass_shard_select() {
     request_lobby_scene();
 }
 
-void pump_goto_lobby() {
-  static volatile LONG s_logged_lock = 0;
-
-  if (InterlockedCompareExchange(&g_goto_lobby_pending, 0, 0) == 0)
-    return;
-
-  if (current_scene() == kSceneLobby) {
-    InterlockedExchange(&g_goto_lobby_pending, 0);
-    InterlockedExchange(&g_did_lobby_notify_send, 0);
-    InterlockedExchange(&s_logged_lock, 0);
-    log_nav("goto_lobby done");
-    return;
-  }
-
-  if (transition_locked()) {
-    if (InterlockedCompareExchange(&s_logged_lock, 1, 0) == 0)
-      log_nav("goto_lobby blocked (transition lock)");
-    return;
-  }
-  InterlockedExchange(&s_logged_lock, 0);
-
-  if (InterlockedCompareExchange(&g_did_lobby_notify_send, 1, 0) == 0)
-    send_lobby_enter_notify();
-}
-
 } // namespace
 
 void Rmi::NavDrainCommands() {
   NavCmd cmd = NavCmd::None;
   while (NavDequeueCommand(&cmd)) {
-    if (cmd == NavCmd::GotoLobby) {
-      log_nav("command nav_goto_lobby");
-      InterlockedExchange(&g_did_lobby_notify_send, 0);
-      InterlockedExchange(&g_goto_lobby_pending, 1);
-      start_nav_wakeup_thread();
-    } else if (cmd == NavCmd::PassShardSelect) {
+    if (cmd == NavCmd::PassShardSelect) {
       log_nav("command nav_pass_shard_select");
       InterlockedExchange(&g_pass_shard_index,
                           static_cast<LONG>(nav_shard_index_from_env()));
@@ -263,7 +231,6 @@ void Rmi::NavTeardown() {
   InterlockedExchange(reinterpret_cast<volatile LONG *>(&g_main_tid), 0);
   InterlockedExchange(&g_getmsg_hook_logged, 0);
   clear_pass_shard_flow();
-  InterlockedExchange(&g_goto_lobby_pending, 0);
   logf("[nav] teardown");
 }
 
@@ -273,5 +240,4 @@ void Rmi::NavPump(const char *phase) {
   ensure_getmsg_hook();
   NavDrainCommands();
   pump_pass_shard_select();
-  pump_goto_lobby();
 }

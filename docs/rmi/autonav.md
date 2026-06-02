@@ -15,9 +15,8 @@
 
 | Command | Response | Main-thread effect |
 | --- | --- | --- |
-| `commands` | `nav_goto_lobby`, `nav_pass_shard_select` | — |
+| `commands` | `nav_pass_shard_select` | — |
 | `nav_pass_shard_select` | `ok` | C2S `0x3EB2` (shard index, default `0`, env `THEGAME_NAV_SHARD_INDEX`) → `RequestState(4)` → C2S `0x3F40` when scene is lobby |
-| `nav_goto_lobby` | `ok` | C2S `0x3F40` once only (legacy; use `nav_pass_shard_select` from `shard_select`) |
 
 **Threading:** a **reader thread** ([`handler_pipe.cpp`](../../src/diagnostics/handler_pipe.cpp)) enqueues work; **never** calls game code. **`NavPump`** ([`Nav.cpp`](../../src/RMI/Nav.cpp)) drains on the **main thread** via a `WH_GETMESSAGE` hook (installed after the first stage hook) plus `onPreProcess` stage hooks when the active state ticks.
 
@@ -50,9 +49,7 @@ After **`shard_select`** (game already sent server-enter `0x3F0C` + `0x3E99` at 
 
 Logs: `[nav] command nav_pass_shard_select`, `[nav] c2s 0x3EB2`, `[nav] RequestState scene=4`, `[nav] c2s 0x3F40`, `[stage] lobby`.
 
-## `nav_goto_lobby` (legacy)
-
-Sends **`0x3F40`** only; does not select a shard or call `RequestState`. Prefer **`nav_pass_shard_select`** from the shard picker.
+**Removed:** `nav_goto_lobby` (notify-only `0x3F40` from the shard picker never reached `lobby`; see investigation journal).
 
 ---
 
@@ -107,4 +104,4 @@ Compile default OFF. **`NavPump` always runs** — handler-pipe commands are not
 
 ## Investigation journal
 
-Timeline, run IDs (302-311), mistakes (`nav_goto_lobby` vs full shard path, stale `last_run`, idle UI pump), and lessons: [journals/long/2026-06-02-01-nav-pass-shard-select.md](../../journals/long/2026-06-02-01-nav-pass-shard-select.md) (brief: [journals/2026-06-02-01-nav-pass-shard-select.md](../../journals/2026-06-02-01-nav-pass-shard-select.md)).
+Timeline, run IDs (302-321), mistakes (removed `nav_goto_lobby`, stale `last_run`, idle UI pump), and lessons: [journals/long/2026-06-02-01-nav-pass-shard-select.md](../../journals/long/2026-06-02-01-nav-pass-shard-select.md) (brief: [journals/2026-06-02-01-nav-pass-shard-select.md](../../journals/2026-06-02-01-nav-pass-shard-select.md)).

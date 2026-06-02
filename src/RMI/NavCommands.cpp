@@ -29,9 +29,7 @@ void Rmi::NavEnqueueCommand(NavCmd cmd) {
   EnterCriticalSection(&g_queue_lock);
   if (g_tail - g_head < kQueueSize) {
     g_queue[g_tail++ % kQueueSize] = cmd;
-    if (cmd == NavCmd::GotoLobby)
-      thegame::logf("[nav] enqueued nav_goto_lobby (handler pipe)");
-    else if (cmd == NavCmd::PassShardSelect)
+    if (cmd == NavCmd::PassShardSelect)
       thegame::logf("[nav] enqueued nav_pass_shard_select (handler pipe)");
     NavSchedulePump();
   } else {
@@ -63,5 +61,5 @@ bool Rmi::NavDequeueCommand(NavCmd *out) {
 }
 
 const char *Rmi::NavCommandList() {
-  return "nav_goto_lobby,nav_pass_shard_select";
+  return "nav_pass_shard_select";
 }

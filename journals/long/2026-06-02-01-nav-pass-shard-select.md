@@ -1,7 +1,7 @@
 # UI autonav: shard_select → lobby (long)
 
-**Date:** 2026-06-02  
-**Runs:** `302_c1ebe23c`, `304`-`307` (nav + `0x3F40`, no lobby), `309` (baseline), `310_1bc6c166` (first success), `311_ef296d2a` (clean e2e)  
+**Date:** 2026-06-02 (re-verified 2026-06-03)  
+**Runs:** `302_c1ebe23c`, `304`-`307` (nav + `0x3F40`, no lobby), `309` (baseline), `310_1bc6c166` (first success), `311_ef296d2a` (clean e2e), **`320_3807cf48`** (`nav_goto_lobby` only — no lobby), **`321_1751c04e`** (`nav_pass_shard_select` only — lobby)  
 **Code:** [`src/RMI/Nav.cpp`](../../src/RMI/Nav.cpp), [`src/diagnostics/handler_pipe.cpp`](../../src/diagnostics/handler_pipe.cpp), [`ctl/justfile`](../../ctl/justfile)  
 **Prior art:** [2026-05-29-04-ui-automation-investigation.md](2026-05-29-04-ui-automation-investigation.md) (RequestState, click handlers, “no WM_* path”)
 
@@ -117,6 +117,28 @@ Run **310** `events.jsonl` (abridged):
 
 Run **311:** full `just ctl::run-e2e-lobby` exit 0.
 
+### Phase E — re-verification (runs **320**, **321**, 2026-06-03)
+
+Controlled replay after journal review: same online launch, **`shard_select`**, 8 s settle, **one** nav command, **`wait-stage lobby`**.
+
+| Run | Command | Result |
+| --- | --- | --- |
+| **320** | **`nav_goto_lobby`** only | `command` + **`c2s 0x3F40`** (×2 while pending); **`game_stage` stays `shard_select`** until session ended; **no `lobby`** from goto alone. Later manual **`nav_pass_shard_select`** in same session → **`lobby`**. |
+| **321** | **`nav_pass_shard_select`** only | `0x3EB2` → `RequestState scene=4` → **`game_stage` `lobby`** → `0x3F40` → `pass_shard_select done`; **`wait-stage lobby` OK** (~58 s). |
+
+Run **321** `events.jsonl` (abridged):
+
+```text
+[nav] command nav_pass_shard_select
+[nav] c2s 0x3EB2 shard index=0
+[nav] RequestState scene=4
+game_stage lobby
+[nav] c2s 0x3F40 lobby enter
+[nav] pass_shard_select done
+```
+
+**Lesson (confirmed):** For ctl e2e from **`shard_select`**, treat **`nav_goto_lobby` as non-functional** — it may put **`0x3F40`** on the wire but does **not** advance the UI state machine. Use **`nav_pass_shard_select`** exclusively.
+
 ---
 
 ## 4. What `nav_goto_lobby` does (and why it failed e2e)
@@ -129,9 +151,11 @@ Implementation: [`pump_goto_lobby()`](../../src/RMI/Nav.cpp)
 | `byte_1C1E409` set | Wait, log `goto_lobby blocked` |
 | Else | Send **`0x3F40`** once (does not clear pending until scene == 4) |
 
-**It is not a no-op** — it does send on the wire. From **`shard_select`** it is the **wrong step**: same as clicking “notify lobby” without picking a shard or loading scene 4.
+**Wire vs UI:** It is **not** a transport no-op — run **320** shows **`c2s 0x3F40`**. For automation it is **effectively a no-op**: **`game_stage` never leaves `shard_select`** and **`wait-stage lobby` never succeeds** (runs **304–307**, **320**).
 
-**Naming trap:** “goto_lobby” sounds like the full shard→lobby journey; implementation is **“send lobby-enter notify if not already in scene 4.”**
+From **`shard_select`** it is the **wrong step**: lobby-enter notify without **`0x3EB2`** or **`RequestState(4)`**.
+
+**Naming trap:** “goto_lobby” sounds like the full shard→lobby journey; implementation is **“retry lobby-enter notify while scene ≠ 4.”** Do **not** use it in e2e or ctl recipes.
 
 ---
 
@@ -187,8 +211,8 @@ Early builds pumped from `diagnostics_game_stage_shard_select` when autonav enab
 6. **Don’t duplicate stage-hook sends** — `0x3F0C`/`0x3E99` at `shard_select` is already game-owned.
 7. **Don’t reach for inject first** — `RequestState` + correct C2S was enough online; inject docs remain for true S2C/offline gaps.
 8. **Align verify with session lifecycle** — `status.run_dir` or explicit `run_id` from `launch` JSON.
-9. **Keep `nav_goto_lobby` documented as narrow** — notify-only; e2e default is **`nav_pass_shard_select`**.
-10. **`nav_goto_lobby` when already scene 4** — exits without sending `0x3F40`; if you need notify in lobby, use pass_shard flow or extend goto_lobby semantics explicitly.
+9. **Do not use `nav_goto_lobby` for shard→lobby** — re-verified run **320**; e2e / ctl default is **`nav_pass_shard_select`** only.
+10. **`nav_goto_lobby` when already scene 4** — clears pending without sending; legacy narrow helper, not part of the working path.
 
 ---
 
@@ -197,7 +221,7 @@ Early builds pumped from `diagnostics_game_stage_shard_select` when autonav enab
 | Command | Use when |
 | --- | --- |
 | **`nav_pass_shard_select`** | At **`shard_select`**: full automation to **`lobby`** (e2e default) |
-| **`nav_goto_lobby`** | Already past shard pick / in scene 4; only need **`0x3F40`** |
+| **`nav_goto_lobby`** | **Deprecated for automation** — notify-only, no shard→lobby transition (run **320**) |
 | `THEGAME_NAV_SHARD_INDEX` | Non-default shard row in server list |
 
 Pipe list: `just ctl::commands` → `nav_goto_lobby,nav_pass_shard_select`.

@@ -86,11 +86,6 @@ bool dispatch_line(const char *line) {
     return write_response_locked(Rmi::NavCommandList());
   }
 
-  if (strcmp(line, "nav_goto_lobby") == 0) {
-    Rmi::NavEnqueueCommand(Rmi::NavCmd::GotoLobby);
-    return write_response_locked("ok");
-  }
-
   if (strcmp(line, "nav_pass_shard_select") == 0) {
     Rmi::NavEnqueueCommand(Rmi::NavCmd::PassShardSelect);
     return write_response_locked("ok");
