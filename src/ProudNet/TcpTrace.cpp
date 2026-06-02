@@ -1,15 +1,17 @@
 #include "ProudNet/TcpTrace.hpp"
 
+#include <cstdio>
+#include <iomanip>
+#include <sstream>
+#include <windows.h>
+
+#include <fmt/format.h>
+
 #include "diagnostics/handlers.hpp"
 #include "game/net/proud_frame_parse.hpp"
 #include "game/net/socket_trace.hpp"
 #include "thegame/config.hpp"
 #include "thegame/log.hpp"
-
-#include <cstdio>
-#include <iomanip>
-#include <sstream>
-#include <windows.h>
 
 namespace {
 
@@ -108,9 +110,8 @@ void log_line(SOCKET sock, u_short port, const char *dir, size_t chunk_len,
 
   const DWORD tid = GetCurrentThreadId();
   std::ostringstream line;
-  line << "tid=" << tid << " port=" << port << " dir=" << dir
-       << " sock=" << static_cast<unsigned long long>(sock)
-       << " chunk=" << chunk_len;
+  line << fmt::format("{} p={} tid={} sock={} chunk={}", dir, port, tid, sock,
+                      chunk_len);
   if (incomplete_tail)
     line << " incomplete=" << incomplete_tail;
   append_frames_text(line, frames, frame_count);

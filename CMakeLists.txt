@@ -1,12 +1,13 @@
 cmake_minimum_required(VERSION 3.15)
 project(TheGame LANGUAGES C CXX)
 
+include(cmake/StaticLinking.cmake)
 include(cmake/TheGameOptions.cmake)
+include(cmake/FetchFmt.cmake)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 if(MSVC)
-    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
     add_compile_options(/GS- /EHs)
 endif()
 
@@ -31,7 +32,7 @@ if(WIN32)
         target_include_directories(TheGame PRIVATE "${MSVC_ATL_INCLUDE_DIR}")
     endif()
 
-    target_link_libraries(TheGame PRIVATE kernel32 user32 Ws2_32)
+    target_link_libraries(TheGame PRIVATE fmt::fmt kernel32 user32 Ws2_32)
 endif()
 
 set_target_properties(TheGame PROPERTIES

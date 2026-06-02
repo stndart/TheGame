@@ -51,7 +51,7 @@ bool connect_pipe_locked() {
       DWORD mode = PIPE_READMODE_BYTE | PIPE_NOWAIT;
       SetNamedPipeHandleState(g_pipe, &mode, nullptr, nullptr);
       if (InterlockedCompareExchange(&g_connected_logged, 1, 0) == 0) {
-        thegame::logf("handler: pipe connected");
+        thegame::logf("[nav] handler pipe connected");
       }
       return true;
     }

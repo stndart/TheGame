@@ -93,9 +93,11 @@ void log_boot_paths() {
   logf("thegame flags: hooks=%d entrypoint=%d veh=%d pipes=%d",
        cfg.disable_hooks ? 0 : 1, cfg.disable_entrypoint_hook ? 0 : 1,
        cfg.disable_veh ? 0 : 1, cfg.pipes ? 1 : 0);
-  logf("thegame log flags: no_net=%d silent_net=%d no_proud=%d silent_proud=%d",
+  logf("thegame log flags: no_net=%d silent_net=%d no_proud=%d silent_proud=%d "
+       "silent_keepalive=%d",
        cfg.no_network_logs ? 1 : 0, cfg.silent_network ? 1 : 0,
-       cfg.no_proud_logs ? 1 : 0, cfg.silent_proud ? 1 : 0);
+       cfg.no_proud_logs ? 1 : 0, cfg.silent_proud ? 1 : 0,
+       cfg.silent_keepalive ? 1 : 0);
 }
 
 void ensure_netlog_open() {
