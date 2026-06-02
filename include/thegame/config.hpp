@@ -41,10 +41,6 @@
 #define MINIDUMP_ENABLED 0
 #endif
 
-#ifndef DISABLE_AUTONAV
-#define DISABLE_AUTONAV 0
-#endif
-
 #ifndef NO_NETWORK_LOGS
 #define NO_NETWORK_LOGS 0
 #endif
@@ -106,7 +102,6 @@ struct Cfg {
   bool disable_park_thread;
   bool disable_int;
   bool minidump_enabled;
-  bool disable_autonav;
   bool no_network_logs;
   bool silent_keepalive;
   bool silent_network;

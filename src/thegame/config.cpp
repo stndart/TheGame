@@ -49,7 +49,6 @@ void init_config() {
       merge_flag("DISABLE_PARK_THREAD", DISABLE_PARK_THREAD);
   cfg.disable_int = merge_flag("DISABLE_INT", DISABLE_INT);
   cfg.minidump_enabled = merge_flag("MINIDUMP_ENABLED", MINIDUMP_ENABLED);
-  cfg.disable_autonav = merge_flag("DISABLE_AUTONAV", DISABLE_AUTONAV);
   cfg.no_network_logs = merge_flag("NO_NETWORK_LOGS", NO_NETWORK_LOGS);
   cfg.silent_keepalive = merge_flag("SILENT_KEEPALIVE", SILENT_KEEPALIVE);
   cfg.silent_network = merge_flag("SILENT_NETWORK", SILENT_NETWORK);

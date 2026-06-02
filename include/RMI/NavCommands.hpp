@@ -5,6 +5,7 @@ namespace Rmi {
 enum class NavCmd : unsigned char {
   None = 0,
   GotoLobby,
+  PassShardSelect,
 };
 
 void NavEnqueueCommand(NavCmd cmd);

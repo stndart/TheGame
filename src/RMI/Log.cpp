@@ -9,7 +9,7 @@ using thegame::logf;
 void Rmi::LogC2sFramework(unsigned rmi_id, unsigned remote_count) {
   const unsigned id = rmi_id & 0xFFFFu;
   char buf[96];
-  wsprintfA(buf, "[rmi] c2s framework id=0x%04X (%u) remotes=%u", id, id,
+  wsprintfA(buf, "[rmi] c2s frame id=0x%04X (%u) remotes=%u", id, id,
             remote_count);
   logf(buf);
 }

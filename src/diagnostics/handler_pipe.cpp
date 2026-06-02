@@ -91,6 +91,11 @@ bool dispatch_line(const char *line) {
     return write_response_locked("ok");
   }
 
+  if (strcmp(line, "nav_pass_shard_select") == 0) {
+    Rmi::NavEnqueueCommand(Rmi::NavCmd::PassShardSelect);
+    return write_response_locked("ok");
+  }
+
   char err[96];
   _snprintf_s(err, sizeof(err), _TRUNCATE, "error: unknown command %s", line);
   return write_response_locked(err);

@@ -20,6 +20,7 @@ logs/
 transcripts/
 ctl/logs/
 diagnostics_events.jsonl
+tools/
 
 # Agent investigation journals (local); template and long/ readme are tracked
 journals/*

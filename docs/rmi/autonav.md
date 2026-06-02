@@ -15,8 +15,9 @@
 
 | Command | Response | Main-thread effect |
 | --- | --- | --- |
-| `commands` | `nav_goto_lobby` (comma-separated list) | — |
-| `nav_goto_lobby` | `ok` | Queue → send C2S `0x3F40` once (after `shard_select` already sent `0x3F0C` + `0x3E99`) |
+| `commands` | `nav_goto_lobby`, `nav_pass_shard_select` | — |
+| `nav_pass_shard_select` | `ok` | C2S `0x3EB2` (shard index, default `0`, env `THEGAME_NAV_SHARD_INDEX`) → `RequestState(4)` → C2S `0x3F40` when scene is lobby |
+| `nav_goto_lobby` | `ok` | C2S `0x3F40` once only (legacy; use `nav_pass_shard_select` from `shard_select`) |
 
 **Threading:** a **reader thread** ([`handler_pipe.cpp`](../../src/diagnostics/handler_pipe.cpp)) enqueues work; **never** calls game code. **`NavPump`** ([`Nav.cpp`](../../src/RMI/Nav.cpp)) drains on the **main thread** via a `WH_GETMESSAGE` hook (installed after the first stage hook) plus `onPreProcess` stage hooks when the active state ticks.
 
@@ -39,15 +40,19 @@ Hook @ `0x4345B0` (`CGameServer` begin) is installed but **does not** emit a ctl
 
 ---
 
-## `nav_goto_lobby`
+## `nav_pass_shard_select` (e2e default)
 
-1. ctl sends `nav_goto_lobby` after **`shard_select`** (game already sent server-enter `0x3F0C` + `0x3E99` at that stage).
-2. On next main-thread `NavPump`: if not in fade lock, send lobby-enter notify `0x3F40` once.
-3. Friends server answers (e.g. S2C `0x3F41`); client reaches scene 4 → **`lobby`** stage.
+After **`shard_select`** (game already sent server-enter `0x3F0C` + `0x3E99` at `0x4347CC`):
 
-Does **not** call `RequestState(4)` or inject RES — server drives the transition.
+1. C2S **`0x3EB2`** — 6 B: floor `0x3AC3` + DWORD shard index (`sub_434F20` / `onClickJoinServer`).
+2. When fade lock clear and scene ≠ 4: **`RequestState(4)`** via `sub_41F0D0(&dword_1C155C0, 4)` (same as success path in `sub_4354D0` `onNetChangeServerFarmRES`).
+3. When scene is 4: C2S **`0x3F40`** lobby enter notify.
 
-Logs: `[nav] command nav_goto_lobby`, `[nav] c2s 0x3F40`, `[rmi] s2c id=0x3F41`, `[stage] lobby`.
+Logs: `[nav] command nav_pass_shard_select`, `[nav] c2s 0x3EB2`, `[nav] RequestState scene=4`, `[nav] c2s 0x3F40`, `[stage] lobby`.
+
+## `nav_goto_lobby` (legacy)
+
+Sends **`0x3F40`** only; does not select a shard or call `RequestState`. Prefer **`nav_pass_shard_select`** from the shard picker.
 
 ---
 
@@ -66,16 +71,16 @@ just build
 just ctl::copy-dll
 just ctl::launch
 just ctl::wait-stage shard_select 120
-just ctl::send nav_goto_lobby
+just ctl::send nav_pass_shard_select
 just ctl::wait-stage lobby 120
 just ctl::copy-logs
 ```
 
 Or: `just ctl::run-e2e-lobby` (daemon must be up).
 
-Grep `events.jsonl` for `[stage] shard_select`, `[nav] command nav_goto_lobby`, `[rmi] c2s proxy id=0x3F40`, `[stage] lobby`.
+Grep `events.jsonl` for `[stage] shard_select`, `[nav] command nav_pass_shard_select`, `[nav] c2s 0x3EB2`, `[nav] c2s 0x3F40`, `[stage] lobby`.
 
-**Shard pick:** if the UI requires choosing a shard, do that after `shard_select` before `nav_goto_lobby`.
+Shard index: `THEGAME_NAV_SHARD_INDEX` (default `0`).
 
 ---
 
@@ -93,7 +98,13 @@ Compile default OFF. **`NavPump` always runs** — handler-pipe commands are not
 
 | Hook | RVA | Log line |
 | --- | --- | --- |
-| `hook_pn_rmi_send` | `0xD5C5E0` | `[rmi] c2s framework …` |
+| `hook_pn_rmi_send` | `0xD5C5E0` | `[rmi] c2s frame …` |
 | `hook_pn_game_rmi_send` | `0x65AEA0` | `[rmi] c2s proxy …` |
 | `hook_pn_rmi_floor` | `0xA0B290` | `[rmi] c2s floor …` |
 | `ProcessMessageProudNetLayer` case Rmi | `0xD653B0` | `[rmi] s2c …` |
+
+---
+
+## Investigation journal
+
+Timeline, run IDs (302–311), mistakes (`nav_goto_lobby` vs full shard path, stale `last_run`, idle UI pump), and lessons: [journals/long/2026-06-02-01-nav-pass-shard-select.md](../../journals/long/2026-06-02-01-nav-pass-shard-select.md) (brief: [journals/2026-06-02-01-nav-pass-shard-select.md](../../journals/2026-06-02-01-nav-pass-shard-select.md)).

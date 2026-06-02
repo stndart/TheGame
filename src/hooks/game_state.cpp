@@ -1,13 +1,9 @@
 #include "RMI/Nav.hpp"
 #include "target_hooks.h"
-#include "thegame/config.hpp"
 #include "thegame/log.hpp"
 
 namespace {
 
-// Handler-pipe nav must run even when DISABLE_AUTONAV is set in the environment
-// (legacy flag). Stage hooks pump when onPreProcess runs; ctl commands also use
-// NavSchedulePump (window message) because shard UI does not tick every frame.
 void nav_pump(const char *phase) { Rmi::NavPump(phase); }
 
 } // namespace

@@ -1,6 +1,7 @@
 #include "RMI/Nav.hpp"
 
 #include <cstdint>
+#include <cstdlib>
 #include <windows.h>
 
 #include "RMI/NavCommands.hpp"
@@ -11,6 +12,8 @@ using thegame::logf;
 namespace {
 
 constexpr int kSceneLobby = 4;
+constexpr std::uint16_t kFloorShardSelect = 0x3AC3;
+constexpr std::uint16_t kFloorLobbyEnter = 0x3ACE;
 
 std::uintptr_t game_va(const std::uint32_t va) {
   const std::uintptr_t delta =
@@ -42,6 +45,8 @@ bool send_proxy_rmi(unsigned id, const void *msg, int len) {
             static_cast<short>(id & 0xFFFFu)) != 0;
 }
 
+using RequestStateFn = char(__thiscall *)(void *, int);
+
 void build_word_payload(unsigned char out[2], std::uint16_t floor_id) {
   out[0] = static_cast<unsigned char>(floor_id & 0xFF);
   out[1] = static_cast<unsigned char>((floor_id >> 8) & 0xFF);
@@ -50,17 +55,56 @@ void build_word_payload(unsigned char out[2], std::uint16_t floor_id) {
 void send_lobby_enter_notify() {
   unsigned char word[2];
   log_nav("c2s 0x3F40 lobby enter");
-  build_word_payload(word, 0x3ACE);
+  build_word_payload(word, kFloorLobbyEnter);
   send_proxy_rmi(0x3F40, word, 2);
+}
+
+void send_shard_select_c2s(int shard_index) {
+  unsigned char buf[6];
+  buf[0] = static_cast<unsigned char>(kFloorShardSelect & 0xFF);
+  buf[1] = static_cast<unsigned char>((kFloorShardSelect >> 8) & 0xFF);
+  *reinterpret_cast<std::uint32_t *>(&buf[2]) =
+      static_cast<std::uint32_t>(shard_index);
+  char line[96];
+  wsprintfA(line, "[nav] c2s 0x3EB2 shard index=%d", shard_index);
+  logf(line);
+  send_proxy_rmi(0x3EB2, buf, 6);
+}
+
+void request_lobby_scene() {
+  const auto fn = reinterpret_cast<RequestStateFn>(game_va(0x41F0D0));
+  void *mgr = reinterpret_cast<void *>(game_va(0x1C155C0));
+  log_nav("RequestState scene=4");
+  fn(mgr, kSceneLobby);
+}
+
+int nav_shard_index_from_env() {
+  char buf[32];
+  const DWORD n =
+      GetEnvironmentVariableA("THEGAME_NAV_SHARD_INDEX", buf, sizeof(buf));
+  if (n == 0 || n >= sizeof(buf))
+    return 0;
+  return atoi(buf);
 }
 
 volatile LONG g_goto_lobby_pending = 0;
 volatile LONG g_did_lobby_notify_send = 0;
+
+volatile LONG g_pass_shard_pending = 0;
+volatile LONG g_pass_shard_index = 0;
+volatile LONG g_did_shard_select_send = 0;
+volatile LONG g_did_request_state = 0;
+
 volatile LONG g_wakeup_thread_running = 0;
 
 volatile DWORD g_main_tid = 0;
 HHOOK g_getmsg_hook = nullptr;
 volatile LONG g_getmsg_hook_logged = 0;
+
+bool nav_work_pending() {
+  return InterlockedCompareExchange(&g_goto_lobby_pending, 0, 0) != 0 ||
+         InterlockedCompareExchange(&g_pass_shard_pending, 0, 0) != 0;
+}
 
 void note_main_thread() {
   const DWORD tid = GetCurrentThreadId();
@@ -72,9 +116,7 @@ LRESULT CALLBACK nav_getmsg_proc(int code, WPARAM wParam, LPARAM lParam) {
   (void)wParam;
   (void)lParam;
   if (code == HC_ACTION &&
-      InterlockedCompareExchange(&g_goto_lobby_pending, 0, 0) != 0)
-    Rmi::NavPump("getmsg");
-  else if (code == HC_ACTION && Rmi::NavHasQueuedCommands())
+      (nav_work_pending() || Rmi::NavHasQueuedCommands()))
     Rmi::NavPump("getmsg");
   return CallNextHookEx(g_getmsg_hook, code, wParam, lParam);
 }
@@ -100,7 +142,7 @@ void wake_main_thread() {
 
 DWORD WINAPI nav_wakeup_thread(LPVOID) {
   for (int i = 0; i < 120; ++i) {
-    if (InterlockedCompareExchange(&g_goto_lobby_pending, 0, 0) == 0)
+    if (!nav_work_pending())
       break;
     wake_main_thread();
     Sleep(500);
@@ -117,6 +159,45 @@ void start_nav_wakeup_thread() {
     CloseHandle(th);
   else
     InterlockedExchange(&g_wakeup_thread_running, 0);
+}
+
+void clear_pass_shard_flow() {
+  InterlockedExchange(&g_pass_shard_pending, 0);
+  InterlockedExchange(&g_did_shard_select_send, 0);
+  InterlockedExchange(&g_did_request_state, 0);
+  InterlockedExchange(&g_did_lobby_notify_send, 0);
+}
+
+void pump_pass_shard_select() {
+  static volatile LONG s_logged_lock = 0;
+
+  if (InterlockedCompareExchange(&g_pass_shard_pending, 0, 0) == 0)
+    return;
+
+  if (InterlockedCompareExchange(&g_did_shard_select_send, 1, 0) == 0) {
+    const int idx = static_cast<int>(
+        InterlockedCompareExchange(&g_pass_shard_index, 0, 0));
+    send_shard_select_c2s(idx);
+  }
+
+  if (current_scene() == kSceneLobby) {
+    if (InterlockedCompareExchange(&g_did_lobby_notify_send, 1, 0) == 0)
+      send_lobby_enter_notify();
+    clear_pass_shard_flow();
+    InterlockedExchange(&s_logged_lock, 0);
+    log_nav("pass_shard_select done");
+    return;
+  }
+
+  if (transition_locked()) {
+    if (InterlockedCompareExchange(&s_logged_lock, 1, 0) == 0)
+      log_nav("pass_shard_select blocked (transition lock)");
+    return;
+  }
+  InterlockedExchange(&s_logged_lock, 0);
+
+  if (InterlockedCompareExchange(&g_did_request_state, 1, 0) == 0)
+    request_lobby_scene();
 }
 
 void pump_goto_lobby() {
@@ -140,7 +221,6 @@ void pump_goto_lobby() {
   }
   InterlockedExchange(&s_logged_lock, 0);
 
-  // shard_select already sends server-enter 0x3F0C + 0x3E99; lobby step is 0x3F40.
   if (InterlockedCompareExchange(&g_did_lobby_notify_send, 1, 0) == 0)
     send_lobby_enter_notify();
 }
@@ -154,6 +234,15 @@ void Rmi::NavDrainCommands() {
       log_nav("command nav_goto_lobby");
       InterlockedExchange(&g_did_lobby_notify_send, 0);
       InterlockedExchange(&g_goto_lobby_pending, 1);
+      start_nav_wakeup_thread();
+    } else if (cmd == NavCmd::PassShardSelect) {
+      log_nav("command nav_pass_shard_select");
+      InterlockedExchange(&g_pass_shard_index,
+                          static_cast<LONG>(nav_shard_index_from_env()));
+      InterlockedExchange(&g_did_shard_select_send, 0);
+      InterlockedExchange(&g_did_request_state, 0);
+      InterlockedExchange(&g_did_lobby_notify_send, 0);
+      InterlockedExchange(&g_pass_shard_pending, 1);
       start_nav_wakeup_thread();
     }
   }
@@ -173,6 +262,8 @@ void Rmi::NavTeardown() {
   }
   InterlockedExchange(reinterpret_cast<volatile LONG *>(&g_main_tid), 0);
   InterlockedExchange(&g_getmsg_hook_logged, 0);
+  clear_pass_shard_flow();
+  InterlockedExchange(&g_goto_lobby_pending, 0);
   logf("[nav] teardown");
 }
 
@@ -181,5 +272,6 @@ void Rmi::NavPump(const char *phase) {
   note_main_thread();
   ensure_getmsg_hook();
   NavDrainCommands();
+  pump_pass_shard_select();
   pump_goto_lobby();
 }

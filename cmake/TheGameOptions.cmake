@@ -8,7 +8,6 @@ option(DISABLE_ENTRYPOINT_HOOK "Do not hook GAME.exe entrypoint" OFF)
 option(DISABLE_VEH "Do not install vectored exception handler" OFF)
 option(DISABLE_PARK_THREAD "Do not park thread on fatal AV (experimental)" ON)
 option(DISABLE_INT "Do not raise int3 on access violation (experimental)" ON)
-option(DISABLE_AUTONAV "Disable ctl handler-pipe navigation pumps" OFF)
 option(NO_NETWORK_LOGS "Disable netlogs.txt" OFF)
 option(SILENT_KEEPALIVE "Omit keepalive-sized packets from netlogs" ON)
 option(SILENT_NETWORK "Omit network events from main log (netlogs still active)" OFF)
@@ -33,7 +32,6 @@ function(thegame_apply_options target)
     DISABLE_VEH
     DISABLE_PARK_THREAD
     DISABLE_INT
-    DISABLE_AUTONAV
     NO_NETWORK_LOGS
     SILENT_KEEPALIVE
     SILENT_NETWORK
