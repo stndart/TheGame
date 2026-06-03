@@ -23,7 +23,8 @@ volatile LONG g_av_release; // set to 0 to release the thread
 
 constexpr DWORD kDbgPrintExceptionC = 0x40010006;
 constexpr DWORD kDbgPrintExceptionWideC = 0x4001000A;
-constexpr DWORD kThreadNameExceptionC = 0x406D1388; // MSVC debugger thread naming
+constexpr DWORD kThreadNameExceptionC =
+    0x406D1388; // MSVC debugger thread naming
 constexpr DWORD kAccessViolationC = 0xC0000005;
 
 bool is_dbgprint_exception(DWORD code) {

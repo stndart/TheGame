@@ -1,5 +1,7 @@
 #pragma once
 
+void log_nav(const char *msg);
+
 namespace Rmi {
 
 // Shard/lobby navigation via ctl handler pipe. Runs on main thread.

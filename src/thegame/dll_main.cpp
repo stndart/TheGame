@@ -136,21 +136,21 @@ BOOL APIENTRY DllMain(HMODULE module, DWORD ul_reason_for_call,
     thegame::log_boot_paths();
 
     if (thegame::cfg.disable_hooks) {
-      thegame::log_message("DLL loaded - no hooks (DISABLE_HOOKS)");
+      thegame::logf("DLL loaded - no hooks (DISABLE_HOOKS)");
     } else {
       install_hooks();
-      thegame::log_message("DLL loaded - hooks installed");
+      thegame::logf("DLL loaded - hooks installed");
       start_diagnostics_poll();
     }
     break;
 
   case DLL_PROCESS_DETACH:
     if (!thegame::cfg.disable_hooks) {
-      thegame::log_message("DLL unloaded - hooks removed");
+      thegame::logf("DLL unloaded - hooks removed");
       Diagnostics::teardown();
       HookManager::restore_all_hooks();
     } else {
-      thegame::log_message("DLL unloaded");
+      thegame::logf("DLL unloaded");
     }
     Proud::TcpTrace::close_log_file();
     thegame::close_logs();

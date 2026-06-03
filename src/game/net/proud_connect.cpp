@@ -70,7 +70,7 @@ static void tcp_nodelay(SOCKET s, int *ctx, unsigned *mgr) {
   int on = static_cast<int>(mgr[197]);
   if (setsockopt(s, IPPROTO_TCP, TCP_NODELAY,
                  reinterpret_cast<const char *>(&on), sizeof(on)) >= 0) {
-    logf("TCP_NODELAY set");
+    lognf(static_cast<int>(s), "TCP_NODELAY set");
     return;
   }
   const int err = WSAGetLastError();

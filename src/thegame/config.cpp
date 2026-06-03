@@ -39,6 +39,7 @@ std::string merge_string(const char *name, const char *compile_default) {
 void init_config() {
   // compile/env flags
   cfg.no_console = merge_flag("THEGAME_NO_CONSOLE", THEGAME_NO_CONSOLE);
+  cfg.no_colors = merge_flag("NO_COLORS", NO_COLORS);
   cfg.pipes = merge_flag("THEGAME_PIPES", THEGAME_PIPES);
   cfg.disable_hooks = merge_flag("DISABLE_HOOKS", DISABLE_HOOKS);
   cfg.disable_syshooks = merge_flag("DISABLE_SYSHOOKS", DISABLE_SYSHOOKS);

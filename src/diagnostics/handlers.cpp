@@ -7,6 +7,7 @@
 #include "diagnostics/handler_pipe.hpp"
 #include "diagnostics/namedpipe.hpp"
 #include "thegame/config.hpp"
+#include "thegame/log.hpp"
 
 using namespace Diagnostics;
 

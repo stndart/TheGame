@@ -402,7 +402,7 @@ void String::Truncate(int maxLength) {
   if (new_size >= old_size)
     new_size = old_size;
 
-  // logf("[x] Original size %i, new %i, maxlength %i, v2 %p, v5 %p", old_size,
+  // logfs("[x] Original size %i, new %i, maxlength %i, v2 %p, v5 %p", old_size,
   //      new_size, maxLength, m_kHandle, header);
 
   if (header) {

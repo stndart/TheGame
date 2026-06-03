@@ -25,6 +25,7 @@ option(FORMAT_LOG "Log String::Vformat" OFF)
 function(thegame_apply_options target)
   set(_defs
     THEGAME_NO_CONSOLE
+    NO_COLORS
     THEGAME_PIPES
     DISABLE_HOOKS
     DISABLE_SYSHOOKS

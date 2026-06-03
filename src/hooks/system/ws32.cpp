@@ -12,7 +12,9 @@ using thegame::logf;
 
 void __cdecl log_parg_n(int i, void *retaddr, void *p) {
 #if WS2_HOOKS
-  logf("[net] Call[%i] from 0x%p with arg 0x%p", i, retaddr, p);
+  logf(thegame::LogMessage(
+      thegame::LogSource::Net,
+      fmt::format("Call[%i] from 0x%p with arg 0x%p", i, retaddr, p)));
 #else
   (void)i;
   (void)retaddr;
@@ -125,8 +127,10 @@ static int WSAAPI connect_with_remap(SOCKET s, const sockaddr *name,
       if (port == ServerOverride::kGameLegPort) {
         in_addr was{};
         was.S_un.S_addr = in->sin_addr.s_addr;
-        logf("connect:27380 %s -> %s", inet_ntoa(was),
-             inet_ntoa(patched.sin_addr));
+        logf(thegame::LogMessage(thegame::LogSource::Net,
+                                 fmt::format("connect:27380 %s -> %s",
+                                             inet_ntoa(was),
+                                             inet_ntoa(patched.sin_addr))));
       }
     }
   }

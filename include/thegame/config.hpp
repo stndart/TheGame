@@ -9,6 +9,10 @@
 #define THEGAME_NO_CONSOLE 0
 #endif
 
+#ifndef NO_COLORS
+#define NO_COLORS 0
+#endif
+
 #ifndef THEGAME_PIPES
 #define THEGAME_PIPES 1
 #endif
@@ -94,6 +98,7 @@ namespace thegame {
 struct Cfg {
   // compile/env flags
   bool no_console;
+  bool no_colors;
   bool pipes;
   bool disable_hooks;
   bool disable_syshooks;

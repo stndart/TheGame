@@ -31,12 +31,6 @@ bool transition_locked() { return game_global<std::uint8_t>(0x1C1E409) != 0; }
 
 int current_scene() { return game_global<int>(0x1C15644); }
 
-void log_nav(const char *msg) {
-  char line[128];
-  wsprintfA(line, "[nav] %s (tid=%lu)", msg, GetCurrentThreadId());
-  logf(line);
-}
-
 using SendProxyFn = int(__thiscall *)(void *, void *, int, short);
 
 bool send_proxy_rmi(unsigned id, const void *msg, int len) {
@@ -65,9 +59,7 @@ void send_shard_select_c2s(int shard_index) {
   buf[1] = static_cast<unsigned char>((kFloorShardSelect >> 8) & 0xFF);
   *reinterpret_cast<std::uint32_t *>(&buf[2]) =
       static_cast<std::uint32_t>(shard_index);
-  char line[96];
-  wsprintfA(line, "[nav] c2s 0x3EB2 shard index=%d", shard_index);
-  logf(line);
+  log_nav(fmt::format("c2s 0x3EB2 shard index={}", shard_index).c_str());
   send_proxy_rmi(0x3EB2, buf, 6);
 }
 
@@ -113,8 +105,7 @@ void note_main_thread() {
 LRESULT CALLBACK nav_getmsg_proc(int code, WPARAM wParam, LPARAM lParam) {
   (void)wParam;
   (void)lParam;
-  if (code == HC_ACTION &&
-      (nav_work_pending() || Rmi::NavHasQueuedCommands()))
+  if (code == HC_ACTION && (nav_work_pending() || Rmi::NavHasQueuedCommands()))
     Rmi::NavPump("getmsg");
   return CallNextHookEx(g_getmsg_hook, code, wParam, lParam);
 }
@@ -173,8 +164,8 @@ void pump_pass_shard_select() {
     return;
 
   if (InterlockedCompareExchange(&g_did_shard_select_send, 1, 0) == 0) {
-    const int idx = static_cast<int>(
-        InterlockedCompareExchange(&g_pass_shard_index, 0, 0));
+    const int idx =
+        static_cast<int>(InterlockedCompareExchange(&g_pass_shard_index, 0, 0));
     send_shard_select_c2s(idx);
   }
 
@@ -200,6 +191,12 @@ void pump_pass_shard_select() {
 
 } // namespace
 
+void log_nav(const char *msg) {
+  logf(thegame::LogMessage(
+      thegame::LogSource::Nav,
+      fmt::format("{} (tid={})", msg, GetCurrentThreadId())));
+}
+
 void Rmi::NavDrainCommands() {
   NavCmd cmd = NavCmd::None;
   while (NavDequeueCommand(&cmd)) {
@@ -221,7 +218,7 @@ void Rmi::NavSchedulePump() {
   wake_main_thread();
 }
 
-void Rmi::NavStartup() { logf("[nav] command-driven (handler pipe)"); }
+void Rmi::NavStartup() { log_nav("command-driven (handler pipe)"); }
 
 void Rmi::NavTeardown() {
   if (g_getmsg_hook) {
@@ -231,7 +228,7 @@ void Rmi::NavTeardown() {
   InterlockedExchange(reinterpret_cast<volatile LONG *>(&g_main_tid), 0);
   InterlockedExchange(&g_getmsg_hook_logged, 0);
   clear_pass_shard_flow();
-  logf("[nav] teardown");
+  log_nav("teardown");
 }
 
 void Rmi::NavPump(const char *phase) {

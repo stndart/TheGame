@@ -112,6 +112,7 @@ These are just basically some flags combinations
 | Flag                      | Default | What it does                                                                                           |
 | ------------------------- | ------- | ------------------------------------------------------------------------------------------------------ |
 | `THEGAME_NO_CONSOLE`      | OFF     | Disables console window                                                                                |
+| `NO_COLORS`               | OFF     | Turns off colorful console.                                                                            |
 | `THEGAME_PIPES`           | ON      | Disabling turns off controller integration.                                                            |
 | `DISABLE_HOOKS`           | OFF     | Disables hooks. Entirely. Why would you need that?                                                     |
 | `DISABLE_SYSHOOKS`        | OFF     | Disables hooks for system calls. WS2, for example.                                                     |
