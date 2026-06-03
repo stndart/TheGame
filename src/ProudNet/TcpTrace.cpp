@@ -145,6 +145,10 @@ void log_connect(SOCKET sock, const char *addr, u_short port) {
   if (!SocketTrace::is_pn_track_port(port))
     return;
   logp(LogMessage("connect socket {} to {}:{}", sock, addr, port));
+  if (thegame::cfg.pipes) {
+    Diagnostics::emit_proudnet_tcp_connect(GetCurrentThreadId(), sock, addr,
+                                           port);
+  }
 }
 
 void log_chunk(SOCKET sock, const void *data, size_t len, bool inbound,

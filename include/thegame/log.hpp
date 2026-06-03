@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <string>
 
 #include <fmt/color.h>
 #include <map>
@@ -33,7 +34,10 @@ public:
 
   LogMessage(const char *message) : message(message ? message : "") {}
 
-  LogMessage(std::string message) : message(message) {}
+  LogMessage(std::string message) : message(std::move(message)) {}
+
+  LogMessage(LogSource source, LogImportance kind, const std::string &text)
+      : message(text), source(source), kind(kind) {}
 
   template <typename... Args>
   LogMessage(format_string<Args...> format, Args &&...args) {
@@ -53,12 +57,12 @@ public:
     message = fmt::format(format, std::forward<Args>(args)...);
   }
 
-  LogMessage with_kind(LogImportance kind) const {
-    return LogMessage(source, kind, message);
+  LogMessage with_kind(LogImportance new_kind) const {
+    return LogMessage(source, new_kind, message);
   }
 
-  LogMessage with_source(LogSource source) const {
-    return LogMessage(source, kind, message);
+  LogMessage with_source(LogSource new_source) const {
+    return LogMessage(new_source, kind, message);
   }
 
 public:

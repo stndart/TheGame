@@ -127,7 +127,7 @@ void log_fault_stack(EXCEPTION_POINTERS *info) {
   const int pos = _snprintf_s(line, sizeof(line), _TRUNCATE,
                               "fault stack @esp=0x%08lX:", c->Esp);
   (void)append_fault_stack_dwords(sp, line, sizeof(line), pos);
-  logf(line);
+  logf(LogMessage(line));
 }
 
 // Spin the faulting thread in place so a debugger can break-all and inspect the

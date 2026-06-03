@@ -1,5 +1,7 @@
 #include "thegame/log.hpp"
 
+#include <cstdio>
+
 #include <fmt/base.h>
 #include <fmt/ranges.h>
 
@@ -140,9 +142,10 @@ void LogMessage::write_to(FILE *file, bool prefix) const {
   if (!file)
     return;
 
+  // protect fmt print from {} injections
   if (prefix)
-    fmt::print(file, source_to_prefix(source));
-  fmt::println(file, message);
+    fmt::print(file, "{}", source_to_prefix(source));
+  fmt::println(file, "{}", message);
   std::fflush(file);
 }
 
@@ -151,14 +154,15 @@ void LogMessage::write_to_console() const {
     if (!console_created)
       create_console();
 
+    // protect fmt print from {} injections
     if (!cfg.no_colors) {
       fmt::text_style fg = fmt::fg(color_for_importance(kind));
-      fmt::print(fg, source_to_prefix(source));
-      fmt::print(fg, message);
+      fmt::print(fg, "{}", source_to_prefix(source));
+      fmt::print(fg, "{}", message);
       fmt::println("");
     } else {
-      fmt::print(source_to_prefix(source));
-      fmt::println(message);
+      fmt::print("{}", source_to_prefix(source));
+      fmt::println("{}", message);
     }
   }
 }
@@ -188,6 +192,13 @@ void logn(int socket, const char *addr, int port) {
 }
 
 void logn(int socket, size_t len, char *data, bool in) {
+  if (cfg.no_network_logs)
+    return;
+
+  // Keepalives are filtered by port (27000) or ProudNet RMI opcode (0x1C).
+  // if (cfg.silent_keepalive && is_keepalive_packet(len))
+  //   return;
+
   LogMessage line(Net, "{} sock {} len={}", in ? "rx" : "tx", socket, len);
   logf(line);
 
@@ -206,15 +217,29 @@ void logp(int socket, const LogMessage &message) {
 }
 
 void logp(const LogMessage &message) {
-  logf(message.with_source(Proud));
-  message.write_to(proudlog_file);
+  const LogMessage line = message.with_source(Proud);
+  logf(line);
+  line.write_to(proudlog_file);
 }
 
 void logp_silent(const LogMessage &message) { message.write_to(proudlog_file); }
 
 void exceptionf(EXCEPTION_POINTERS *info, const char *type) {
-  logf(LogMessage(Exception, "{}: {}", type,
-                  info->ExceptionRecord->ExceptionCode));
+  // VEH-safe: no fmt/LogMessage (C++ in first-chance handlers breaks unwind).
+  char buffer[512];
+  _snprintf_s(buffer, sizeof(buffer), _TRUNCATE, "[!exception] %s: 0x%08lX",
+              type ? type : "exception", info->ExceptionRecord->ExceptionCode);
+  if (log_file) {
+    std::fputs(buffer, log_file);
+    std::fputc('\n', log_file);
+    std::fflush(log_file);
+  }
+  if (!cfg.no_console) {
+    if (!console_created)
+      create_console();
+    std::fputs(buffer, stdout);
+    std::fputc('\n', stdout);
+  }
   Diagnostics::emit_exception_event(type, info);
 }
 
