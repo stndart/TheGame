@@ -33,13 +33,21 @@ void install_syshooks() {
 #if WS2_HOOKS
   HookManager::make_syshook(g_ws2_send, 0x01588B9C);
   HookManager::make_syshook(g_ws2_sendto, 0x01588C08);
+  HookManager::make_syshook(g_ws2_recvfrom, 0x01588BA0);
+  HookManager::make_syshook(g_ws2_wsarecv, 0x01588BF0);
+  HookManager::make_syshook(g_ws2_wsarecvfrom, 0x01588BF4);
   HookManager::make_syshook(g_ws2_wsasend, 0x01588BF8);
   HookManager::make_syshook(g_ws2_wsasendto, 0x01588C04);
+  HookManager::make_syshook(g_ws2_recv, 0x01588C14);
   HookManager::make_syshook(g_ws2_connect, 0x01588BEC);
-  // HookManager::hook_import(GetModuleHandle(nullptr), "WS2_32.dll", "connect",
-  //                          reinterpret_cast<void *>(connect_syshandle));
-  // HookManager::hook_import(g_dll_module, "WS2_32.dll", "connect",
-  //                          reinterpret_cast<void *>(connect_syshandle));
+
+  // PN reimpl calls WSASend/WSARecv through TheGame.dll imports (not GAME IAT).
+  if (g_dll_module) {
+    HookManager::hook_import(g_dll_module, "WS2_32.dll", "WSASend",
+                             reinterpret_cast<void *>(wsasend_syshandle));
+    HookManager::hook_import(g_dll_module, "WS2_32.dll", "WSARecv",
+                             reinterpret_cast<void *>(wsarecv_syshandle));
+  }
 #endif
 }
 

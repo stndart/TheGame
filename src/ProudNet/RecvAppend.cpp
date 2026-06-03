@@ -34,6 +34,7 @@ void log_recv_chunk(const Proud::RecvBuffer *recv, const char *src, int len) {
   if (sock == INVALID_SOCKET)
     sock = SocketTrace::socket_from_last_fast_ctx();
 
+  // RX: net is logged at recv_complete / WSARecv hook; append adds proud only.
   Proud::TcpTrace::log_chunk(sock, src, static_cast<size_t>(len), true, fast);
 }
 

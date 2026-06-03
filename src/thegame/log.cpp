@@ -244,8 +244,11 @@ void exceptionf(EXCEPTION_POINTERS *info, const char *type) {
 }
 
 void exceptionf(const LogMessage &message) {
-  logf(message.with_source(Exception));
-  Diagnostics::emit_custom_exception(message.message.c_str());
+  LogMessage line = message.with_source(Exception);
+  if (line.kind == Default)
+    line.kind = Warning;
+  logf(line);
+  Diagnostics::emit_custom_exception(line.message.c_str());
 }
 
 // the same as logf, but doesn't print to console

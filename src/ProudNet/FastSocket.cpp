@@ -7,9 +7,11 @@
 #include "ProudNet/GrowableBuffer.hpp"
 #include "ProudNet/SocketError.hpp"
 #include "game/net/socket_trace.hpp"
+#include "thegame/config.hpp"
 #include "thegame/log.hpp"
 
 using thegame::LogMessage;
+using thegame::logn;
 using thegame::logp;
 
 namespace {
@@ -111,6 +113,13 @@ char Proud::CFastSocket::recv_complete(unsigned char wait, std::uint32_t *out) {
   addr_port_update(
       reinterpret_cast<PNAddrPort *>(base + Proud::FastSocketLayout::kAddrPort),
       sock);
+
+  if (!thegame::cfg.no_network_logs && transferred > 0) {
+    const char *staging = recv_staging_ptr();
+    if (staging)
+      logn(sock, static_cast<size_t>(transferred),
+           const_cast<char *>(staging), true);
+  }
 
   logp(sock, LogMessage("recv_complete fast={} bytes={}",
                         reinterpret_cast<void *>(this), transferred));
