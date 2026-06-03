@@ -5,16 +5,20 @@
 #include "thegame/log.hpp"
 
 using thegame::logf;
+using thegame::LogMessage;
 
 class WString {
   static void __cdecl log_str(const WString *handle, LPCSTR hint = "") {
     void *nullstr_hardcoded = *reinterpret_cast<void **>(0x017B75E4);
     if (handle == nullptr) {
-      logf("log %s: null at %p", hint, handle);
+      logf(LogMessage("log {} : null at {}", hint,
+                      reinterpret_cast<const void *>(handle)));
     } else {
       WString::WStringBody *ptr = handle->m_kHandle;
       if (ptr == nullstr_hardcoded || ptr == nullptr) {
-        logf("log %s: nullstr at %p at %p", hint, ptr, handle);
+        logf(LogMessage("log {} : nullstr at {} at {}", hint,
+                        reinterpret_cast<const void *>(ptr),
+                        reinterpret_cast<const void *>(handle)));
       } else {
         int *header =
             reinterpret_cast<int *>(reinterpret_cast<char *>(ptr) - 8);
@@ -26,11 +30,14 @@ class WString {
           wstr[display_len] = L'\0';
           memcpy(wstr, ptr, display_len * sizeof(WCHAR));
 
-          logf(
-              "log %s: str at %p with len %i and refcnt %i starts as %ls at %p",
-              hint, ptr, len, cnt, wstr, handle);
+          logf(LogMessage("log {} : str at {} with len {} and refcnt {} starts "
+                          "as ... at {}",
+                          hint, reinterpret_cast<const void *>(ptr), len, cnt,
+                          reinterpret_cast<const void *>(handle)));
         } else {
-          logf("log %s: broken header at %p at %p", hint, ptr, handle);
+          logf(LogMessage("log {} : broken header at {} at {}", hint,
+                          reinterpret_cast<const void *>(ptr),
+                          reinterpret_cast<const void *>(handle)));
         }
       }
     }

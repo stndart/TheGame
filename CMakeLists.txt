@@ -5,6 +5,7 @@ include(cmake/MsvcArchTools.cmake)
 include(cmake/StaticLinking.cmake)
 include(cmake/TheGameOptions.cmake)
 include(cmake/FetchFmt.cmake)
+include(cmake/FetchJson.cmake)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -33,7 +34,10 @@ if(WIN32)
         target_include_directories(TheGame PRIVATE "${MSVC_ATL_INCLUDE_DIR}")
     endif()
 
-    target_link_libraries(TheGame PRIVATE fmt::fmt kernel32 user32 Ws2_32)
+    target_link_libraries(TheGame PRIVATE
+        fmt::fmt
+        nlohmann_json::nlohmann_json
+        kernel32 user32 Ws2_32)
 endif()
 
 set_target_properties(TheGame PROPERTIES

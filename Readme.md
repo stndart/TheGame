@@ -112,6 +112,7 @@ These are just basically some flags combinations
 | Flag                      | Default | What it does                                                                                           |
 | ------------------------- | ------- | ------------------------------------------------------------------------------------------------------ |
 | `THEGAME_NO_CONSOLE`      | OFF     | Disables console window                                                                                |
+| `NO_COLORS`               | OFF     | Turns off colorful console.                                                                            |
 | `THEGAME_PIPES`           | ON      | Disabling turns off controller integration.                                                            |
 | `DISABLE_HOOKS`           | OFF     | Disables hooks. Entirely. Why would you need that?                                                     |
 | `DISABLE_SYSHOOKS`        | OFF     | Disables hooks for system calls. WS2, for example.                                                     |
@@ -121,6 +122,7 @@ These are just basically some flags combinations
 | `DISABLE_INT`             | ON      | Experimental - raises a debug interrupt on exception. You would need to bypass AC to get this working. |
 | `MINIDUMP_ENABLED`        | OFF     | Experimental - makes a minidump on fatal exception (AV).                                               |
 | `NO_NETWORK_LOGS`         | OFF     | No logs, no `netlogs.txt`                                                                              |
+| `QUIET_NETWORK`           | ON      | Network logs do not go to the diagnostics pipe.                                                        |
 | `SILENT_NETWORK`          | OFF     | Do not print network logs in main log.                                                                 |
 | `SILENT_KEEPALIVE`        | ON      | Prevents logging pings on 20009 port. And proud 0x1C pings.                                            |
 | `NO_PROUD_LOGS`           | OFF     | No logs, no `proudlogs.txt`                                                                            |

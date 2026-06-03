@@ -10,6 +10,7 @@ option(DISABLE_PARK_THREAD "Do not park thread on fatal AV (experimental)" ON)
 option(DISABLE_INT "Do not raise int3 on access violation (experimental)" ON)
 option(NO_NETWORK_LOGS "Disable netlogs.txt" OFF)
 option(SILENT_KEEPALIVE "Omit keepalive-sized packets from netlogs" ON)
+option(QUIET_NETWORK, "Omit network events from diagnostics pipe" ON)
 option(SILENT_NETWORK "Omit network events from main log (netlogs still active)" OFF)
 option(NO_PROUD_LOGS "Disable proudlogs.txt" OFF)
 option(SILENT_PROUD "Omit ProudNet events from main log" OFF)
@@ -25,6 +26,7 @@ option(FORMAT_LOG "Log String::Vformat" OFF)
 function(thegame_apply_options target)
   set(_defs
     THEGAME_NO_CONSOLE
+    NO_COLORS
     THEGAME_PIPES
     DISABLE_HOOKS
     DISABLE_SYSHOOKS

@@ -10,7 +10,9 @@
 #include "thegame/config.hpp"
 #include "thegame/log.hpp"
 
-using thegame::logpnf;
+using thegame::LogMessage;
+using thegame::logn;
+using thegame::logp;
 
 namespace {
 
@@ -112,9 +114,14 @@ char Proud::CFastSocket::recv_complete(unsigned char wait, std::uint32_t *out) {
       reinterpret_cast<PNAddrPort *>(base + Proud::FastSocketLayout::kAddrPort),
       sock);
 
-  if (!thegame::cfg.no_proud_logs)
-    logpnf(static_cast<int>(sock), "recv_complete fast=%p bytes=%lu", this,
-           static_cast<unsigned long>(transferred));
+  if (!thegame::cfg.no_network_logs && transferred > 0) {
+    const char *staging = recv_staging_ptr();
+    if (staging)
+      logn(sock, true, staging, transferred);
+  }
+
+  logp(sock, LogMessage("recv_complete fast={} bytes={}",
+                        reinterpret_cast<void *>(this), transferred));
   return 1;
 }
 
@@ -125,9 +132,9 @@ int Proud::CFastSocket::recv(int len) {
   const SOCKET sock =
       *reinterpret_cast<SOCKET *>(base + Proud::FastSocketLayout::kSocket);
 
-  if (base[Proud::FastSocketLayout::kRecvIssueWarning] &&
-      !thegame::cfg.no_proud_logs) {
-    logpnf(static_cast<int>(sock), "IssueRecv duplicated fast=%p", this);
+  if (base[Proud::FastSocketLayout::kRecvIssueWarning]) {
+    logp(sock, LogMessage("IssueRecv duplicated fast={}",
+                          reinterpret_cast<void *>(this)));
   }
 
   if (len <= 0)
@@ -224,9 +231,9 @@ int Proud::CFastSocket::send(void *data, int len) {
   const SOCKET sock =
       *reinterpret_cast<SOCKET *>(base + Proud::FastSocketLayout::kSocket);
 
-  if (*reinterpret_cast<BYTE *>(base + Proud::FastSocketLayout::kSendWarning) &&
-      !thegame::cfg.no_proud_logs) {
-    logpnf(static_cast<int>(sock), "IssueSend duplicated fast=%p", this);
+  if (*reinterpret_cast<BYTE *>(base + Proud::FastSocketLayout::kSendWarning)) {
+    logp(sock, LogMessage("IssueSend duplicated fast={}",
+                          reinterpret_cast<void *>(this)));
   }
 
   if (len <= 0)

@@ -1,9 +1,9 @@
 #include "ProudNet/DrainReceiveQueue.hpp"
 
-#include "thegame/config.hpp"
 #include "thegame/log.hpp"
 
-using thegame::logpnf;
+using thegame::LogMessage;
+using thegame::logp;
 
 namespace {
 
@@ -22,13 +22,13 @@ void *worker_from_client(void *net_client) {
 
 void Proud::DrainReceiveQueue(void *net_client) {
   static int logs = 0;
-  if (logs < kLogLimit && !thegame::cfg.no_proud_logs) {
-    logpnf(0, "drain_recv: client=%p worker=%p", net_client,
-           worker_from_client(net_client));
+  if (logs < kLogLimit) {
+    logp(0, LogMessage("drain_recv: client={} worker={}", net_client,
+                       worker_from_client(net_client)));
     ++logs;
   }
-  // NOTE: in-process S2C inject was removed (v1); friends server is authoritative.
-  // See docs/rmi/fake-server-hooks.md.
+  // NOTE: in-process S2C inject was removed (v1); friends server is
+  // authoritative. See docs/rmi/fake-server-hooks.md.
 }
 
 void Proud::DrainReceiveQueueCallOriginal(void *net_client) {

@@ -11,6 +11,7 @@
 #include "thegame/log.hpp"
 
 using thegame::logf;
+using thegame::LogMessage;
 
 String::StringBody *String::nullstr =
     *reinterpret_cast<StringBody **>(0x017B75E4);
@@ -22,7 +23,7 @@ inline String::StringHeader *String::GetRealBufferStart(StringBody *pBody) {
 
 String::StringBody *String::Allocate(size_t stCount) {
   if (ALLOC_LOG)
-    logf("String::Allocate %i", stCount);
+    logf(LogMessage("String::Allocate {}", stCount));
 
   size_t stBufferSize = (stCount + 1) * sizeof(char) + sizeof(StringHeader);
 
@@ -39,7 +40,7 @@ String::StringBody *String::Allocate(size_t stCount) {
 
 String::StringBody *String::AllocateAndCopy(LPCSTR pcStr, size_t stCount) {
   if (ALLOC_LOG)
-    logf("String::AllocateAndCopy %i", stCount);
+    logf(LogMessage("String::AllocateAndCopy {}", stCount));
 
   if (pcStr == nullptr)
     return nullptr;
@@ -56,14 +57,16 @@ String::StringBody *String::AllocateAndCopy(LPCSTR pcStr, size_t stCount) {
   GetRealBufferStart(pBody)->m_cbBufferSize = stCount;
 
   if (ALLOC_LOG)
-    logf("String::AllocateAndCopy: allocated at %p", pBody);
+    logf(LogMessage("String::AllocateAndCopy: allocated at {}",
+                    reinterpret_cast<void *>(pBody)));
 
   return pBody;
 }
 
 inline void String::Deallocate(StringBody *&io_pBody) {
   if (ALLOC_LOG)
-    logf("String::Deallocate %p", io_pBody);
+    logf(LogMessage("String::Deallocate {}",
+                    reinterpret_cast<void *>(io_pBody)));
 
   if (io_pBody != nullptr && io_pBody != nullstr) {
     StringHeader *pString = GetRealBufferStart(io_pBody);
@@ -228,7 +231,7 @@ void String::Concatenate_cstr(LPCSTR pcStr) {
   if (CONCAT_LOG) {
     logf("String::Concatenate(LPCSTR)");
     log_str(this, "Concatenate left");
-    logf("Concatenate right: %s", pcStr);
+    logf(LogMessage("Concatenate right: {}", pcStr));
   }
 
   if (pcStr == nullptr)
@@ -277,7 +280,7 @@ size_t String::GetRefCount() const {
 }
 
 void String::Swap(LPCSTR pcNewValue, size_t stLength) {
-  logf("String::Swap %i", stLength);
+  logf(LogMessage("String::Swap {}", stLength));
 
   if (pcNewValue == nullptr) {
     DecRefCount();
@@ -295,7 +298,8 @@ void String::Swap(LPCSTR pcNewValue, size_t stLength) {
 
 LPCSTR String::Reserve(int stLength) {
   if (RESERVE_LOG)
-    logf("String::Reserve %i for %p", stLength, this);
+    logf(LogMessage("String::Reserve {} for {}", stLength,
+                    reinterpret_cast<void *>(this)));
 
   size_t old_size = 0;
   if (m_kHandle != nullptr && m_kHandle != nullstr) {
@@ -313,7 +317,8 @@ LPCSTR String::Reserve(int stLength) {
 
   if (RESERVE_LOG) {
     if (m_kHandle)
-      logf("String::Reserve - reserved at %p", &m_kHandle->m_data);
+      logf(LogMessage("String::Reserve - reserved at {}",
+                      reinterpret_cast<void *>(&m_kHandle->m_data)));
   }
 
   if (!m_kHandle)
@@ -323,7 +328,8 @@ LPCSTR String::Reserve(int stLength) {
 
 void String::Realloc(int stLength) {
   if (RESERVE_LOG)
-    logf("String::Realloc %i for %p", stLength, this);
+    logf(LogMessage("String::Realloc {} for {}", stLength,
+                    reinterpret_cast<void *>(this)));
 
   if (!m_kHandle)
     m_kHandle = nullstr;
@@ -346,7 +352,8 @@ void String::Realloc(int stLength) {
   m_kHandle->m_data[stLength] = '\0';
 
   if (RESERVE_LOG) {
-    logf("String::Realloc - reserved at %p", &m_kHandle->m_data);
+    logf(LogMessage("String::Realloc - reserved at {}",
+                    reinterpret_cast<void *>(&m_kHandle->m_data)));
   }
 }
 
@@ -390,7 +397,7 @@ inline void String::CalcLength() {
 
 void String::Truncate(int maxLength) {
   if (RESERVE_LOG)
-    logf("String::Truncate %i", maxLength);
+    logf(LogMessage("String::Truncate {}", maxLength));
 
   if (!m_kHandle || m_kHandle == nullstr)
     return;
@@ -402,7 +409,7 @@ void String::Truncate(int maxLength) {
   if (new_size >= old_size)
     new_size = old_size;
 
-  // logf("[x] Original size %i, new %i, maxlength %i, v2 %p, v5 %p", old_size,
+  // logfs("[x] Original size %i, new %i, maxlength %i, v2 %p, v5 %p", old_size,
   //      new_size, maxLength, m_kHandle, header);
 
   if (header) {
@@ -454,7 +461,7 @@ void String::CopyOnWrite() {
 
 void String::vformat(String *pStr, LPCSTR pcFormat, ...) {
   if (FORMAT_LOG)
-    logf("vformat of format %s", pcFormat);
+    logf(LogMessage("vformat of format {}", pcFormat));
 
   va_list args;
   va_start(args, pcFormat);
@@ -464,7 +471,8 @@ void String::vformat(String *pStr, LPCSTR pcFormat, ...) {
 
 void String::Vformat(LPCSTR pcFormat, va_list argPtr) {
   if (FORMAT_LOG)
-    logf("String::Vformat of format %s to %p", pcFormat, this);
+    logf(LogMessage("String::Vformat of format {} to {}", pcFormat,
+                    reinterpret_cast<void *>(this)));
 
   if (!pcFormat) {
     throw ATL::CAtlException(E_INVALIDARG);

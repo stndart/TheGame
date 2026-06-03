@@ -1,12 +1,14 @@
-#include "ProudNet/TcpTrace.hpp"
 #include "crt/memory.h"
 #include "diagnostics/handlers.hpp"
 #include "hook_manager.h"
 #include "thegame/config.hpp"
 #include "thegame/log.hpp"
+#include "thegame/proud_db.hpp"
 
 #include "system_hooks.h"
 #include "target_hooks.h"
+
+using thegame::logf;
 
 extern "C" __declspec(dllexport) void __cdecl A() {}
 
@@ -32,13 +34,21 @@ void install_syshooks() {
 #if WS2_HOOKS
   HookManager::make_syshook(g_ws2_send, 0x01588B9C);
   HookManager::make_syshook(g_ws2_sendto, 0x01588C08);
+  HookManager::make_syshook(g_ws2_recvfrom, 0x01588BA0);
+  HookManager::make_syshook(g_ws2_wsarecv, 0x01588BF0);
+  HookManager::make_syshook(g_ws2_wsarecvfrom, 0x01588BF4);
   HookManager::make_syshook(g_ws2_wsasend, 0x01588BF8);
   HookManager::make_syshook(g_ws2_wsasendto, 0x01588C04);
+  HookManager::make_syshook(g_ws2_recv, 0x01588C14);
   HookManager::make_syshook(g_ws2_connect, 0x01588BEC);
-  // HookManager::hook_import(GetModuleHandle(nullptr), "WS2_32.dll", "connect",
-  //                          reinterpret_cast<void *>(connect_syshandle));
-  // HookManager::hook_import(g_dll_module, "WS2_32.dll", "connect",
-  //                          reinterpret_cast<void *>(connect_syshandle));
+
+  // PN reimpl calls WSASend/WSARecv through TheGame.dll imports (not GAME IAT).
+  if (g_dll_module) {
+    HookManager::hook_import(g_dll_module, "WS2_32.dll", "WSASend",
+                             reinterpret_cast<void *>(wsasend_syshandle));
+    HookManager::hook_import(g_dll_module, "WS2_32.dll", "WSARecv",
+                             reinterpret_cast<void *>(wsarecv_syshandle));
+  }
 #endif
 }
 
@@ -133,26 +143,27 @@ BOOL APIENTRY DllMain(HMODULE module, DWORD ul_reason_for_call,
     CRT::init_CRT();
     thegame::init_config();
     thegame::create_console();
+    thegame::prepare_logs();
+    thegame::init_proud_db();
     thegame::log_boot_paths();
 
     if (thegame::cfg.disable_hooks) {
-      thegame::log_message("DLL loaded - no hooks (DISABLE_HOOKS)");
+      logf("DLL loaded - no hooks (DISABLE_HOOKS)");
     } else {
       install_hooks();
-      thegame::log_message("DLL loaded - hooks installed");
+      logf("DLL loaded - hooks installed");
       start_diagnostics_poll();
     }
     break;
 
   case DLL_PROCESS_DETACH:
     if (!thegame::cfg.disable_hooks) {
-      thegame::log_message("DLL unloaded - hooks removed");
+      logf("DLL unloaded - hooks removed");
       Diagnostics::teardown();
       HookManager::restore_all_hooks();
     } else {
-      thegame::log_message("DLL unloaded");
+      logf("DLL unloaded");
     }
-    Proud::TcpTrace::close_log_file();
     thegame::close_logs();
     if (thegame::console_created)
       FreeConsole();

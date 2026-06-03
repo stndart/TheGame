@@ -7,10 +7,10 @@
 #include "game/engine/String.h"
 #include "game/engine/TCPSocket.h"
 #include "game/engine/WString.h"
-#include "thegame/config.hpp"
 #include "thegame/log.hpp"
 
-using thegame::logpnf;
+using thegame::LogMessage;
+using thegame::logp;
 
 namespace {
 
@@ -21,8 +21,8 @@ int fast_socket_handle(Proud::CFastSocket *fast) {
   if (!fast)
     return 0;
   auto *base = reinterpret_cast<char *>(fast);
-  return static_cast<int>(*reinterpret_cast<SOCKET *>(
-      base + Proud::FastSocketLayout::kSocket));
+  return static_cast<int>(
+      *reinterpret_cast<SOCKET *>(base + Proud::FastSocketLayout::kSocket));
 }
 
 void set_fast_socket_nonblock(Proud::CFastSocket *fast) {
@@ -109,9 +109,9 @@ bool Proud::SendArm::arm_send() {
 
 char Proud::ConnectionNode::run_state_1() {
   Proud::CFastSocket *const sock_early = fast();
-  if (!thegame::cfg.no_proud_logs)
-    logpnf(fast_socket_handle(sock_early), "conn state1 conn=%p fast=%p", this,
-           sock_early);
+  logp(fast_socket_handle(sock_early),
+       LogMessage("conn state1 conn={} fast={}", reinterpret_cast<void *>(this),
+                  reinterpret_cast<void *>(sock_early)));
 
   alignas(4) std::uint8_t select_buf[0x220];
   auto *sel = reinterpret_cast<Proud::CSelectContext *>(select_buf);
@@ -158,8 +158,9 @@ char Proud::ConnectionNode::run_state_2() {
   std::uint32_t overlap_out[8] = {};
 
   Proud::CFastSocket *const sock = fast();
-  if (!thegame::cfg.no_proud_logs)
-    logpnf(fast_socket_handle(sock), "conn state2 conn=%p fast=%p", this, sock);
+  logp(fast_socket_handle(sock),
+       LogMessage("conn state2 conn={} fast={}", reinterpret_cast<void *>(this),
+                  reinterpret_cast<void *>(sock)));
   if (!sock)
     return 0;
 
@@ -200,9 +201,10 @@ int Proud::ConnectionNode::run_state_3() {
   std::uint32_t overlap_out[8] = {};
 
   Proud::CFastSocket *const sock = fast();
-  if (!thegame::cfg.no_proud_logs)
-    logpnf(fast_socket_handle(sock), "conn state3 conn=%p fast=%p recv.size=%d",
-           this, sock, recv.size_);
+  logp(fast_socket_handle(sock),
+       LogMessage("conn state3 conn={} fast={} recv.size={}",
+                  reinterpret_cast<void *>(this),
+                  reinterpret_cast<void *>(sock), recv.size_));
   if (!sock)
     return 0;
 

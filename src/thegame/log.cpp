@@ -1,21 +1,61 @@
 #include "thegame/log.hpp"
 
+#include <cstddef>
+#include <cstdio>
+#include <cstring>
+
+#include <fmt/base.h>
+#include <fmt/ranges.h>
+
 #include "diagnostics/handlers.hpp"
 #include "thegame/config.hpp"
 #include "thegame/paths.hpp"
 
-#include <cstring>
-
-#include <cstdarg>
-#include <cstdio>
-#include <iomanip>
-#include <windows.h>
-
 namespace thegame {
 
-std::ofstream log_file;
-std::ofstream netlog_file;
-std::ofstream proudlog_file;
+fmt::rgb color_for_importance(LogImportance kind) {
+  switch (kind) {
+  case Seen:
+    return fmt::rgb(64, 192, 64);
+  case NotSeen:
+    return fmt::rgb(192, 96, 96);
+  case Milestone:
+    return fmt::rgb(128, 192, 192);
+  case Warning:
+    return fmt::rgb(255, 192, 64);
+  case Default:
+  default:
+    return fmt::color::white;
+  }
+}
+
+std::string source_to_prefix(LogSource source) {
+  switch (source) {
+  case Exception:
+    return "[!exception] ";
+  case Log:
+    return "[log] ";
+  case Net:
+    return "[net] ";
+  case Proud:
+    return "[proud] ";
+  case RMI:
+    return "[rmi] ";
+  case Stage:
+    return "[stage] ";
+  case Nav:
+    return "[nav] ";
+  default:
+    return "";
+  }
+}
+
+std::map<LogSource, bool> silenced;
+std::map<LogSource, bool> file_silenced;
+
+FILE *log_file = nullptr;
+FILE *netlog_file = nullptr;
+FILE *proudlog_file = nullptr;
 bool console_created = false;
 
 void create_console() {
@@ -25,237 +65,255 @@ void create_console() {
   AllocConsole();
   freopen("CONOUT$", "w", stdout);
   freopen("CONOUT$", "w", stderr);
+
+  if (!cfg.no_colors) {
+    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    if (hOut != INVALID_HANDLE_VALUE) {
+      DWORD mode = 0;
+      if (GetConsoleMode(hOut, &mode))
+        SetConsoleMode(hOut, mode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+    }
+  }
+
   console_created = true;
 }
 
-void log_message(const char *message) {
-  if (!cfg.no_console) {
-    if (!console_created)
-      create_console();
-    printf("%s\n", message);
-  }
-
-  if (!log_file.is_open())
-    log_file.open(main_log_path(), std::ios::app);
-  if (log_file.is_open())
-    log_file << message << std::endl;
-}
-
-void logf(const char *format, ...) {
-  char buffer[1024];
-  va_list args;
-  va_start(args, format);
-  vsprintf_s(buffer, format, args);
-  va_end(args);
-  log_message(buffer);
-
-  if (cfg.pipes)
-    Diagnostics::emit_game_log(buffer);
-}
-
-void exceptionf(const char *type, EXCEPTION_POINTERS *info, const char *format,
-                ...) {
-  char buffer[1024];
-  va_list args;
-  va_start(args, format);
-  vsprintf_s(buffer, format, args);
-  va_end(args);
-  if (buffer[0] != '\0')
-    log_message(buffer);
-  if (info)
-    Diagnostics::emit_exception_event(type, info, buffer);
-  else
-    Diagnostics::emit_custom_exception(buffer);
-}
-
-// the same as logf, but doesn't print to console
-void eventf(const char *format, ...) {
-  char buffer[1024];
-  va_list args;
-  va_start(args, format);
-  vsprintf_s(buffer, format, args);
-  va_end(args);
-  if (cfg.pipes)
-    Diagnostics::emit_game_log(buffer);
-}
-
-void stagef(const char *stage) {
-  char buffer[512];
-  sprintf_s(buffer, "[stage] %s", stage);
-  log_message(buffer);
-  if (cfg.pipes)
-    Diagnostics::emit_game_stage(stage);
-}
-
 void log_boot_paths() {
-  logf("thegame logs: main=%s net=%s proud=%s", main_log_path().c_str(),
-       net_log_path().c_str(), proud_log_path().c_str());
-  logf("thegame flags: hooks=%d entrypoint=%d veh=%d pipes=%d",
-       cfg.disable_hooks ? 0 : 1, cfg.disable_entrypoint_hook ? 0 : 1,
-       cfg.disable_veh ? 0 : 1, cfg.pipes ? 1 : 0);
-  logf("thegame log flags: no_net=%d silent_net=%d no_proud=%d silent_proud=%d "
-       "silent_keepalive=%d",
-       cfg.no_network_logs ? 1 : 0, cfg.silent_network ? 1 : 0,
-       cfg.no_proud_logs ? 1 : 0, cfg.silent_proud ? 1 : 0,
-       cfg.silent_keepalive ? 1 : 0);
+  logf(LogMessage(fmt::format("thegame logs: main={} net={} proud={}",
+                              main_log_path(), net_log_path(),
+                              proud_log_path())));
+  logf(LogMessage(fmt::format(
+      "thegame flags: hooks={} entrypoint={} veh={} pipes={}",
+      cfg.disable_hooks ? 0 : 1, cfg.disable_entrypoint_hook ? 0 : 1,
+      cfg.disable_veh ? 0 : 1, cfg.pipes ? 1 : 0)));
+
+  logf(LogMessage(
+      fmt::format("thegame log flags: no_net={} silent_net={} no_proud={} "
+                  "silent_proud={} "
+                  "silent_keepalive={}",
+                  cfg.no_network_logs ? 1 : 0, cfg.silent_network ? 1 : 0,
+                  cfg.no_proud_logs ? 1 : 0, cfg.silent_proud ? 1 : 0,
+                  cfg.silent_keepalive ? 1 : 0)));
 }
 
-void ensure_netlog_open() {
-  if (netlog_file.is_open())
-    return;
-  netlog_file.open(net_log_path(), std::ios::app);
-  netlog_file << "log start\n";
-}
+void prepare_logs() {
+  if (!log_file)
+    log_file = fopen(main_log_path().c_str(), "a");
+  if (!netlog_file)
+    netlog_file = fopen(net_log_path().c_str(), "a");
+  if (!proudlog_file)
+    proudlog_file = fopen(proud_log_path().c_str(), "a");
 
-void logns(int socket, const char *addr, int port) {
-  if (cfg.no_network_logs)
-    return;
-
-  ensure_netlog_open();
-
-  netlog_file << "Connecting socket " << socket << " to " << addr << ":"
-              << std::dec << port << "\n";
-  netlog_file.flush();
-
-  if (!cfg.silent_network)
-    logf("[net] connect socket %d to %s:%d", socket, addr, port);
-}
-
-void lognf(int socket, const char *format, ...) {
-  if (cfg.no_network_logs)
-    return;
-
-  char buffer[1024];
-  va_list args;
-  va_start(args, format);
-  vsprintf_s(buffer, format, args);
-  va_end(args);
-
-  ensure_netlog_open();
-
-  netlog_file << "Error with socket " << socket << ": " << buffer << "\n";
-  netlog_file.flush();
-
-  if (!cfg.silent_network)
-    logf("[net] error socket %d: %s", socket, buffer);
-}
-
-bool is_keepalive_packet(size_t len) { return len <= 8; }
-
-void logn(int socket, size_t len, char *data, bool in) {
-  if (cfg.no_network_logs)
-    return;
-  if (cfg.silent_keepalive && is_keepalive_packet(len))
-    return;
-
-  ensure_netlog_open();
-
-  if (in)
-    netlog_file << socket << " < ";
-  else
-    netlog_file << socket << " > ";
-
-  for (size_t i = 0; i < len; ++i) {
-    netlog_file << std::hex << std::setw(2) << std::setfill('0')
-                << static_cast<unsigned int>(
-                       static_cast<unsigned char>(data[i]));
+  // make sure you have all the keys here. segfault otherwise.
+  for (LogSource source : {Exception, Log, Net, Proud, RMI, Stage, Nav}) {
+    silenced[source] = false;
+    file_silenced[source] = false;
   }
-  netlog_file << std::endl;
-  netlog_file.flush();
 
-  if (!cfg.silent_network) {
-    logf("[net] %s socket %d len=%u", in ? "rx" : "tx", socket,
-         static_cast<unsigned>(len));
+  if (cfg.no_network_logs) {
+    silenced[Net] = true;
+    file_silenced[Net] = true;
   }
-}
-
-void ensure_proudlog_open() {
-  if (cfg.no_proud_logs || proudlog_file.is_open())
-    return;
-  proudlog_file.open(proud_log_path(), std::ios::app);
-  if (proudlog_file.is_open())
-    proudlog_file << "# proudnet-tcp headers (tid port dir chunk frames)\n";
-}
-
-void logpns(int socket, const char *addr, unsigned short port) {
-  if (cfg.no_proud_logs)
-    return;
-
-  ensure_proudlog_open();
-  if (!proudlog_file.is_open())
-    return;
-
-  const DWORD tid = GetCurrentThreadId();
-  proudlog_file << "tid=" << tid << " event=connect port=" << port
-                << " sock=" << socket << " addr=" << (addr ? addr : "?")
-                << "\n";
-  proudlog_file.flush();
-
-  if (!cfg.silent_proud)
-    logf("[proud] connect socket %d port=%u addr=%s", socket,
-         static_cast<unsigned>(port), addr ? addr : "?");
-
-  if (cfg.pipes) {
-    Diagnostics::emit_proudnet_tcp_connect(
-        tid, static_cast<unsigned long long>(socket), addr, port);
+  if (cfg.no_proud_logs) {
+    silenced[Proud] = true;
+    file_silenced[Proud] = true;
   }
-}
 
-void logpnf(int socket, const char *format, ...) {
-  if (cfg.no_proud_logs)
-    return;
-
-  char buffer[1024];
-  va_list args;
-  va_start(args, format);
-  vsprintf_s(buffer, format, args);
-  va_end(args);
-
-  ensure_proudlog_open();
-  if (!proudlog_file.is_open())
-    return;
-
-  proudlog_file << "Error with socket " << socket << ": " << buffer << "\n";
-  proudlog_file.flush();
-
-  if (!cfg.silent_proud)
-    logf("[proud] error socket %d: %s", socket, buffer);
-}
-
-void logpln(const char *line) {
-  if (cfg.no_proud_logs || !line || !line[0])
-    return;
-
-  ensure_proudlog_open();
-  if (!proudlog_file.is_open())
-    return;
-
-  proudlog_file << line << "\n";
-  proudlog_file.flush();
-
-  if (!cfg.silent_proud)
-    logf("[proud] %s", line);
-}
-
-void logpln_silent(const char *line) {
-  if (cfg.no_proud_logs || !line || !line[0])
-    return;
-
-  ensure_proudlog_open();
-  if (!proudlog_file.is_open())
-    return;
-
-  proudlog_file << line << "\n";
-  proudlog_file.flush();
+  if (cfg.silent_network)
+    silenced[Net] = true;
+  if (cfg.silent_proud)
+    silenced[Proud] = true;
 }
 
 void close_logs() {
-  if (log_file.is_open())
-    log_file.close();
-  if (netlog_file.is_open())
-    netlog_file.close();
-  if (proudlog_file.is_open())
-    proudlog_file.close();
+  if (log_file) {
+    fclose(log_file);
+    log_file = nullptr;
+  }
+  if (netlog_file) {
+    fclose(netlog_file);
+    netlog_file = nullptr;
+  }
+  if (proudlog_file) {
+    fclose(proudlog_file);
+    proudlog_file = nullptr;
+  }
+}
+
+void LogMessage::write_to(FILE *file, bool prefix) const {
+  if (!file)
+    return;
+
+  // protect fmt print from {} injections
+  if (prefix)
+    fmt::print(file, "{}", source_to_prefix(source));
+  fmt::println(file, "{}", message);
+  std::fflush(file);
+}
+
+void LogMessage::write_to_console() const {
+  if (!cfg.no_console) {
+    if (!console_created)
+      create_console();
+
+    // protect fmt print from {} injections
+    if (!cfg.no_colors) {
+      fmt::text_style fg = fmt::fg(color_for_importance(kind));
+      fmt::print(fg, "{}", source_to_prefix(source));
+      fmt::print(fg, "{}", message);
+      fmt::println("");
+    } else {
+      fmt::print("{}", source_to_prefix(source));
+      fmt::println("{}", message);
+    }
+  }
+}
+
+void logf(const LogMessage &message) {
+  if (!silenced[message.source])
+    message.write_to_console();
+
+  if (!file_silenced[message.source])
+    message.write_to(log_file);
+
+  // Exception and Stage have their own emits
+  if (cfg.pipes && message.source != Exception && message.source != Stage)
+    Diagnostics::emit_game_log(message.message.c_str());
+}
+
+void logf_quiet(const LogMessage &message) {
+  if (!silenced[message.source])
+    message.write_to_console();
+
+  if (!file_silenced[message.source])
+    message.write_to(log_file);
+}
+
+void logn(int socket, const char *addr, int port) {
+  LogMessage line(Net, "connect socket {} to {}:{}", socket, addr, port);
+  if (cfg.quiet_network)
+    logf_quiet(line);
+  else
+    logf(line);
+  line.write_to(netlog_file);
+}
+
+void logn(int socket, const LogMessage &message) {
+  LogMessage line(Net, "sock {}: {}", socket, message.message);
+  if (cfg.quiet_network)
+    logf_quiet(line);
+  else
+    logf(line);
+  line.write_to(netlog_file);
+}
+
+void logn(int socket, bool inbound, const LogMessage &message) {
+  LogMessage line(Net, "{} sock {}: {}", inbound ? "rx" : "tx", socket,
+                  message.message);
+  if (cfg.quiet_network)
+    logf_quiet(line);
+  else
+    logf(line);
+  line.write_to(netlog_file);
+}
+
+void logn(int socket, bool inbound, const char *data, size_t len) {
+  if (cfg.no_network_logs)
+    return;
+
+  if (cfg.silent_keepalive && is_keepalive_packet(data, len))
+    return;
+
+  LogMessage line(Net, "{} sock {} len={}", inbound ? "rx" : "tx", socket, len);
+  if (cfg.quiet_network)
+    logf_quiet(line);
+  else
+    logf(line);
+
+  const auto *bytes = reinterpret_cast<const unsigned char *>(data);
+  const auto hex = fmt::format("{:02x}", fmt::join(bytes, bytes + len, " "));
+
+  LogMessage data_line(Net, "{} sock {} data[{}]: {}", inbound ? "rx" : "tx",
+                       socket, len, hex);
+  data_line.write_to(netlog_file);
+}
+
+void logp(int socket, const LogMessage &message) {
+  LogMessage line = message.with_source(Proud);
+  line.message = fmt::format("sock {}: {}", socket, message.message);
+  logf(line);
+  line.write_to(proudlog_file);
+}
+
+void logp(const LogMessage &message) {
+  const LogMessage line = message.with_source(Proud);
+  logf(line);
+  line.write_to(proudlog_file);
+}
+
+void logp_silent(const LogMessage &message) { message.write_to(proudlog_file); }
+
+void exceptionf(EXCEPTION_POINTERS *info, const char *type) {
+  // VEH-safe: no fmt/LogMessage (C++ in first-chance handlers breaks unwind).
+  char buffer[512];
+  _snprintf_s(buffer, sizeof(buffer), _TRUNCATE, "[!exception] %s: 0x%08lX",
+              type ? type : "exception", info->ExceptionRecord->ExceptionCode);
+  if (log_file) {
+    std::fputs(buffer, log_file);
+    std::fputc('\n', log_file);
+    std::fflush(log_file);
+  }
+  if (!cfg.no_console) {
+    if (!console_created)
+      create_console();
+    std::fputs(buffer, stdout);
+    std::fputc('\n', stdout);
+  }
+  Diagnostics::emit_exception_event(type, info);
+}
+
+void exceptionf(const LogMessage &message) {
+  LogMessage line = message.with_source(Exception);
+  if (line.kind == Default)
+    line.kind = Warning;
+  logf(line);
+  Diagnostics::emit_custom_exception(line.message.c_str());
+}
+
+// the same as logf, but doesn't print to console
+void eventf(const LogMessage &message) {
+  if (cfg.pipes)
+    Diagnostics::emit_game_log(message.message.c_str());
+}
+
+void stagef(const LogMessage &message) {
+  logf(message.with_source(Stage).with_kind(Milestone));
+  if (cfg.pipes)
+    Diagnostics::emit_game_stage(message.message.c_str());
+}
+
+void ensure_netlog_open() {
+  if (netlog_file)
+    return;
+  netlog_file = fopen(net_log_path().c_str(), "a");
+  if (netlog_file) {
+    fmt::println(netlog_file, "log start");
+    std::fflush(netlog_file);
+  }
+}
+
+namespace {
+
+// ProudNet keepalive on game TCP (e.g. 27380): 13 57 01 01 1c
+constexpr unsigned char kPnKeepalive[] = {0x13, 0x57, 0x01, 0x01, 0x1c};
+constexpr size_t kPnKeepaliveLen = sizeof(kPnKeepalive);
+
+} // namespace
+
+bool is_keepalive_packet(const void *data, size_t len) {
+  if (!data || len != kPnKeepaliveLen)
+    return false;
+  return std::memcmp(data, kPnKeepalive, kPnKeepaliveLen) == 0;
 }
 
 } // namespace thegame

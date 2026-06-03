@@ -8,13 +8,14 @@
 #include "thegame/log.hpp"
 
 using thegame::logf;
+using thegame::LogMessage;
 
 WString::WStringBody *WString::nullwstr =
     *reinterpret_cast<WStringBody **>(0x017B75E8);
 
 WString::WStringBody *WString::Allocate(size_t stCount) {
   if (ALLOC_LOG)
-    logf("WString::Allocate %i", stCount);
+    logf(LogMessage("WString::Allocate {}", stCount));
 
   size_t stBufferSize = (stCount + 1) * sizeof(WCHAR) + sizeof(WStringHeader);
 
@@ -31,7 +32,7 @@ WString::WStringBody *WString::Allocate(size_t stCount) {
 
 WString::WStringBody *WString::AllocateAndCopy(LPCWSTR pcStr, size_t stCount) {
   if (ALLOC_LOG)
-    logf("WString::AllocateAndCopy %i", stCount);
+    logf(LogMessage("WString::AllocateAndCopy {}", stCount));
 
   if (pcStr == nullptr)
     return nullptr;
@@ -48,14 +49,16 @@ WString::WStringBody *WString::AllocateAndCopy(LPCWSTR pcStr, size_t stCount) {
   GetRealBufferStart(pBody)->m_cbBufferSize = stCount;
 
   if (ALLOC_LOG)
-    logf("WString::AllocateAndCopy: allocated at %p", pBody);
+    logf(LogMessage("WString::AllocateAndCopy: allocated at {}",
+                    reinterpret_cast<void *>(pBody)));
 
   return pBody;
 }
 
 inline void WString::Deallocate(WStringBody *&io_pBody) {
   if (ALLOC_LOG)
-    logf("WString::Deallocate %p", io_pBody);
+    logf(LogMessage("WString::Deallocate {}",
+                    reinterpret_cast<void *>(io_pBody)));
 
   if (io_pBody != nullptr && io_pBody != nullwstr) {
     WStringHeader *pString = GetRealBufferStart(io_pBody);
@@ -124,7 +127,7 @@ size_t WString::GetRefCount() const {
 }
 
 void WString::Swap(LPCWSTR pcNewValue, size_t stLength) {
-  logf("WString::Swap %i", stLength);
+  logf(LogMessage("WString::Swap {}", stLength));
 
   if (pcNewValue == nullptr) {
     DecRefCount();
@@ -142,7 +145,8 @@ void WString::Swap(LPCWSTR pcNewValue, size_t stLength) {
 
 LPCWSTR WString::Reserve(int stLength) {
   if (RESERVE_LOG)
-    logf("WString::Reserve %i for %p", stLength, this);
+    logf(LogMessage("WString::Reserve {} for {}", stLength,
+                    reinterpret_cast<void *>(this)));
 
   size_t old_size = 0;
   if (m_kHandle != nullptr && m_kHandle != nullwstr) {
@@ -160,7 +164,8 @@ LPCWSTR WString::Reserve(int stLength) {
 
   if (RESERVE_LOG) {
     if (m_kHandle)
-      logf("WString::Reserve - reserved at %p", &m_kHandle->m_data);
+      logf(LogMessage("WString::Reserve - reserved at {}",
+                      reinterpret_cast<void *>(&m_kHandle->m_data)));
   }
 
   if (!m_kHandle)
@@ -170,7 +175,8 @@ LPCWSTR WString::Reserve(int stLength) {
 
 void WString::Realloc(int stLength) {
   if (RESERVE_LOG)
-    logf("WString::Realloc %i for %p", stLength, this);
+    logf(LogMessage("WString::Realloc {} for {}", stLength,
+                    reinterpret_cast<void *>(this)));
 
   if (!m_kHandle)
     m_kHandle = nullwstr;
@@ -193,7 +199,8 @@ void WString::Realloc(int stLength) {
   m_kHandle->m_data[stLength] = L'\0';
 
   if (RESERVE_LOG) {
-    logf("WString::Realloc - reserved at %p", &m_kHandle->m_data);
+    logf(LogMessage("WString::Realloc - reserved at {}",
+                    reinterpret_cast<void *>(&m_kHandle->m_data)));
   }
 }
 

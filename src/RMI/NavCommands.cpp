@@ -1,7 +1,6 @@
 #include "RMI/NavCommands.hpp"
 
 #include "RMI/Nav.hpp"
-#include "thegame/log.hpp"
 #include <windows.h>
 
 namespace {
@@ -30,10 +29,10 @@ void Rmi::NavEnqueueCommand(NavCmd cmd) {
   if (g_tail - g_head < kQueueSize) {
     g_queue[g_tail++ % kQueueSize] = cmd;
     if (cmd == NavCmd::PassShardSelect)
-      thegame::logf("[nav] enqueued nav_pass_shard_select (handler pipe)");
+      log_nav("enqueued nav_pass_shard_select (handler pipe)");
     NavSchedulePump();
   } else {
-    thegame::logf("[nav] command queue full, dropped");
+    log_nav("command queue full, dropped");
   }
   LeaveCriticalSection(&g_queue_lock);
 }
@@ -60,6 +59,4 @@ bool Rmi::NavDequeueCommand(NavCmd *out) {
   return true;
 }
 
-const char *Rmi::NavCommandList() {
-  return "nav_pass_shard_select";
-}
+const char *Rmi::NavCommandList() { return "nav_pass_shard_select"; }

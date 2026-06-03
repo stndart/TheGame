@@ -9,6 +9,10 @@
 #define THEGAME_NO_CONSOLE 0
 #endif
 
+#ifndef NO_COLORS
+#define NO_COLORS 0
+#endif
+
 #ifndef THEGAME_PIPES
 #define THEGAME_PIPES 1
 #endif
@@ -47,6 +51,10 @@
 
 #ifndef SILENT_KEEPALIVE
 #define SILENT_KEEPALIVE 1
+#endif
+
+#ifndef QUIET_NETWORK
+#define QUIET_NETWORK 1
 #endif
 
 #ifndef SILENT_NETWORK
@@ -94,6 +102,7 @@ namespace thegame {
 struct Cfg {
   // compile/env flags
   bool no_console;
+  bool no_colors;
   bool pipes;
   bool disable_hooks;
   bool disable_syshooks;
@@ -103,6 +112,7 @@ struct Cfg {
   bool disable_int;
   bool minidump_enabled;
   bool no_network_logs;
+  bool quiet_network;
   bool silent_keepalive;
   bool silent_network;
   bool no_proud_logs;

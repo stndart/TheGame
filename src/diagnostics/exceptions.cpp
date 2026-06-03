@@ -7,6 +7,10 @@
 #include "thegame/config.hpp"
 #include "thegame/log.hpp"
 
+using thegame::exceptionf;
+using thegame::logf;
+using thegame::LogMessage;
+
 namespace Diagnostics {
 
 thread_local bool g_in_vectored_handler = false;
@@ -23,7 +27,8 @@ volatile LONG g_av_release; // set to 0 to release the thread
 
 constexpr DWORD kDbgPrintExceptionC = 0x40010006;
 constexpr DWORD kDbgPrintExceptionWideC = 0x4001000A;
-constexpr DWORD kThreadNameExceptionC = 0x406D1388; // MSVC debugger thread naming
+constexpr DWORD kThreadNameExceptionC =
+    0x406D1388; // MSVC debugger thread naming
 constexpr DWORD kAccessViolationC = 0xC0000005;
 
 bool is_dbgprint_exception(DWORD code) {
@@ -91,9 +96,23 @@ void write_av_minidump(EXCEPTION_POINTERS *info) {
                 nullptr, nullptr);
   CloseHandle(file);
 
-  char msg[MAX_PATH + 32];
-  _snprintf_s(msg, sizeof(msg), _TRUNCATE, "minidump written: %s", dump);
-  thegame::logf(msg);
+  logf(LogMessage("minidump written: {}", dump));
+}
+
+// SEH must live in a function with no C++ unwinding (logf builds LogMessage).
+static int append_fault_stack_dwords(const DWORD *sp, char *line, size_t cap,
+                                     int pos) {
+  __try {
+    for (int i = 0; i < 8 && pos > 0; ++i) {
+      const int n = _snprintf_s(line + pos, cap - static_cast<size_t>(pos),
+                                _TRUNCATE, " 0x%08lX", sp[i]);
+      if (n < 0)
+        break;
+      pos += n;
+    }
+  } __except (EXCEPTION_EXECUTE_HANDLER) {
+  }
+  return pos;
 }
 
 // Log the top stack dwords at the faulting esp. After a faulting `call` (incl.
@@ -105,19 +124,10 @@ void log_fault_stack(EXCEPTION_POINTERS *info) {
     return;
   const DWORD *sp = reinterpret_cast<const DWORD *>(c->Esp);
   char line[256];
-  int pos = _snprintf_s(line, sizeof(line), _TRUNCATE,
-                        "fault stack @esp=0x%08lX:", c->Esp);
-  __try {
-    for (int i = 0; i < 8 && pos > 0; ++i) {
-      const int n = _snprintf_s(line + pos, sizeof(line) - pos, _TRUNCATE,
-                                " 0x%08lX", sp[i]);
-      if (n < 0)
-        break;
-      pos += n;
-    }
-  } __except (EXCEPTION_EXECUTE_HANDLER) {
-  }
-  thegame::logf(line);
+  const int pos = _snprintf_s(line, sizeof(line), _TRUNCATE,
+                              "fault stack @esp=0x%08lX:", c->Esp);
+  (void)append_fault_stack_dwords(sp, line, sizeof(line), pos);
+  logf(LogMessage(line));
 }
 
 // Spin the faulting thread in place so a debugger can break-all and inspect the
@@ -149,7 +159,7 @@ LONG WINAPI vectored_exception_handler(EXCEPTION_POINTERS *info) {
       g_av_context = *info->ContextRecord;
     ++g_av_count;
 
-    thegame::exceptionf("access_violation", info);
+    exceptionf(info, "access_violation");
 
     // Handle the first AV fully. BlackCipher/nProtect neutralizes debugger-
     // planted breakpoints (clears DRx, hides threads, eats int3), so we:
@@ -184,7 +194,7 @@ LONG WINAPI vectored_exception_handler(EXCEPTION_POINTERS *info) {
     if (rec->NumberParameters >= 2 &&
         !should_suppress_message(
             reinterpret_cast<const char *>(rec->ExceptionInformation[1]))) {
-      thegame::exceptionf("exception", info);
+      exceptionf(info);
     }
   }
 
@@ -193,7 +203,7 @@ LONG WINAPI vectored_exception_handler(EXCEPTION_POINTERS *info) {
 }
 
 LONG WINAPI unhandled_exception_handler(EXCEPTION_POINTERS *info) {
-  thegame::exceptionf("fatal_exception", info);
+  exceptionf(info, "fatal_exception");
   return EXCEPTION_CONTINUE_SEARCH;
 }
 

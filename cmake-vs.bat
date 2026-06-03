@@ -1,6 +1,10 @@
 @echo off
 setlocal
 
+rem Ninja matches /showIncludes lines byte-for-byte via msvc_deps_prefix in rules.ninja.
+rem Configure and build must use the same console code page as cl.exe (UTF-8 here).
+chcp 65001 >nul
+
 rem try vswhere
 set "VSWHERE=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"
 if exist "%VSWHERE%" (
@@ -18,6 +22,7 @@ if "%VSINSTALL%"=="" (
 )
 
 rem Prefer VsDevCmd; pass host/target architecture flags if desired
+set VSLANG=1033
 call "%VSINSTALL%\Common7\Tools\VsDevCmd.bat" -host_arch=x64 -arch=x86
 if errorlevel 1 (
   echo ERROR: VsDevCmd failed.

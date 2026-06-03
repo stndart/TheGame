@@ -1,0 +1,47 @@
+{
+  "_source": "AphroditeServer/Assets/Scripts/Server/Constants.cs",
+  "Opcodes": {
+    "0x01": "INTERNAL_MESSAGE",
+    "0x02": "USER_MESSAGE",
+    "0x04": "HANDSHAKE_RESULT",
+    "0x05": "SESSION_KEYS",
+    "0x06": "SESSION_KEY_SUCCESS",
+    "0x07": "SERVER_CONNECTION_REQUEST",
+    "0x0A": "SERVER_CONNECTION_SUCCESS",
+    "0x0B": "HOLEPUNCH_START",
+    "0x0C": "HOLEPUNCH_REQUEST",
+    "0x0D": "HOLEPUNCH_ACK",
+    "0x0E": "HOLEPUNCH_SUCCESS",
+    "0x0F": "HOLEPUNCH_UDP_MATCHED",
+    "0x18": "UNRELIABLE_RELAY_PACKET",
+    "0x1B": "UNRELIABLE_PONG",
+    "0x1C": "SPEEDHACK_DETECTOR",
+    "0x1D": "SERVER_TIME",
+    "0x22": "ENDPOINT_INFO_RESULT",
+    "0x25": "ENCRYPTED_MESSAGE",
+    "0x2F": "HANDSHAKE_REQUEST",
+    "0x31": "P2P_RELIABLE_PONG",
+    "0x32": "P2P_RELIABLE_PING",
+    "0x3A": "IPC_MESSAGE"
+  },
+  "RMI": {
+    "C2S": {
+      "HandshakeRequest": 2000,
+      "DecryptSessionKeysNfy": 2003,
+      "OnJoinPlayerEvent": 2004,
+      "BenchmarkPing": 2006,
+      "RemovePlayerRequest": 2009,
+      "StreamPacket": 2010,
+      "KillPacket": 2012
+    },
+    "S2C": {
+      "HandshakeNfy": 2001,
+      "DecryptSessionKeys": 2002,
+      "PlayerConnectionStatusNfy": 2005,
+      "BenchmarkPing": 2007,
+      "KickPlayer": 2008,
+      "FinishMatch": 2011,
+      "MetricsData": 2013
+    }
+  }
+}

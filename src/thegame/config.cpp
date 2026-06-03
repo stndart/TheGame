@@ -39,6 +39,7 @@ std::string merge_string(const char *name, const char *compile_default) {
 void init_config() {
   // compile/env flags
   cfg.no_console = merge_flag("THEGAME_NO_CONSOLE", THEGAME_NO_CONSOLE);
+  cfg.no_colors = merge_flag("NO_COLORS", NO_COLORS);
   cfg.pipes = merge_flag("THEGAME_PIPES", THEGAME_PIPES);
   cfg.disable_hooks = merge_flag("DISABLE_HOOKS", DISABLE_HOOKS);
   cfg.disable_syshooks = merge_flag("DISABLE_SYSHOOKS", DISABLE_SYSHOOKS);
@@ -50,6 +51,7 @@ void init_config() {
   cfg.disable_int = merge_flag("DISABLE_INT", DISABLE_INT);
   cfg.minidump_enabled = merge_flag("MINIDUMP_ENABLED", MINIDUMP_ENABLED);
   cfg.no_network_logs = merge_flag("NO_NETWORK_LOGS", NO_NETWORK_LOGS);
+  cfg.quiet_network = merge_flag("QUIET_NETWORK", QUIET_NETWORK);
   cfg.silent_keepalive = merge_flag("SILENT_KEEPALIVE", SILENT_KEEPALIVE);
   cfg.silent_network = merge_flag("SILENT_NETWORK", SILENT_NETWORK);
   cfg.no_proud_logs = merge_flag("NO_PROUD_LOGS", NO_PROUD_LOGS);

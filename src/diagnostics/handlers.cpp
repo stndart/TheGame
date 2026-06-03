@@ -144,8 +144,7 @@ void emit_custom_exception(const char *message) {
   emit_message("exception", message);
 }
 
-void emit_exception_event(const char *type, EXCEPTION_POINTERS *info,
-                          const char *message) {
+void emit_exception_event(const char *type, EXCEPTION_POINTERS *info) {
   if (InterlockedExchange(&g_handling_exception, 1) != 0)
     return;
 

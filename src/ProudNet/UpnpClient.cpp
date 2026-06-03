@@ -4,10 +4,12 @@
 #include "thegame/config.hpp"
 #include "thegame/log.hpp"
 
+using thegame::logp;
+
 void Proud::UpnpClient::AddPortMapping() {
   if (ServerOverride::override_active()) {
     if (!thegame::cfg.no_proud_logs)
-      thegame::logpnf(0, "skip UPnP (offline server override)");
+      logp(0, "skip UPnP (offline server override)");
     return;
   }
   // sub_D6E180 is void; online paths unwind without a success flag in eax.

@@ -2,6 +2,8 @@
 #include "target_hooks.h"
 #include "thegame/log.hpp"
 
+using thegame::stagef;
+
 namespace {
 
 void nav_pump(const char *phase) { Rmi::NavPump(phase); }
@@ -9,12 +11,12 @@ void nav_pump(const char *phase) { Rmi::NavPump(phase); }
 } // namespace
 
 extern "C" void __cdecl diagnostics_game_stage_intro() {
-  thegame::stagef("intro");
+  stagef("intro");
   nav_pump("intro");
 }
 
 extern "C" void __cdecl diagnostics_game_stage_login() {
-  thegame::stagef("login");
+  stagef("login");
   nav_pump("login");
 }
 
@@ -25,42 +27,42 @@ extern "C" void __cdecl diagnostics_game_stage_server_begin() {
 
 // CGameServer::onPreProcess end @ 0x4347CC — shard picker UI is active.
 extern "C" void __cdecl diagnostics_game_stage_shard_select() {
-  thegame::stagef("shard_select");
+  stagef("shard_select");
   nav_pump("shard_select");
 }
 
 extern "C" void __cdecl diagnostics_game_stage_lobby() {
-  thegame::stagef("lobby");
+  stagef("lobby");
   nav_pump("lobby");
 }
 
 extern "C" void __cdecl diagnostics_game_stage_room_list() {
-  thegame::stagef("room_list");
+  stagef("room_list");
   nav_pump("room_list");
 }
 
 extern "C" void __cdecl diagnostics_game_stage_party_room() {
-  thegame::stagef("party_room");
+  stagef("party_room");
   nav_pump("party_room");
 }
 
 extern "C" void __cdecl diagnostics_game_stage_room() {
-  thegame::stagef("room");
+  stagef("room");
   nav_pump("room");
 }
 
 extern "C" void __cdecl diagnostics_game_stage_char_select() {
-  thegame::stagef("char_select");
+  stagef("char_select");
   nav_pump("char_select");
 }
 
 extern "C" void __cdecl diagnostics_game_stage_map_loading() {
-  thegame::stagef("map_loading");
+  stagef("map_loading");
   nav_pump("map_loading");
 }
 
 extern "C" void __cdecl diagnostics_game_stage_in_game() {
-  thegame::stagef("in_game");
+  stagef("in_game");
   nav_pump("in_game");
 }
 

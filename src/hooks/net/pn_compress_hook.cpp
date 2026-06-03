@@ -3,10 +3,10 @@
 #include <windows.h>
 
 #include "ProudNet/Layout.hpp"
-#include "thegame/config.hpp"
 #include "thegame/log.hpp"
 
-using thegame::logpnf;
+using thegame::LogMessage;
+using thegame::logp;
 
 namespace {
 
@@ -31,9 +31,9 @@ using ProcessEncryptedFn = char(__thiscall *)(void *core, void *received_msg,
 extern "C" char process_compressed_c(void *core, std::uint32_t type,
                                      void *received_msg, void *stack_mem) {
   static int logs = 0;
-  if (logs < kLogLimit && !thegame::cfg.no_proud_logs) {
-    logpnf(0, "compress: core=%p type=%u msg=%p stack=%p", core, type,
-           received_msg, stack_mem);
+  if (logs < kLogLimit) {
+    logp(0, LogMessage("compress: core={} type={} msg={} stack={}", core, type,
+                       received_msg, stack_mem));
     ++logs;
   }
 
@@ -61,9 +61,9 @@ extern "C" void __declspec(naked) hook_pn_process_compressed() {
 extern "C" char process_encrypted_c(void *core, void *received_msg,
                                     void *stack_mem) {
   static int logs = 0;
-  if (logs < kLogLimit && !thegame::cfg.no_proud_logs) {
-    logpnf(0, "encrypt: core=%p msg=%p stack=%p", core, received_msg,
-           stack_mem);
+  if (logs < kLogLimit) {
+    logp(0, LogMessage("encrypt: core={} msg={} stack={}", core, received_msg,
+                       stack_mem));
     ++logs;
   }
 

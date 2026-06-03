@@ -7,6 +7,7 @@
 #include "thegame/log.hpp"
 
 using thegame::logf;
+using thegame::LogMessage;
 
 namespace {
 
@@ -159,7 +160,7 @@ bool HookManager::make_syshook(SysHookStub &stub, void *iat_addr) {
                                (int32_t)main_module - (int32_t)0x400000);
   HMODULE module = GetModuleHandle(stub.modname);
   if (!module) {
-    logf("Failed to get module %s", stub.modname);
+    logf(LogMessage("Failed to get module {}", stub.modname));
     return false;
   }
 
@@ -176,15 +177,15 @@ bool HookManager::make_syshook(SysHookStub &stub, void *iat_addr) {
 
   memcpy(&old_iat, stub.patched_addr, sizeof(old_iat));
   if (old_iat != (DWORD)stub.sym_addr)
-    logf("old iat of %s is %p, while resolved is %p", stub.symname, old_iat,
-         stub.sym_addr);
+    logf(LogMessage("old iat of {} is {}, while resolved is {}", stub.symname,
+                    old_iat, reinterpret_cast<void *>(stub.sym_addr)));
 
   if (!write_memory(stub.patched_addr, &iat_patch, sizeof(iat_patch))) {
     return false;
   }
 
-  logf("Hooked system call to %s_%s through IAT at %p", stub.modname,
-       stub.symname, stub.patched_addr);
+  logf(LogMessage("Hooked system call to {}_{} through IAT at {}", stub.modname,
+                  stub.symname, reinterpret_cast<void *>(stub.patched_addr)));
 
   stub.is_hooked = true;
   HookManager::syshooks.push_back(&stub);
@@ -274,7 +275,8 @@ bool HookManager::hook_import(const HMODULE image, const char *import_dll,
 
       thunk->u1.Function = reinterpret_cast<ULONG_PTR>(detour);
       patched = true;
-      logf("hook_import: %s!%s at %p", dll_name, symbol, &thunk->u1.Function);
+      logf(LogMessage("hook_import: {}!{} at {}", dll_name, symbol,
+                      reinterpret_cast<void *>(&thunk->u1.Function)));
     }
   }
   return patched;

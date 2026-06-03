@@ -3,7 +3,6 @@
 #include <windows.h>
 
 #include "RMI/Log.hpp"
-#include "thegame/log.hpp"
 
 // GAME application RMI proxy send chokepoints (NOT the framework proxy
 // 0xD5C5E0, which only carries builtin heartbeat/ping ids 1001/1006/1019).
