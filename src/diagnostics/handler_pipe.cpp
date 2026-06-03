@@ -1,11 +1,13 @@
 #include "diagnostics/handler_pipe.hpp"
 
+#include <windows.h>
+
 #include "RMI/NavCommands.hpp"
 #include "thegame/log.hpp"
 
-#include <cstdio>
-#include <cstring>
-#include <windows.h>
+using thegame::logf;
+using thegame::LogMessage;
+using thegame::LogSource::Nav;
 
 namespace {
 
@@ -51,7 +53,7 @@ bool connect_pipe_locked() {
       DWORD mode = PIPE_READMODE_BYTE | PIPE_NOWAIT;
       SetNamedPipeHandleState(g_pipe, &mode, nullptr, nullptr);
       if (InterlockedCompareExchange(&g_connected_logged, 1, 0) == 0) {
-        thegame::logf("[nav] handler pipe connected");
+        logf(LogMessage(Nav, "handler pipe connected"));
       }
       return true;
     }

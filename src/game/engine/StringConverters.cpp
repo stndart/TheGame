@@ -6,6 +6,7 @@
 #include "thegame/log.hpp"
 
 using thegame::logf;
+using thegame::LogMessage;
 
 void ThrowStringConversionError(DWORD errcode) {
   throw ATL::CAtlException(HRESULT_FROM_WIN32(errcode));
@@ -75,8 +76,8 @@ void __thiscall MultiByteHolder::ConvertWideToMultiByte(LPCWSTR lpWideCharStr,
   }
 
   if (LOG_WCONVERT)
-    logf("ConvertWideToMultiByte: lpWideCharStr='%ls', CodePage='%u'",
-         lpWideCharStr, CodePage);
+    logf(LogMessage("ConvertWideToMultiByte: lpWideCharStr=..., CodePage='{}'",
+                    CodePage));
 
   int len = lstrlenW(lpWideCharStr) + 1;
 
@@ -96,6 +97,9 @@ void __thiscall MultiByteHolder::ConvertWideToMultiByte(LPCWSTR lpWideCharStr,
       ThrowStringConversionError(GetLastError());
     }
   }
+
+  if (LOG_WCONVERT)
+    logf(LogMessage("ConvertWideToMultiByte: current_ptr='{}'", current_ptr));
 }
 
 void __thiscall WideStringHolder::ConvertMultiByteToWide(LPCSTR lpMultiByteStr,
@@ -108,8 +112,8 @@ void __thiscall WideStringHolder::ConvertMultiByteToWide(LPCSTR lpMultiByteStr,
   }
 
   if (LOG_WCONVERT)
-    logf("ConvertMultiByteToWide: lpMultiByteStr='%s', CodePage='%u'",
-         lpMultiByteStr, CodePage);
+    logf(LogMessage("ConvertMultiByteToWide: lpMultiByteStr={}, CodePage='{}'",
+                    lpMultiByteStr, CodePage));
 
   int len = lstrlenA(lpMultiByteStr) + 1;
 

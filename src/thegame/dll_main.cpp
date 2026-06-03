@@ -1,4 +1,3 @@
-#include "ProudNet/TcpTrace.hpp"
 #include "crt/memory.h"
 #include "diagnostics/handlers.hpp"
 #include "hook_manager.h"
@@ -7,6 +6,8 @@
 
 #include "system_hooks.h"
 #include "target_hooks.h"
+
+using thegame::logf;
 
 extern "C" __declspec(dllexport) void __cdecl A() {}
 
@@ -134,25 +135,25 @@ BOOL APIENTRY DllMain(HMODULE module, DWORD ul_reason_for_call,
     thegame::init_config();
     thegame::create_console();
     thegame::log_boot_paths();
+    thegame::prepare_logs();
 
     if (thegame::cfg.disable_hooks) {
-      thegame::logf("DLL loaded - no hooks (DISABLE_HOOKS)");
+      logf("DLL loaded - no hooks (DISABLE_HOOKS)");
     } else {
       install_hooks();
-      thegame::logf("DLL loaded - hooks installed");
+      logf("DLL loaded - hooks installed");
       start_diagnostics_poll();
     }
     break;
 
   case DLL_PROCESS_DETACH:
     if (!thegame::cfg.disable_hooks) {
-      thegame::logf("DLL unloaded - hooks removed");
+      logf("DLL unloaded - hooks removed");
       Diagnostics::teardown();
       HookManager::restore_all_hooks();
     } else {
-      thegame::logf("DLL unloaded");
+      logf("DLL unloaded");
     }
-    Proud::TcpTrace::close_log_file();
     thegame::close_logs();
     if (thegame::console_created)
       FreeConsole();

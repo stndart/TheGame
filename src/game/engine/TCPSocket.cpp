@@ -21,9 +21,7 @@
 using thegame::logf;
 using thegame::LogMessage;
 using thegame::logn;
-using thegame::lognf;
-using thegame::logns;
-using thegame::LogSource;
+using thegame::LogSource::Net;
 
 inline std::string to_ip_string(int addr) {
   unsigned char *caddr = reinterpret_cast<unsigned char *>(&addr);
@@ -55,9 +53,8 @@ int TCPSocket::Connect(WString wideHostname, int port) {
 
   std::string remapped_host = ServerOverride::remap_host(host.c_str());
   if (strcmp(remapped_host.c_str(), host.c_str()) != 0) {
-    logf(LogMessage(
-        LogSource::Net,
-        fmt::format("TCPSocket::Connect remap {} -> {}", host, remapped_host)));
+    logf(LogMessage(Net, "TCPSocket::Connect remap {} -> {}", host,
+                    remapped_host));
     host = remapped_host;
   }
 
@@ -90,16 +87,15 @@ int TCPSocket::Connect(WString wideHostname, int port) {
 
   // Remap sockaddr *after* setting the port
   if (ServerOverride::remap_sockaddr_in(&serverAddr)) {
-    logf(LogMessage(LogSource::Net,
-                    fmt::format("TCPSocket::Connect remap {} -> {}", host,
-                                thegame::cfg.server_ip)));
+    logf(LogMessage(Net, "TCPSocket::Connect remap {} -> {}", host,
+                    thegame::cfg.server_ip));
   }
 
   std::string ipstr =
       to_ip_string(*reinterpret_cast<int *>(&serverAddr.sin_addr));
 
   if (!thegame::cfg.no_network_logs)
-    logns(m_socketId, ipstr.c_str(), port);
+    logn(m_socketId, ipstr.c_str(), port);
 
   Proud::TcpTrace::log_connect(m_socketId, ipstr.c_str(),
                                static_cast<u_short>(port));
@@ -110,9 +106,7 @@ int TCPSocket::Connect(WString wideHostname, int port) {
     Proud::SocketReportError(this, error, nullptr);
     if (error != WSAEWOULDBLOCK && error != WSA_IO_PENDING) {
       if (!thegame::cfg.no_network_logs)
-        lognf(m_socketId,
-              LogMessage(LogSource::Net,
-                         fmt::format("Error connecting: {}", error)));
+        logn(m_socketId, LogMessage(Net, "Error connecting: {}", error));
     }
     return error;
   }
@@ -123,8 +117,7 @@ int TCPSocket::Connect(WString wideHostname, int port) {
 int TCPSocket::Send(TCPSocket::MessageToSend *message) {
   // Check if we need to send a warning
   if (m_sendWarningFlag && !thegame::cfg.no_network_logs) {
-    lognf(m_socketId,
-          LogMessage(LogSource::Net, "TCPSocket::Send: IssueSend duplicated"));
+    logn(m_socketId, LogMessage(Net, "TCPSocket::Send: IssueSend duplicated"));
   }
 
   // Validate send parameters
@@ -143,10 +136,8 @@ int TCPSocket::Send(TCPSocket::MessageToSend *message) {
 
   if (!thegame::cfg.no_network_logs) {
     if (message->bufferCount > 1) {
-      lognf(m_socketId,
-            LogMessage(LogSource::Net,
-                       fmt::format("TCPSocket::Send: buffer has {} WSABUFs",
-                                   message->bufferCount)));
+      logn(m_socketId, LogMessage(Net, "TCPSocket::Send: buffer has {} WSABUFs",
+                                  message->bufferCount));
     }
     logn(m_socketId, message->inlineBufferPtr[0].len,
          message->inlineBufferPtr[0].buf, false);

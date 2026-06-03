@@ -6,12 +6,11 @@
 
 #include "game/server_override.hpp"
 #include "system_hooks.h"
-#include "thegame/config.hpp"
 #include "thegame/log.hpp"
 
-using thegame::logf;
-using thegame::lognf;
-using thegame::logns;
+using thegame::LogMessage;
+using thegame::logn;
+using thegame::logp;
 
 namespace {
 
@@ -70,13 +69,13 @@ static void tcp_nodelay(SOCKET s, int *ctx, unsigned *mgr) {
   int on = static_cast<int>(mgr[197]);
   if (setsockopt(s, IPPROTO_TCP, TCP_NODELAY,
                  reinterpret_cast<const char *>(&on), sizeof(on)) >= 0) {
-    lognf(static_cast<int>(s), "TCP_NODELAY set");
+    logn(s, "TCP_NODELAY set");
     return;
   }
   const int err = WSAGetLastError();
-  if (!thegame::cfg.no_network_logs)
-    lognf(static_cast<int>(s), "Could not set TCP_NODELAY: %s",
-          format_wsa_error(ctx, static_cast<unsigned long>(err)));
+
+  logn(s, LogMessage("Could not set TCP_NODELAY: {}",
+                     format_wsa_error(ctx, static_cast<unsigned long>(err))));
 }
 
 // sub_1431290 - raise SO_RCVBUF to at least 16416 when current is smaller.
@@ -98,8 +97,8 @@ static void set_keepalive(unsigned *mgr, SOCKET s) {
   int on = mgr[258] != 0;
   if (setsockopt(s, SOL_SOCKET, SO_KEEPALIVE,
                  reinterpret_cast<const char *>(&on), sizeof(on)) < 0)
-    if (!thegame::cfg.no_network_logs)
-      lognf(static_cast<int>(s), "Failed to set SO_KEEPALIVE");
+
+    logn(s, "Failed to set SO_KEEPALIVE");
 }
 
 // sub_144D2A0 - non-blocking mode.
@@ -232,8 +231,8 @@ static int connect_with_remap(SOCKET s, sockaddr *name, int namelen) {
     in_addr was = in->sin_addr;
     if (ServerOverride::remap_sockaddr_in(in) &&
         port == ServerOverride::kGameLegPort)
-      logf("w_connect_2:27380 %s -> %s", inet_ntoa(was),
-           inet_ntoa(in->sin_addr));
+      logp(s, LogMessage("w_connect_2 {}:{} -> {}", inet_ntoa(was), port,
+                         inet_ntoa(in->sin_addr)));
   }
   return connect_syshandle(s, name, namelen);
 }
@@ -299,8 +298,8 @@ static int w_bind_3(int *ctx, SOCKET s, int af) {
       host = strip_prefix(host, kIfPrefix);
       if (!resolve_local_interface(af, host, ip_text, sizeof(ip_text)))
         return 45;
-      logf("Local Interface %s is ip %s using address family %i", host, ip_text,
-           af);
+      logn(s, LogMessage("Local Interface {} is ip {} using address family {}",
+                         host, ip_text, af));
     } else {
       if (starts_with_prefix(host, kHostPrefix))
         host = strip_prefix(host, kHostPrefix);
@@ -312,13 +311,13 @@ static int w_bind_3(int *ctx, SOCKET s, int af) {
 
       if (!resolve_hostname(af, host, ip_text, sizeof(ip_text))) {
         *reinterpret_cast<int *>(ctx_bytes + 540) = saved;
-        logf("Couldn't bind to '%s'", iface);
+        logn(s, LogMessage("Couldn't bind to '{}'", iface));
         return 45;
       }
 
       *reinterpret_cast<int *>(ctx_bytes + 540) = saved;
-      logf("Name '%s' family %i resolved to '%s' family %i", host, af, ip_text,
-           af);
+      logn(s, LogMessage("Name '{}' family {} resolved to '{}' family {}", host,
+                         af, ip_text, af));
     }
 
     if (af == AF_INET && parse_ipv4_dotted(ip_text, &name.sin_addr) > 0) {
@@ -339,7 +338,7 @@ static int w_bind_3(int *ctx, SOCKET s, int af) {
     goto bound_ok;
 
   while (--retries > 0) {
-    logf("Bind to local port %hu failed, trying next", port);
+    logn(s, LogMessage("Bind to local port {} failed, trying next", port));
     ++port;
     if (name.sin_family == AF_INET)
       name.sin_port = htons(port);
@@ -351,8 +350,7 @@ static int w_bind_3(int *ctx, SOCKET s, int af) {
     const int err = WSAGetLastError();
     mgr[8549] = static_cast<unsigned>(err); // +34196
     const char *msg = format_wsa_error(ctx, static_cast<unsigned long>(err));
-    if (!thegame::cfg.no_network_logs)
-      lognf(static_cast<int>(s), "bind failed with errno %d: %s", err, msg);
+    logn(s, LogMessage("bind failed with errno {}: {}", err, msg));
     return 45;
   }
 
@@ -363,12 +361,10 @@ bound_ok: {
     const int err = WSAGetLastError();
     mgr[8549] = static_cast<unsigned>(err);
     const char *msg = format_wsa_error(ctx, static_cast<unsigned long>(err));
-    if (!thegame::cfg.no_network_logs)
-      lognf(static_cast<int>(s), "getsockname() failed with errno %d: %s", err,
-            msg);
+    logn(s, LogMessage("getsockname() failed with errno {}: {}", err, msg));
     return 45;
   }
-  logf("Local port: %hu", port);
+  logn(s, LogMessage("Local port: {}", port));
   ctx[127] = 1;
   return 0;
 }
@@ -388,10 +384,8 @@ bool ProudConnect::Socket::w_connect_3() {
     in_addr was = peer.sin_addr;
     if (ServerOverride::remap_sockaddr_in(&peer) &&
         port == ServerOverride::kGameLegPort)
-      logf("w_connect_3:27380 %s -> %s", inet_ntoa(was),
-           inet_ntoa(peer.sin_addr));
-    if (!thegame::cfg.no_network_logs)
-      logns(static_cast<int>(s), inet_ntoa(peer.sin_addr), port);
+      logp(s, LogMessage("w_connect_3 {}:{} -> {}", inet_ntoa(was), port,
+                         inet_ntoa(peer.sin_addr)));
   }
 
   return connect_syshandle(s, reinterpret_cast<sockaddr *>(&peer), 16) !=
@@ -417,18 +411,18 @@ extern "C" int __fastcall ProudConnect::w_connect_2(int *out_zero,
   if (!resolve_sockaddr(ctx, &sockbuf.name)) {
     const unsigned long err = GetLastError();
     const char *msg = format_wsa_error(ctx, err);
-    if (!thegame::cfg.no_network_logs)
-      lognf(static_cast<int>(sock),
-            "sa_addr inet_ntop() failed with errno %lu: %s", err, msg);
+
+    logn(sock,
+         LogMessage("sa_addr inet_ntop() failed with errno {}: {}", err, msg));
+
     close_socket_ctx(ctx, sock);
     return 0;
   }
 
   memcpy(ctx_bytes + 0x40, ctx_bytes + 0x9E, 0x2Eu);
-  if (!thegame::cfg.no_network_logs)
-    logns(static_cast<int>(sock),
-          reinterpret_cast<const char *>(ctx_bytes + 0x40),
-          ntohs(sockbuf.name.sin_port));
+
+  logn(sock, reinterpret_cast<const char *>(ctx_bytes + 0x40),
+       ntohs(sockbuf.name.sin_port));
 
   copy_ctx_fields(ctx);
 
@@ -485,9 +479,10 @@ extern "C" int __fastcall ProudConnect::w_connect_2(int *out_zero,
   }
 
   const char *msg = format_wsa_error(ctx, static_cast<unsigned long>(err));
-  if (!thegame::cfg.no_network_logs)
-    lognf(static_cast<int>(sock), "Failed to connect to %s: %s",
-          ctx_bytes + 0x40, msg);
+
+  logn(sock, LogMessage("Failed to connect to {}: {}",
+                        reinterpret_cast<const char *>(ctx_bytes + 0x40), msg));
+
   mgr_dwords[8549] = static_cast<unsigned>(err);
   close_socket_ctx(ctx, sock);
   return 0;

@@ -8,6 +8,8 @@
 #include "thegame/log.hpp"
 
 using thegame::logf;
+using thegame::LogMessage;
+using thegame::LogSource::Nav;
 
 namespace {
 
@@ -192,9 +194,7 @@ void pump_pass_shard_select() {
 } // namespace
 
 void log_nav(const char *msg) {
-  logf(thegame::LogMessage(
-      thegame::LogSource::Nav,
-      fmt::format("{} (tid={})", msg, GetCurrentThreadId())));
+  logf(LogMessage(Nav, "{} (tid={})", msg, GetCurrentThreadId()));
 }
 
 void Rmi::NavDrainCommands() {

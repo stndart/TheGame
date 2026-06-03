@@ -8,13 +8,12 @@
 #include "game/server_override.hpp"
 #include "thegame/log.hpp"
 
-using thegame::logf;
+using thegame::LogMessage;
+using thegame::logn;
 
 void __cdecl log_parg_n(int i, void *retaddr, void *p) {
 #if WS2_HOOKS
-  logf(thegame::LogMessage(
-      thegame::LogSource::Net,
-      fmt::format("Call[%i] from 0x%p with arg 0x%p", i, retaddr, p)));
+  logn(0, LogMessage("Call[{}] from 0x{} with arg 0x{}", i, retaddr, p));
 #else
   (void)i;
   (void)retaddr;

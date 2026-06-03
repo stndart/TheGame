@@ -13,6 +13,9 @@
 #include "thegame/config.hpp"
 #include "thegame/log.hpp"
 
+using thegame::LogMessage;
+using thegame::logp;
+
 namespace {
 
 constexpr size_t kMaxFramesPerLine = 32;
@@ -100,8 +103,6 @@ const uint8_t kOpKeepalive = 0x1C;
 void log_line(SOCKET sock, u_short port, const char *dir, size_t chunk_len,
               const uint8_t *raw, const ProudFrameParse::ParsedFrame *frames,
               size_t frame_count, size_t incomplete_tail) {
-  if (thegame::cfg.no_proud_logs)
-    return;
 
   if (thegame::cfg.silent_keepalive) {
     if (frame_count == 1 && frames[0].inner.opcode == kOpKeepalive)
@@ -118,7 +119,7 @@ void log_line(SOCKET sock, u_short port, const char *dir, size_t chunk_len,
   if (frame_count == 0 && raw && chunk_len)
     append_raw_preview(line, raw, chunk_len);
 
-  thegame::logpln(line.str().c_str());
+  logp(line.str());
 
   if (thegame::cfg.pipes) {
     Diagnostics::PnTcpFrameHeader pipe_frames[kMaxFramesPerLine];
@@ -143,7 +144,7 @@ namespace TcpTrace {
 void log_connect(SOCKET sock, const char *addr, u_short port) {
   if (!SocketTrace::is_pn_track_port(port))
     return;
-  thegame::logpns(static_cast<int>(sock), addr, port);
+  logp(LogMessage("connect socket {} to {}:{}", sock, addr, port));
 }
 
 void log_chunk(SOCKET sock, const void *data, size_t len, bool inbound,
@@ -173,10 +174,6 @@ void log_chunk(SOCKET sock, const void *data, size_t len, bool inbound,
 
   log_line(sock, port, inbound ? "rx" : "tx", len, bytes, frames, frame_count,
            incomplete);
-}
-
-void close_log_file() {
-  // Closed via thegame::close_logs() in DllMain.
 }
 
 } // namespace TcpTrace

@@ -1,106 +1,101 @@
 #pragma once
 
-#include <cstdarg>
 #include <cstddef>
 
 #include <fmt/color.h>
+#include <map>
 
 struct _EXCEPTION_POINTERS;
 typedef struct _EXCEPTION_POINTERS EXCEPTION_POINTERS;
+
+template <typename... Args>
+using format_string =
+    fmt::basic_format_string<char, fmt::type_identity_t<Args>...>;
 
 namespace thegame {
 
 enum LogSource { Exception, Log, Net, Proud, RMI, Stage, Nav };
 
-enum ColorKind {
-  White,
-  Seen,
-  Unknown,
-  Interesting,
-  Milestone,
-};
+enum LogImportance { Default, Seen, NotSeen, Milestone, Warning };
 
-fmt::rgb color_from_kind(ColorKind kind);
+fmt::rgb color_for_importance(LogImportance importance);
 
 std::string source_to_prefix(LogSource source);
 
-struct LogMessage {
-  LogSource source;
+extern std::map<LogSource, bool> silenced;
+extern std::map<LogSource, bool> file_silenced;
+
+class LogMessage {
+public:
   std::string message;
-  ColorKind kind = White;
+  LogSource source = Log;
+  LogImportance kind = Default;
 
-  LogMessage(std::string message) {
-    this->message = message;
-    source = Log;
+  LogMessage(const char *message) : message(message ? message : "") {}
+
+  LogMessage(std::string message) : message(message) {}
+
+  template <typename... Args>
+  LogMessage(format_string<Args...> format, Args &&...args) {
+    message = fmt::format(format, std::forward<Args>(args)...);
   }
 
-  LogMessage(LogSource source, std::string message) {
-    this->message = message;
-    this->source = source;
+  template <typename... Args>
+  LogMessage(LogSource source, format_string<Args...> format, Args &&...args)
+      : source(source) {
+    message = fmt::format(format, std::forward<Args>(args)...);
   }
 
-  LogMessage(LogSource source, ColorKind kind, std::string message) {
-    this->message = message;
-    this->source = source;
-    this->kind = kind;
+  template <typename... Args>
+  LogMessage(LogSource source, LogImportance kind,
+             format_string<Args...> format, Args &&...args)
+      : source(source), kind(kind) {
+    message = fmt::format(format, std::forward<Args>(args)...);
   }
 
-  LogMessage(LogSource source, const char *format, ...) {
-    va_list args;
-    va_start(args, format);
-    message = fmt::format(format, args);
-    va_end(args);
-    this->source = source;
+  LogMessage with_kind(LogImportance kind) const {
+    return LogMessage(source, kind, message);
   }
 
-  LogMessage(LogSource source, ColorKind kind, const char *format, ...) {
-    va_list args;
-    va_start(args, format);
-    message = fmt::format(format, args);
-    va_end(args);
-    this->source = source;
-    this->kind = kind;
+  LogMessage with_source(LogSource source) const {
+    return LogMessage(source, kind, message);
   }
 
-  LogMessage with_kind(ColorKind kind) const {
-    return LogMessage(source, kind, message.c_str());
-  }
+public:
+  // writes to file, optionally with prefix
+  void write_to(FILE *file, bool prefix = true) const;
+  // writes to console, always with prefix
+  void write_to_console() const;
 };
 
 extern bool console_created;
 
 void create_console();
-void log_message(const LogMessage &message);
+void log_boot_paths();
+
+void prepare_logs();
+void close_logs();
+
+// general console log + logs.txt
 void logf(const LogMessage &message);
-void logf(const char *format, ...);
 
 // netlogs.txt (+ optional [net] console line);
 // gated by NO_NETWORK_LOGS / SILENT_NETWORK.
-void logns(int socket, const char *addr, int port);
-void lognf(int socket, const LogMessage &message);
-void lognf(int socket, const char *format, ...);
+void logn(int socket, const LogMessage &message);
+void logn(int socket, const char *addr, int port);
 void logn(int socket, size_t len, char *data, bool in = false);
 
 // proudlogs.txt (+ optional [proud] console line);
 // gated by NO_PROUD_LOGS / SILENT_PROUD.
-void logpns(int socket, const char *addr, unsigned short port);
-void logpnf(int socket, const LogMessage &message);
-void logpnf(int socket, const char *format, ...);
-void logpln(const LogMessage &message);
-void logpln(const char *format, ...);
-void logpln_silent(const LogMessage &message); // doesn't print to console
-void logpln_silent(const char *format, ...);
+void logp(int socket, const LogMessage &message);
+void logp(const LogMessage &message);
+void logp_silent(const LogMessage &message); // doesn't print to console
 
-void exceptionf(const char *type, EXCEPTION_POINTERS *info,
-                const LogMessage &message);
-void exceptionf(const char *type, EXCEPTION_POINTERS *info,
-                const char *format = "", ...);
+void exceptionf(EXCEPTION_POINTERS *info, const char *type = "exception");
+void exceptionf(const LogMessage &message);
+
 void eventf(const LogMessage &message);
-void stagef(const char *stage);
-
-void log_boot_paths();
-
-void close_logs();
+void stagef(const LogMessage &message);
 
 bool is_keepalive_packet(size_t len);
 

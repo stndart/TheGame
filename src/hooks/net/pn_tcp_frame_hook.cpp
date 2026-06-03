@@ -4,10 +4,10 @@
 
 #include "ProudNet/Layout.hpp"
 #include "ProudNet/TcpLayerMessageExtractor.hpp"
-#include "thegame/config.hpp"
 #include "thegame/log.hpp"
 
-using thegame::logpnf;
+using thegame::LogMessage;
+using thegame::logp;
 
 namespace {
 
@@ -55,8 +55,8 @@ extern "C" void __declspec(naked) hook_pn_tcp_frame_recv() {
 extern "C" void log_tcp_frame_send_once(void *framer) {
   ensure_tcp_frame_send_body();
   static int logs = 0;
-  if (logs < kLogLimit && !thegame::cfg.no_proud_logs) {
-    logpnf(0, "tcp_frame: send self=%p", framer);
+  if (logs < kLogLimit) {
+    logp(0, LogMessage("tcp_frame: send self={}", framer));
     ++logs;
   }
 }
