@@ -3,6 +3,7 @@
 #include "hook_manager.h"
 #include "thegame/config.hpp"
 #include "thegame/log.hpp"
+#include "thegame/proud_db.hpp"
 
 #include "system_hooks.h"
 #include "target_hooks.h"
@@ -142,8 +143,9 @@ BOOL APIENTRY DllMain(HMODULE module, DWORD ul_reason_for_call,
     CRT::init_CRT();
     thegame::init_config();
     thegame::create_console();
-    thegame::log_boot_paths();
     thegame::prepare_logs();
+    thegame::init_proud_db();
+    thegame::log_boot_paths();
 
     if (thegame::cfg.disable_hooks) {
       logf("DLL loaded - no hooks (DISABLE_HOOKS)");

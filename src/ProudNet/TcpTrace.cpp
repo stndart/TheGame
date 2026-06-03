@@ -12,9 +12,12 @@
 #include "game/net/socket_trace.hpp"
 #include "thegame/config.hpp"
 #include "thegame/log.hpp"
+#include "thegame/proud_db.hpp"
 
+using thegame::LogImportance;
 using thegame::LogMessage;
 using thegame::logp;
+using thegame::LogSource;
 
 namespace {
 
@@ -100,6 +103,32 @@ void append_frames_text(std::ostream &out,
 
 const uint8_t kOpKeepalive = 0x1C;
 
+void log_frames(SOCKET sock, u_short port, const char *dir, size_t chunk_len,
+
+                const ProudFrameParse::ParsedFrame *frames, size_t frame_count,
+                size_t incomplete_tail) {
+  for (size_t i = 0; i < frame_count; ++i) {
+    const ProudFrameParse::ParsedFrame &frame = frames[i];
+    uint8_t opcode = frame.inner.opcode;
+    uint16_t rmi_id = frame.inner.rmi_id;
+    bool has_rmi = frame.inner.has_rmi;
+
+    bool known;
+    std::string comment;
+    generate_frame_comment(opcode, rmi_id, has_rmi, known, comment);
+
+    LogMessage message(LogSource::Proud,
+                       "op=0x{:02x}, rmi_id=0x{:04x}, has_rmi={}, known={}, "
+                       "comment={}",
+                       opcode, rmi_id, has_rmi, known, comment);
+    if (known)
+      message.kind = LogImportance::Seen;
+    else
+      message.kind = LogImportance::NotSeen;
+    logp(sock, message);
+  }
+}
+
 void log_line(SOCKET sock, u_short port, const char *dir, size_t chunk_len,
               const uint8_t *raw, const ProudFrameParse::ParsedFrame *frames,
               size_t frame_count, size_t incomplete_tail) {
@@ -120,6 +149,8 @@ void log_line(SOCKET sock, u_short port, const char *dir, size_t chunk_len,
     append_raw_preview(line, raw, chunk_len);
 
   logp(line.str());
+
+  log_frames(sock, port, dir, chunk_len, frames, frame_count, incomplete_tail);
 
   if (thegame::cfg.pipes) {
     Diagnostics::PnTcpFrameHeader pipe_frames[kMaxFramesPerLine];

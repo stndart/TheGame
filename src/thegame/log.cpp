@@ -18,7 +18,7 @@ fmt::rgb color_for_importance(LogImportance kind) {
   case Seen:
     return fmt::rgb(64, 192, 64);
   case NotSeen:
-    return fmt::rgb(192, 64, 64);
+    return fmt::rgb(192, 96, 96);
   case Milestone:
     return fmt::rgb(128, 192, 192);
   case Warning:
@@ -239,7 +239,8 @@ void logn(int socket, bool inbound, const char *data, size_t len) {
 }
 
 void logp(int socket, const LogMessage &message) {
-  LogMessage line(Proud, "sock {}: {}", socket, message.message);
+  LogMessage line = message.with_source(Proud);
+  line.message = fmt::format("sock {}: {}", socket, message.message);
   logf(line);
   line.write_to(proudlog_file);
 }
