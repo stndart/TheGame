@@ -51,6 +51,7 @@ void init_config() {
   cfg.disable_int = merge_flag("DISABLE_INT", DISABLE_INT);
   cfg.minidump_enabled = merge_flag("MINIDUMP_ENABLED", MINIDUMP_ENABLED);
   cfg.no_network_logs = merge_flag("NO_NETWORK_LOGS", NO_NETWORK_LOGS);
+  cfg.quiet_network = merge_flag("QUIET_NETWORK", QUIET_NETWORK);
   cfg.silent_keepalive = merge_flag("SILENT_KEEPALIVE", SILENT_KEEPALIVE);
   cfg.silent_network = merge_flag("SILENT_NETWORK", SILENT_NETWORK);
   cfg.no_proud_logs = merge_flag("NO_PROUD_LOGS", NO_PROUD_LOGS);

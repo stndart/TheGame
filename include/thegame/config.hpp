@@ -53,6 +53,10 @@
 #define SILENT_KEEPALIVE 1
 #endif
 
+#ifndef QUIET_NETWORK
+#define QUIET_NETWORK 1
+#endif
+
 #ifndef SILENT_NETWORK
 #define SILENT_NETWORK 0
 #endif
@@ -108,6 +112,7 @@ struct Cfg {
   bool disable_int;
   bool minidump_enabled;
   bool no_network_logs;
+  bool quiet_network;
   bool silent_keepalive;
   bool silent_network;
   bool no_proud_logs;

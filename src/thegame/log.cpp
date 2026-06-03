@@ -1,6 +1,8 @@
 #include "thegame/log.hpp"
 
+#include <cstddef>
 #include <cstdio>
+#include <cstring>
 
 #include <fmt/base.h>
 #include <fmt/ranges.h>
@@ -179,34 +181,60 @@ void logf(const LogMessage &message) {
     Diagnostics::emit_game_log(message.message.c_str());
 }
 
-void logn(int socket, const LogMessage &message) {
-  LogMessage line(Net, "sock {}: {}", socket, message.message);
-  logf(line);
-  line.write_to(netlog_file);
+void logf_quiet(const LogMessage &message) {
+  if (!silenced[message.source])
+    message.write_to_console();
+
+  if (!file_silenced[message.source])
+    message.write_to(log_file);
 }
 
 void logn(int socket, const char *addr, int port) {
   LogMessage line(Net, "connect socket {} to {}:{}", socket, addr, port);
-  logf(line);
+  if (cfg.quiet_network)
+    logf_quiet(line);
+  else
+    logf(line);
   line.write_to(netlog_file);
 }
 
-void logn(int socket, size_t len, char *data, bool in) {
+void logn(int socket, const LogMessage &message) {
+  LogMessage line(Net, "sock {}: {}", socket, message.message);
+  if (cfg.quiet_network)
+    logf_quiet(line);
+  else
+    logf(line);
+  line.write_to(netlog_file);
+}
+
+void logn(int socket, bool inbound, const LogMessage &message) {
+  LogMessage line(Net, "{} sock {}: {}", inbound ? "rx" : "tx", socket,
+                  message.message);
+  if (cfg.quiet_network)
+    logf_quiet(line);
+  else
+    logf(line);
+  line.write_to(netlog_file);
+}
+
+void logn(int socket, bool inbound, const char *data, size_t len) {
   if (cfg.no_network_logs)
     return;
 
-  // Keepalives are filtered by port (27000) or ProudNet RMI opcode (0x1C).
-  // if (cfg.silent_keepalive && is_keepalive_packet(len))
-  //   return;
+  if (cfg.silent_keepalive && is_keepalive_packet(data, len))
+    return;
 
-  LogMessage line(Net, "{} sock {} len={}", in ? "rx" : "tx", socket, len);
-  logf(line);
+  LogMessage line(Net, "{} sock {} len={}", inbound ? "rx" : "tx", socket, len);
+  if (cfg.quiet_network)
+    logf_quiet(line);
+  else
+    logf(line);
 
   const auto *bytes = reinterpret_cast<const unsigned char *>(data);
   const auto hex = fmt::format("{:02x}", fmt::join(bytes, bytes + len, " "));
 
-  LogMessage data_line(Net, "{} sock {} data[{}]: {}", in ? "rx" : "tx", socket,
-                       len, hex);
+  LogMessage data_line(Net, "{} sock {} data[{}]: {}", inbound ? "rx" : "tx",
+                       socket, len, hex);
   data_line.write_to(netlog_file);
 }
 
@@ -273,6 +301,18 @@ void ensure_netlog_open() {
   }
 }
 
-bool is_keepalive_packet(size_t len) { return len <= 8; }
+namespace {
+
+// ProudNet keepalive on game TCP (e.g. 27380): 13 57 01 01 1c
+constexpr unsigned char kPnKeepalive[] = {0x13, 0x57, 0x01, 0x01, 0x1c};
+constexpr size_t kPnKeepaliveLen = sizeof(kPnKeepalive);
+
+} // namespace
+
+bool is_keepalive_packet(const void *data, size_t len) {
+  if (!data || len != kPnKeepaliveLen)
+    return false;
+  return std::memcmp(data, kPnKeepalive, kPnKeepaliveLen) == 0;
+}
 
 } // namespace thegame

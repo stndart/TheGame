@@ -17,15 +17,13 @@ namespace {
 void log_tcp_payload(SOCKET s, const void *data, size_t len, bool inbound) {
   if (thegame::cfg.no_network_logs || !data || len == 0)
     return;
-  logn(static_cast<int>(s), len,
-       const_cast<char *>(static_cast<const char *>(data)), inbound);
+  logn(s, inbound, static_cast<const char *>(data), len);
 }
 
 void log_udp_len(SOCKET s, size_t len, bool inbound) {
   if (thegame::cfg.no_network_logs || len == 0)
     return;
-  logn(static_cast<int>(s),
-       LogMessage("{} UDP, payload len {}", inbound ? "rx" : "tx", len));
+  logn(s, inbound, LogMessage("UDP, payload len {}", len));
 }
 
 void log_pn_wsasend_buffers(SOCKET s, LPWSABUF bufs, DWORD count) {
@@ -122,7 +120,7 @@ extern "C" int WSAAPI sendto_syshandle(SOCKET s, const char *buf, int len,
                                        int tolen) {
   log_udp_len(s, static_cast<size_t>(len), false);
   return reinterpret_cast<SendToFn>(g_ws2_sendto.sym_addr)(s, buf, len, flags,
-                                                             to, tolen);
+                                                           to, tolen);
 }
 
 static int WSAAPI
@@ -142,11 +140,10 @@ wsasend_syshandle(SOCKET s, LPWSABUF bufs, DWORD buffer_count,
                          completion);
 }
 
-extern "C" int WSAAPI
-wsasendto_syshandle(SOCKET s, LPWSABUF bufs, DWORD buffer_count,
-                    LPDWORD bytes_sent, DWORD flags, const sockaddr *to,
-                    int tolen, LPWSAOVERLAPPED overlapped,
-                    LPWSAOVERLAPPED_COMPLETION_ROUTINE completion) {
+extern "C" int WSAAPI wsasendto_syshandle(
+    SOCKET s, LPWSABUF bufs, DWORD buffer_count, LPDWORD bytes_sent,
+    DWORD flags, const sockaddr *to, int tolen, LPWSAOVERLAPPED overlapped,
+    LPWSAOVERLAPPED_COMPLETION_ROUTINE completion) {
   log_udp_len(s, wsabuf_total_len(bufs, buffer_count), false);
   return reinterpret_cast<WSASendToFn>(g_ws2_wsasendto.sym_addr)(
       s, bufs, buffer_count, bytes_sent, flags, to, tolen, overlapped,
@@ -172,8 +169,8 @@ extern "C" int WSAAPI recvfrom_syshandle(SOCKET s, char *buf, int len,
 }
 
 static int WSAAPI
-wsarecv_forward(SOCKET s, LPWSABUF bufs, DWORD buffer_count, LPDWORD bytes_recvd,
-                LPDWORD flags, LPWSAOVERLAPPED overlapped,
+wsarecv_forward(SOCKET s, LPWSABUF bufs, DWORD buffer_count,
+                LPDWORD bytes_recvd, LPDWORD flags, LPWSAOVERLAPPED overlapped,
                 LPWSAOVERLAPPED_COMPLETION_ROUTINE completion) {
   const int rc = reinterpret_cast<WSARecvFn>(g_ws2_wsarecv.sym_addr)(
       s, bufs, buffer_count, bytes_recvd, flags, overlapped, completion);
@@ -182,11 +179,10 @@ wsarecv_forward(SOCKET s, LPWSABUF bufs, DWORD buffer_count, LPDWORD bytes_recvd
   return rc;
 }
 
-extern "C" int WSAAPI
-wsarecv_syshandle(SOCKET s, LPWSABUF bufs, DWORD buffer_count,
-                  LPDWORD bytes_recvd, LPDWORD flags,
-                  LPWSAOVERLAPPED overlapped,
-                  LPWSAOVERLAPPED_COMPLETION_ROUTINE completion) {
+extern "C" int WSAAPI wsarecv_syshandle(
+    SOCKET s, LPWSABUF bufs, DWORD buffer_count, LPDWORD bytes_recvd,
+    LPDWORD flags, LPWSAOVERLAPPED overlapped,
+    LPWSAOVERLAPPED_COMPLETION_ROUTINE completion) {
   return wsarecv_forward(s, bufs, buffer_count, bytes_recvd, flags, overlapped,
                          completion);
 }
@@ -255,8 +251,9 @@ SysHookStub g_ws2_recvfrom = {"ws2_32.dll", "recvfrom",
                               reinterpret_cast<void (*)()>(recvfrom_syshandle)};
 SysHookStub g_ws2_wsasend = {"ws2_32.dll", "WSASend",
                              reinterpret_cast<void (*)()>(wsasend_syshandle)};
-SysHookStub g_ws2_wsasendto = {"ws2_32.dll", "WSASendTo",
-                               reinterpret_cast<void (*)()>(wsasendto_syshandle)};
+SysHookStub g_ws2_wsasendto = {
+    "ws2_32.dll", "WSASendTo",
+    reinterpret_cast<void (*)()>(wsasendto_syshandle)};
 SysHookStub g_ws2_wsarecv = {"ws2_32.dll", "WSARecv",
                              reinterpret_cast<void (*)()>(wsarecv_syshandle)};
 SysHookStub g_ws2_wsarecvfrom = {

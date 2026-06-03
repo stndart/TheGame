@@ -117,8 +117,7 @@ char Proud::CFastSocket::recv_complete(unsigned char wait, std::uint32_t *out) {
   if (!thegame::cfg.no_network_logs && transferred > 0) {
     const char *staging = recv_staging_ptr();
     if (staging)
-      logn(sock, static_cast<size_t>(transferred),
-           const_cast<char *>(staging), true);
+      logn(sock, true, staging, transferred);
   }
 
   logp(sock, LogMessage("recv_complete fast={} bytes={}",

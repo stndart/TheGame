@@ -82,12 +82,14 @@ void close_logs();
 
 // general console log + logs.txt
 void logf(const LogMessage &message);
+void logf_quiet(const LogMessage &message);
 
 // netlogs.txt (+ optional [net] console line);
 // gated by NO_NETWORK_LOGS / SILENT_NETWORK.
+void logn(int socket, const char *addr, int port); // connect
 void logn(int socket, const LogMessage &message);
-void logn(int socket, const char *addr, int port);
-void logn(int socket, size_t len, char *data, bool in = false);
+void logn(int socket, bool inbound, const LogMessage &message);
+void logn(int socket, bool inbound, const char *data, size_t len);
 
 // proudlogs.txt (+ optional [proud] console line);
 // gated by NO_PROUD_LOGS / SILENT_PROUD.
@@ -101,6 +103,6 @@ void exceptionf(const LogMessage &message);
 void eventf(const LogMessage &message);
 void stagef(const LogMessage &message);
 
-bool is_keepalive_packet(size_t len);
+bool is_keepalive_packet(const void *data, size_t len);
 
 } // namespace thegame

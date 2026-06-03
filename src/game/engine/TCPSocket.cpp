@@ -21,6 +21,7 @@
 using thegame::logf;
 using thegame::LogMessage;
 using thegame::logn;
+using thegame::LogImportance::Warning;
 using thegame::LogSource::Net;
 
 inline std::string to_ip_string(int addr) {
@@ -137,10 +138,11 @@ int TCPSocket::Send(TCPSocket::MessageToSend *message) {
   if (!thegame::cfg.no_network_logs) {
     if (message->bufferCount > 1) {
       logn(m_socketId, LogMessage(Net, "TCPSocket::Send: buffer has {} WSABUFs",
-                                  message->bufferCount));
+                                  message->bufferCount)
+                           .with_kind(Warning));
     }
-    logn(m_socketId, message->inlineBufferPtr[0].len,
-         message->inlineBufferPtr[0].buf, false);
+    logn(m_socketId, false, message->inlineBufferPtr[0].buf,
+         message->inlineBufferPtr[0].len);
   }
 
   // Use WSASend for overlapped I/O
