@@ -1,5 +1,7 @@
 # Game RMI - server (data + implementation)
 
+> **Separate package:** The friends **dummy server** is not part of this RE repo (submodules removed). Paths below describe that server’s layout for cross-reference when integrating S2C builders with `TheGame.dll` + **ctl**.
+
 How the **Python dummy server** builds S2C game RMI frames and what replay artifacts remain opaque.
 
 ---
@@ -20,7 +22,7 @@ Builders: [`server/server/proud_rmi.py`](../../server/server/proud_rmi.py), fram
 
 | RMI | Builder | Min body | Leaf / effect |
 | --- | --- | --- | --- |
-| `0x3F3E` | `build_net_user_connect_res_frame()` | 644 B (replay) / 384 B (IDA) | `sub_4BA070` - connect |
+| `0x3F3E` | `build_net_user_connect_res_frame()` | see § NetUserConnectRES | `sub_4BA070` - connect |
 | `0x3F30` | `build_create_room_res_frame()` | 4 B (`result@+2==0`) | `sub_437160` → scene 9 |
 | `0x3ED4` | `build_room_enter_res_frame()` | 6+32×N | `sub_4BB560` |
 | `0x3ED8` | `build_room_members_ui_res_frame()` | 6+168×N | `sub_4BB370` |
@@ -54,7 +56,14 @@ Builders: [`server/server/proud_rmi.py`](../../server/server/proud_rmi.py), fram
 | `0x16C` | 4 | `num_char_slots` | |
 | `0x170` | 16 | pad | |
 
-Offline replay body: **644 B** (`LOBBY_CONNECT_3F3E_BODY`); optional `name=` patches wchar @ +0x10.
+### Body size (client vs server)
+
+| Source | Size | Notes |
+| --- | --- | --- |
+| Client handler / [`net_user_connect_res.hpp`](../../include/game/net/net_user_connect_res.hpp) | **384 B** (`0x180`) | What this repo’s struct documents and safe emit uses |
+| Friends-server replay capture | Often cited as **644 B** | May be the same field layout with trailing padding — **not confirmed** as a second schema; treat 384 B as authoritative for client fields until wire diff proves otherwise |
+
+Optional `name=` patches wchar @ +0x10 in replay tooling.
 
 ---
 
@@ -70,9 +79,9 @@ Server cannot parse C2S RMI from the socket - use **body length heuristics** on 
 | `GENERATE_START_MATCH_RES_ON_REQ` | Start-match RES |
 | `START_MATCH_RES_AFTER_CREATE_NTH_25=2` | After create, on Ready |
 | `GENERATE_LEAVE_ROOM_RES_ON_REQ` | Leave-room RES |
-| `LEAVE_ROOM_RES_ON_25_BODY_LEN=19` | Collides with enter/ready - prefer inject or nth-25 |
+| `LEAVE_ROOM_RES_ON_25_BODY_LEN=19` | Collides with enter/ready - prefer session counters |
 
-**Verify wire-only:** default **debug** DLL (inject compiled out).
+**Verify:** friends server on the wire + `just ctl::copy-logs` (`[rmi] s2c` in netlogs). No in-process inject.
 
 ```powershell
 cd server && uv run python -m server.test_wire_create_room

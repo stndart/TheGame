@@ -134,11 +134,14 @@ After E9: client opens PROBE `:20009` and GAME `:27380`.
 
 ### 4.4 ctl stages (outcome, not wire)
 
+Canonical list: [stages.md](stages.md). Typical offline progression:
+
 | Stage | Meaning |
 | --- | --- |
 | `connecting_to_server` | `TCPSocket::Connect` toward port 7000. |
-| `shard_choice` | `CGameServer::onPreProcess` begin. |
-| `main_menu` / `server_ready` | Same hook, end - main menu wired. |
+| *(no stage)* | `CGameServer::onPreProcess` **begin** @ `0x4345B0`. |
+| `shard_select` | Same handler **end** @ `0x4347CC` — shard picker UI. |
+| `lobby` | After shard selection / lobby GFX. |
 
 Requires GAME-leg replay success, not merely ENTRY handshake.
 

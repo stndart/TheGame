@@ -20,8 +20,8 @@ Globals: `0x1C1ABA0` (account/lobby proxy), `0x1C1ABB0` (match floor).
 
 | RVA | Symbol | Hook | Mode |
 | --- | --- | --- | --- |
-| `0xD65940` | Receive drain | `pn_drain_recv.cpp` | **trace** (resume `0xD65947`) |
-| `0xD653B0` | `ProcessMessage_ProudNetLayer` | `pn_process_message.cpp` | **full jmp** |
+| `0xD65940` | Receive drain | `hooks/net/pn_drain_recv_hook.cpp` | **trace** (resume `0xD65947`) |
+| `0xD653B0` | `ProcessMessage_ProudNetLayer` | `hooks/net/pn_process_message_hook.cpp` + `ProudNet/ProcessProudNetLayer.cpp` | **full jmp** |
 | `0xD64F10` | RMI case handler | - | tail-call GAME |
 | `0xD59300` / `0xD58B30` | Message_Read / CMessage::Read | - | tail-call GAME |
 | `0xD00FE0` | Peer resolver | - | - |
@@ -33,7 +33,7 @@ Globals: `0x1C1ABA0` (account/lobby proxy), `0x1C1ABB0` (match floor).
 
 | RVA | Registrar | Binder | Count |
 | --- | --- | --- | --- |
-| `0x4B8630` | `CAccountPacket::Register` | `0x556CB0` | ~55 |
+| `0x4B8630` | `CAccountPacket::Register` | `0x556CB0` | 54 (table below) |
 | `0x421070` | `CCommonPacket::Register` | `0x554930` | ~43 |
 | `0x4366E0` | Room proxy | `0x555520` | 3 |
 | `0x43A680` | Floor/match | `0x5555E0` | 36 |
@@ -42,20 +42,21 @@ Globals: `0x1C1ABA0` (account/lobby proxy), `0x1C1ABB0` (match floor).
 
 ## Key RES leaves (connect / lobby / room)
 
-| RMI id | Leaf RVA | Role | Hook / inject |
+| RMI id | Leaf RVA | Role | Notes |
 | --- | --- | --- | --- |
-| `0x3F3E` | `0x4BA070` | NetUserConnectRES | - |
-| `0x3E8E` | `0x4BA520` | NetConnectRES | - |
-| `0x3F2F` | `0x437390` | Room-list RES | - |
-| **`0x3F30`** | **`0x437160`** | **Create-room RES** | inject @ `src/RMI/Inject.cpp` |
-| `0x3F31` | `0x437240` | Room close | - |
-| `0x3ED4` | `0x4BB560` | Room-enter ack | inject WIP |
-| `0x3ED8` | `0x4BB2E0` / `0x4BB370` | Member UI map | inject WIP |
-| `0x3F81` | `0x4BB450` | Room state | - |
-| `0x3F11` | `0x4BB7E0` | Member name | - |
-| **`0x3F3D`** | **`0x43D9B0`** | **Start-match RES** | inject WIP |
-| **`0x3F45`** | **`0x43D020`** | **Leave-room RES** | - |
-| `0x675160` | - | Server-error popup | - |
+| `0x3F3E` | `0x4BA070` | NetUserConnectRES | friends server / replay |
+| `0x3E8E` | `0x4BA520` | NetConnectRES | |
+| `0x3F2F` | `0x437390` | Room-list RES | |
+| **`0x3F30`** | **`0x437160`** | **Create-room RES** | |
+| `0x3F31` | `0x437240` | Room close | |
+| `0x3ED4` | `0x4BB560` | Room-enter ack | |
+| `0x3ED8` | `0x4BB2E0` / `0x4BB370` | Member UI map | |
+| `0x3F81` | `0x4BB450` | Room state | |
+| `0x3F11` | `0x4BB7E0` | Member name | |
+| **`0x3F3D`** | **`0x43D9B0`** | **Start-match RES** | |
+| **`0x3F45`** | **`0x43D020`** | **Leave-room RES** | |
+
+Handler `sub_675160` @ `0x675160` is server-error popup (not an RMI id).
 
 ---
 
@@ -79,17 +80,23 @@ Globals: `0x1C1ABA0` (account/lobby proxy), `0x1C1ABB0` (match floor).
 | `0x41A920` | Scene → class factory |
 | `0x1C155C0` | State manager base (+128 active, +132 scene, +140 next) |
 
-### UI onPreProcess hooks (`game_stage.cpp`)
+### UI onPreProcess hooks (`src/hooks/game_state.cpp`)
 
-| RVA | Stage |
+| RVA | ctl stage |
 | --- | --- |
+| `0x42A010` | `intro` |
+| `0x42B280` | `login` |
+| `0x4345B0` | *(none)* |
+| `0x4347CC` | `shard_select` |
 | `0x42BD50` | `lobby` |
 | `0x4362E0` | `room_list` |
+| `0x42F690` | `party_room` |
 | `0x439B00` | `room` |
+| `0x4F2DB0` | `char_select` |
 | `0x4806E0` | `map_loading` |
 | `0x47F610` | `in_game` |
 
-Full table: [plans/proudnet-rmi-server-plan.md](plans/proudnet-rmi-server-plan.md).
+Full table: [proudnet/stages.md](proudnet/stages.md).
 
 ---
 
@@ -160,4 +167,4 @@ Removed in v1. Archive: [rmi/fake-server-hooks.md](rmi/fake-server-hooks.md). RM
 | `0x3F32` | `0x43CCC0` | |
 | `0x3F46` | `0x43CE00` | |
 
-*Last updated: 2026-05-29 - tables from IDA decomp; living notes in [plans/proudnet-game-rmi.md](plans/proudnet-game-rmi.md).*
+*Last updated: 2026-06-03 — tables from IDA decomp; action map in [rmi/actions.md](rmi/actions.md). Open issues: [plans/controversies-to-resolve.md](plans/controversies-to-resolve.md).*

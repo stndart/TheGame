@@ -23,7 +23,7 @@ Application frame: **`[rmi_id:2 LE][body...]`**; `len` includes the 2-byte id.
 
 | Hook | Target | Log prefix |
 | --- | --- | --- |
-| `hook_pn_rmi_send` | `sub_D5C5E0` | `[rmi] c2s framework ...` |
+| `hook_pn_rmi_send` | `sub_D5C5E0` | `[rmi] c2s frame ...` |
 | `hook_pn_game_rmi_send` | `sub_65AEA0` | `[rmi] c2s proxy ...` |
 | `hook_pn_rmi_floor` | `sub_A0B290` | `[rmi] c2s floor ...` |
 | `ProcessMessageProudNetLayer` (case Rmi) | `sub_D653B0` | `[rmi] s2c ...` |
@@ -37,7 +37,7 @@ Logs **id + len** (framework: + remotes); no filtering. Read body at `msg` for h
 | EA | Role |
 | --- | --- |
 | **`sub_D65940`** | Receive-queue drain → `sub_D653B0` per message. SEH resume `0xD65947`. |
-| **`sub_D653B0`** | `ProcessMessage_ProudNetLayer` - case **1 (Rmi)** → `sub_D64F10`. Reimpl: [`pn_process_message.cpp`](../../src/game/net/pn_process_message.cpp). |
+| **`sub_D653B0`** | `ProcessMessage_ProudNetLayer` - case **1 (Rmi)** → `sub_D64F10`. Reimpl: [`ProcessProudNetLayer.cpp`](../../src/ProudNet/ProcessProudNetLayer.cpp); hook: [`pn_process_message_hook.cpp`](../../src/hooks/net/pn_process_message_hook.cpp). |
 | **`sub_D64F10`** | RMI handler - dispatcher virtual resolves id → leaf. |
 | **`sub_D00FE0`** | Peer resolver; `hostid == 1` → server fast-path. |
 
@@ -114,12 +114,12 @@ Full id → leaf tables: [../rmi-ida-reimpl.md](../rmi-ida-reimpl.md).
 | room list | `0x3F2F` | `0x3A9F` | 2 | `0x3F2F` → `sub_437390` |
 | **create room** | **`0x3F30`** | **`0x3AA0`** | **98** | **`0x3F30`** → **`sub_437160`** |
 | room enter | `0x3ED3` | `0x3AC0` | 6 | `0x3ED4` → `sub_4BB560` |
-| ready | `0x3F2B` | `0x3AA8` | 3 | `0x3F2C`? |
+| ready | `0x3F2B` | `0x3AA8` | 3 | **unknown** — [actions.md](actions.md) |
 | team/loadout | - | `0x3AC6` | 10246 | ? |
 | **start match** | **`0x3F3D`** | **`0x3AA9`** | 2 | **`0x3F3D`** → **`sub_43D9B0`** |
 | **leave room** | **`0x3F45`** | **`0x3AA3`** | 6 | **`0x3F45`** → **`sub_43D020`** |
 
-Full table + body layouts: [../plans/proudnet-game-rmi.md §9](../plans/proudnet-game-rmi.md).
+Full table + body layouts: [actions.md](actions.md).
 
 ### Create-room REQ body (98 B)
 
@@ -146,7 +146,7 @@ Create RES only needs `result@+2 == 0`.
 
 ## In-process injection (removed)
 
-The fake-server S2C inject harness was **removed in v1**. Archive: [fake-server-hooks.md](fake-server-hooks.md). Use the friends server wire + `[rmi] s2c` logs instead.
+The in-process S2C inject harness was **removed in v1**. Archive: [fake-server-hooks.md](fake-server-hooks.md) (do not trust inject RES ids for open actions). Use the **friends server** on the wire + `[rmi] s2c` logs.
 
 ---
 

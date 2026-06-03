@@ -2,7 +2,7 @@
 
 **Status:** removed in v1 (friends server is authoritative). This document archives the harness that lived in `src/RMI/Inject.cpp` before deletion.
 
-**Related:** [client.md](client.md), [autonav.md](autonav.md), [../plans/proudnet-game-rmi.md](../plans/proudnet-game-rmi.md).
+**Related:** [client.md](client.md), [autonav.md](autonav.md), [actions.md](actions.md).
 
 ---
 
@@ -53,7 +53,7 @@ arg[2] = body;
 | `0x3F30` create room | `0x3F30` | `0x437160` | `PumpLobby` | Success → `RequestState(9)` (room) |
 | `0x3ED3` room enter / populate arm | `0x3ED4` | `0x4BB560` | `PumpRoom` | Compact member map (32 B records) |
 | (same populate latch) | `0x3ED8` | `0x4BB370` | `PumpRoom` | UI member map (168 B records, slot 0) |
-| `0x3F2B` Ready (one-shot) | `0x3F3D` | `0x43D9B0` | `PumpRoom` | Start match → scene 11 if play ctx set |
+| `0x3F2B` Ready (one-shot) | `0x3F3D` | `0x43D9B0` | `PumpRoom` | **Archival** — inject pumped start-match RES; **not** verified Ready answer on wire ([actions.md](actions.md)) |
 | `0x3F45` leave room | `0x3F45` | `0x43D020` | `PumpRoom` | Leave-room RES |
 
 **Nav-only direct calls:** `InjectLobbyEnterRes()`, `InjectLeaveRoomRes()` (no C2S latch).

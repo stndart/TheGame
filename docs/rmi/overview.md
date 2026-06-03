@@ -2,7 +2,7 @@
 
 Application-layer **request/response** messages above ProudNet transport. The game registers hundreds of S2C handlers at startup; the client sends C2S requests through proxy wrappers. This doc defines intent and numbering; wire bodies in [server.md](server.md), client paths in [client.md](client.md).
 
-**Living investigation:** [../plans/proudnet-game-rmi.md](../plans/proudnet-game-rmi.md). **Emulation plan:** [../plans/proudnet-rmi-server-plan.md](../plans/proudnet-rmi-server-plan.md).
+**Action map:** [actions.md](actions.md). **Friends server** (separate repo) builds S2C — see [server.md](server.md). Resolution log: [../plans/controversies-to-resolve.md](../plans/controversies-to-resolve.md).
 
 ---
 
@@ -87,7 +87,7 @@ Transition: **`sub_41F0D0(CStateMachine*, sceneId)`**. State manager @ `dword_1C
 | 9 | CGameRoom | `room` |
 | 11 | CGamePlay | `in_game` / map load |
 
-Full stage → RVA table: [../plans/proudnet-rmi-server-plan.md](../plans/proudnet-rmi-server-plan.md).
+Full stage → RVA table: [../proudnet/stages.md](../proudnet/stages.md).
 
 ---
 

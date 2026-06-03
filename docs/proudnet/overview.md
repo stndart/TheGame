@@ -40,7 +40,7 @@ How ProudNet is structured in **The Game** offline client path and what each lay
 | **`CFastSocket`** | Overlapped WSASend/WSARecv on worker socket @ `this+0x12C`. |
 | **`ProcessMessage_ProudNetLayer`** | Internal envelope dispatch (`sub_D653B0`): `Message_Read` → 50-case `MessageType` switch. Case **1** = RMI → game layer. |
 | **Game RMI** | Application request/response ids (`0x3F3E`, `0x3F30`, ...) registered at startup. See [../rmi/overview.md](../rmi/overview.md). |
-| **ctl stages** | UI milestones from `TheGame.dll` hooks (`shard_choice`, `lobby`, `room`, ...) - observable outcome, not wire opcodes. |
+| **ctl stages** | UI milestones from `TheGame.dll` hooks (`shard_select`, `lobby`, `room_list`, …) — observable outcome, not wire opcodes. See [stages.md](stages.md). |
 
 ---
 
@@ -98,8 +98,10 @@ Three **different** byte namespaces - do not conflate:
 | Wire bytes, sequences | [protocol.md](protocol.md) |
 | `MessageType` switch | [message-dispatch.md](message-dispatch.md) |
 | Reimpl file map | [implementation.md](implementation.md) |
+| ctl stages | [stages.md](stages.md) |
 | RVA / hook index | [../proudnet-ida-reimpl.md](../proudnet-ida-reimpl.md) |
 | SDK ↔ GAME crossmap (historical) | [../proudnet-sdk-crossmap.md](../proudnet-sdk-crossmap.md) |
 | Current hook matrix | [../plans/proudnet-hook-status.md](../plans/proudnet-hook-status.md) |
+| Folder index | [README.md](README.md) |
 
-*Last updated: 2026-05-29.*
+*Last updated: 2026-06-03.*

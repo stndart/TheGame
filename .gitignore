@@ -16,12 +16,14 @@ GitS_FA_Network_Captures/
 IvyDocs/
 patchingPE/
 AphroditeServer/
+tools/
+journals/
 
 logs/
 transcripts/
-ctl/logs/
 diagnostics_events.jsonl
 tools/
+ctl/
 
 # Agent investigation journals (local); template and long/ readme are tracked
 journals/*

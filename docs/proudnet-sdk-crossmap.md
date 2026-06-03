@@ -89,7 +89,7 @@ PN18 size **264** (`0x108`). GAME object larger (~328+ B).
 | Dispatch | `0xD6F7B0` | connection driver |
 | Worker | `0xD668B0` | `"PNCliWorker"` |
 
-FSM state @ `conn+0x40` (`PNConnectionNode::kFsmState` in `pn_layout.hpp`).
+FSM state @ `conn+0x40` (`conn::kFsmState` in [`include/ProudNet/Layout.hpp`](../include/ProudNet/Layout.hpp)).
 
 ---
 
